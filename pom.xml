@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.excelsiorjet</groupId>
@@ -10,11 +11,11 @@
 
     <!-- todo: -->
     <!--<url>http://www.excelsiorjet.com/maven-plugin</url>-->
-<!--    <url>https://github.com/${github-repo-owner}/${github-repo}</url>
-    <description>
-        Excelsior JET Maven Plugin provides Maven users with an easy way to compile their applications
-        down to optimized native Windows, OS X, or Linux executables with Excelsior JET.
-    </description>-->
+    <!--    <url>https://github.com/${github-repo-owner}/${github-repo}</url>
+        <description>
+            Excelsior JET Maven Plugin provides Maven users with an easy way to compile their applications
+            down to optimized native Windows, OS X, or Linux executables with Excelsior JET.
+        </description>-->
 
     <licenses>
         <license>
@@ -38,31 +39,31 @@
         </developer>
     </developers>
 
-   <!-- todo: -->
-<!--    <scm>
-        <connection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</connection>
-        <developerConnection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</developerConnection>
-        <url>https://github.com/${github-repo-owner}/${github-repo}</url>
-        <tag>HEAD</tag>
-    </scm>-->
+    <!-- todo: -->
+    <!--    <scm>
+            <connection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</connection>
+            <developerConnection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</developerConnection>
+            <url>https://github.com/${github-repo-owner}/${github-repo}</url>
+            <tag>HEAD</tag>
+        </scm>-->
 
     <!-- todo: -->
-<!--    <issueManagement>
-        <system>GitHub</system>
-        <url>https://github.com/${github-repo-owner}/${github-repo}/issues</url>
-    </issueManagement>-->
+    <!--    <issueManagement>
+            <system>GitHub</system>
+            <url>https://github.com/${github-repo-owner}/${github-repo}/issues</url>
+        </issueManagement>-->
 
     <!-- todo: -->
-<!--    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>-->
+    <!--    <distributionManagement>
+            <snapshotRepository>
+                <id>ossrh</id>
+                <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            </snapshotRepository>
+            <repository>
+                <id>ossrh</id>
+                <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            </repository>
+        </distributionManagement>-->
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -89,6 +90,11 @@
             <artifactId>mockito-all</artifactId>
             <version>1.9.5</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.10</version>
         </dependency>
     </dependencies>
 
