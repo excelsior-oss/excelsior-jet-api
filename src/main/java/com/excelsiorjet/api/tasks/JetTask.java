@@ -2,292 +2,24 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.cmd.*;
 import com.excelsiorjet.api.log.AbstractLog;
+import com.excelsiorjet.api.tasks.config.JetTaskConfig;
 import com.excelsiorjet.api.util.Utils;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
-public class JetTask extends AbstractJetTask<JetTaskConfig> {
+public class JetTask {
 
-    //packaging types
-    private static final String ZIP = "zip";
-    private static final String NONE = "none";
-    private static final String EXCELSIOR_INSTALLER = "excelsior-installer";
-    private static final String OSX_APP_BUNDLE = "osx-app-bundle";
-    private static final String NATIVE_BUNDLE = "native-bundle";
+    private final JetTaskConfig config;
 
     public JetTask(JetTaskConfig config) {
-        super(config);
+        this.config = config;
     }
 
     private static final String APP_DIR = "app";
-
-    private void checkVersionInfo(JetHome jetHome) throws JetHomeException {
-        if (!Utils.isWindows()) {
-            config.setAddWindowsVersionInfo(false);
-        }
-        if (config.isAddWindowsVersionInfo() && (jetHome.getEdition() == JetEdition.STANDARD)) {
-            config.log().warn(s("JetMojo.NoVersionInfoInStandard.Warning"));
-            config.setAddWindowsVersionInfo(false);
-        }
-        if (config.isAddWindowsVersionInfo() || EXCELSIOR_INSTALLER.equals(config.excelsiorJetPackaging()) || OSX_APP_BUNDLE.equals(config.excelsiorJetPackaging())) {
-            if (Utils.isEmpty(config.vendor())) {
-                //no organization name. Get it from groupId that cannot be empty.
-                String[] groupId = config.groupId().split("\\.");
-                if (groupId.length >= 2) {
-                    config.setVendor(groupId[1]);
-                } else {
-                    config.setVendor(groupId[0]);
-                }
-                config.setVendor(Character.toUpperCase(config.vendor().charAt(0)) + config.vendor().substring(1));
-            }
-            if (Utils.isEmpty(config.product())) {
-                // no project name, get it from artifactId.
-                config.setProduct(config.artifactId());
-            }
-        }
-        if (config.isAddWindowsVersionInfo()) {
-            //Coerce winVIVersion to v1.v2.v3.v4 format.
-            String finalVersion = deriveFourDigitVersion(config.winVIVersion());
-            if (!config.winVIVersion().equals(finalVersion)) {
-                config.log().warn(s("JetMojo.NotCompatibleExeVersion.Warning", config.winVIVersion(), finalVersion));
-                config.setWinVIVersion(finalVersion);
-            }
-
-            if (config.winVICopyright() == null) {
-                String inceptionYear = config.inceptionYear();
-                String curYear = new SimpleDateFormat("yyyy").format(new Date());
-                String years = Utils.isEmpty(inceptionYear) ? curYear : inceptionYear + "," + curYear;
-                config.setWinVICopyright("Copyright \\x00a9 " + years + " " + config.vendor());
-            }
-            if (config.winVIDescription() == null) {
-                config.setWinVIDescription(config.product());
-            }
-        }
-    }
-
-    private String deriveFourDigitVersion(String version) {
-        String[] versions = version.split("\\.");
-        String[] finalVersions = new String[]{"0", "0", "0", "0"};
-        for (int i = 0; i < Math.min(versions.length, 4); ++i) {
-            try {
-                finalVersions[i] = Integer.decode(versions[i]).toString();
-            } catch (NumberFormatException e) {
-                int minusPos = versions[i].indexOf('-');
-                if (minusPos > 0) {
-                    String v = versions[i].substring(0, minusPos);
-                    try {
-                        finalVersions[i] = Integer.decode(v).toString();
-                    } catch (NumberFormatException ignore) {
-                    }
-                }
-            }
-        }
-        return String.join(".", finalVersions);
-    }
-
-    private void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, ExcelsiorJetApiException {
-        if (config.globalOptimizer()) {
-            if (jetHome.is64bit()) {
-                config.log().warn(s("JetMojo.NoGlobalIn64Bit.Warning"));
-                config.setGlobalOptimizer(false);
-            } else if (jetHome.getEdition() == JetEdition.STANDARD) {
-                config.log().warn(s("JetMojo.NoGlobalInStandard.Warning"));
-                config.setGlobalOptimizer(false);
-            }
-        }
-
-        if ((config.javaRuntimeSlimDown() != null) && !config.javaRuntimeSlimDown().isEnabled()) {
-            config.setJavaRuntimeSlimDown(null);
-        }
-
-        if (config.javaRuntimeSlimDown() != null) {
-            if (jetHome.is64bit()) {
-                config.log().warn(s("JetMojo.NoSlimDownIn64Bit.Warning"));
-                config.setJavaRuntimeSlimDown(null);
-            } else if (jetHome.getEdition() == JetEdition.STANDARD) {
-                config.log().warn(s("JetMojo.NoSlimDownInStandard.Warning"));
-                config.setJavaRuntimeSlimDown(null);
-            } else {
-                if (config.javaRuntimeSlimDown().detachedBaseURL == null) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.DetachedBaseURLMandatory.Failure"));
-                }
-
-                if (config.javaRuntimeSlimDown().detachedPackage == null) {
-                    config.javaRuntimeSlimDown().detachedPackage = config.finalName() + ".pkl";
-                }
-
-                config.setGlobalOptimizer(true);
-            }
-
-        }
-
-        if (config.globalOptimizer()) {
-            TestRunExecProfiles execProfiles = new TestRunExecProfiles(config.execProfilesDir(), config.execProfilesName());
-            if (!execProfiles.getUsg().exists()) {
-                throw new ExcelsiorJetApiException(s("JetMojo.NoTestRun.Failure"));
-            }
-        }
-    }
-
-    private void checkTrialVersionConfig(JetHome jetHome) throws ExcelsiorJetApiException, JetHomeException {
-        if ((config.trialVersion() != null) && config.trialVersion().isEnabled()) {
-            if ((config.trialVersion().expireInDays >= 0) && (config.trialVersion().expireDate != null)) {
-                throw new ExcelsiorJetApiException(s("JetMojo.AmbiguousExpireSetting.Failure"));
-            }
-            if (config.trialVersion().expireMessage == null || config.trialVersion().expireMessage.isEmpty()) {
-                throw new ExcelsiorJetApiException(s("JetMojo.NoExpireMessage.Failure"));
-            }
-
-            if (jetHome.getEdition() == JetEdition.STANDARD) {
-                config.log().warn(s("JetMojo.NoTrialsInStandard.Warning"));
-                config.setTrialVersion(null);
-            }
-        } else {
-            config.setTrialVersion(null);
-        }
-    }
-
-    private void checkExcelsiorInstallerConfig() throws ExcelsiorJetApiException {
-        if (config.excelsiorJetPackaging().equals(EXCELSIOR_INSTALLER)) {
-            config.excelsiorInstallerConfiguration().fillDefaults(config);
-        }
-    }
-
-    private void checkOSXBundleConfig() {
-        if (config.excelsiorJetPackaging().equals(OSX_APP_BUNDLE)) {
-            String fourDigitVersion = deriveFourDigitVersion(config.version());
-            config.osxBundleConfiguration().fillDefaults(config, config.outputName(), config.product(),
-                    deriveFourDigitVersion(config.version()),
-                    deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
-            if (!config.osxBundleConfiguration().icon.exists()) {
-                config.log().warn(s("JetMojo.NoIconForOSXAppBundle.Warning"));
-            }
-        }
-
-    }
-
-    @Override
-    protected JetHome checkPrerequisites() throws ExcelsiorJetApiException {
-        JetHome jetHomeObj = super.checkPrerequisites();
-
-        switch (appType) {
-            case PLAIN:
-                //normalize main and set outputName
-                config.setMainClass(config.mainClass().replace('.', '/'));
-                if (config.outputName() == null) {
-                    int lastSlash = config.mainClass().lastIndexOf('/');
-                    config.setOutputName(lastSlash < 0 ? config.mainClass() : config.mainClass().substring(lastSlash + 1));
-                }
-                break;
-            case TOMCAT:
-                if (config.outputName() == null) {
-                    config.setOutputName(config.artifactId());
-                }
-                break;
-            default:
-                throw new AssertionError("Unknown application type");
-        }
-
-        //check packaging type
-        switch (config.excelsiorJetPackaging()) {
-            case ZIP:
-            case NONE:
-                break;
-            case EXCELSIOR_INSTALLER:
-                if (Utils.isOSX()) {
-                    config.log().warn(s("JetMojo.NoExcelsiorInstallerOnOSX.Warning"));
-                    config.setExcelsiorJetPackaging(ZIP);
-                }
-                break;
-            case OSX_APP_BUNDLE:
-                if (!Utils.isOSX()) {
-                    config.log().warn(s("JetMojo.OSXBundleOnNotOSX.Warning"));
-                    config.setExcelsiorJetPackaging(ZIP);
-                }
-                break;
-
-            case NATIVE_BUNDLE:
-                if (Utils.isOSX()) {
-                    config.setExcelsiorJetPackaging(OSX_APP_BUNDLE);
-                } else {
-                    config.setExcelsiorJetPackaging(EXCELSIOR_INSTALLER);
-                }
-                break;
-
-            default:
-                throw new ExcelsiorJetApiException(s("JetMojo.UnknownPackagingMode.Failure", config.excelsiorJetPackaging()));
-        }
-
-        // check version info
-        try {
-            checkVersionInfo(jetHomeObj);
-
-            if (config.multiApp() && (jetHomeObj.getEdition() == JetEdition.STANDARD)) {
-                config.log().warn(s("JetMojo.NoMultiappInStandard.Warning"));
-                config.setMultiApp(false);
-            }
-
-            if (config.profileStartup()) {
-                if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
-                    config.log().warn(s("JetMojo.NoStartupAcceleratorInStandard.Warning"));
-                    config.setProfileStartup(false);
-                } else if (Utils.isOSX()) {
-                    config.log().warn(s("JetMojo.NoStartupAcceleratorOnOSX.Warning"));
-                    config.setProfileStartup(false);
-                }
-            }
-
-            if (config.protectData()) {
-                if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.NoDataProtectionInStandard.Failure"));
-                } else {
-                    if (config.cryptSeed() == null) {
-                        config.setCryptSeed(Utils.randomAlphanumeric(64));
-                    }
-                }
-            }
-
-            checkTrialVersionConfig(jetHomeObj);
-
-            checkGlobalAndSlimDownParameters(jetHomeObj);
-
-            checkExcelsiorInstallerConfig();
-
-            checkOSXBundleConfig();
-
-        } catch (JetHomeException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
-        }
-
-        return jetHomeObj;
-    }
-
-    private String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules) throws ExcelsiorJetApiException {
-        String prj = config.outputName() + ".prj";
-        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
-            compilerArgs.forEach(out::println);
-            for (ClasspathEntry dep : dependencies) {
-                out.println("!classpathentry " + dep.getFile().toString());
-                out.println("  -optimize=" + (dep.isLib() ? "autodetect" : "all"));
-                out.println("  -protect=" + (dep.isLib() ? "nomatter" : "all"));
-                out.println("!end");
-            }
-            for (String mod : modules) {
-                out.println("!module " + mod);
-            }
-        } catch (IOException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
-        }
-        return prj;
-    }
 
     /**
      * Invokes the Excelsior JET AOT compiler.
@@ -296,7 +28,7 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
         ArrayList<String> compilerArgs = new ArrayList<>();
         ArrayList<String> modules = new ArrayList<>();
 
-        switch (appType) {
+        switch (config.appType()) {
             case PLAIN:
                 compilerArgs.add("-main=" + config.mainClass());
                 break;
@@ -378,7 +110,7 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
             compilerArgs.add("%" + jetVMPropOpt);
         }
 
-        String prj = createJetCompilerProject(buildDir, compilerArgs, dependencies, modules);
+        String prj = TaskUtils.createJetCompilerProject(buildDir, compilerArgs, dependencies, modules, config.outputName() + ".prj");
 
         if (new JetCompiler(jetHome, "=p", prj, jetVMPropOpt)
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
@@ -386,10 +118,10 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
         }
     }
 
-    private ArrayList<String> getCommonXPackArgs() {
+    private ArrayList<String> getCommonXPackArgs() throws ExcelsiorJetApiException {
         ArrayList<String> xpackArgs = new ArrayList<>();
 
-        switch (appType) {
+        switch (config.appType()) {
             case PLAIN:
                 if (config.packageFilesDir().exists()) {
                     xpackArgs.add("-source");
@@ -404,7 +136,7 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
                 xpackArgs.add("-source");
                 xpackArgs.add(config.tomcatInBuildDir().getAbsolutePath());
                 if (config.packageFilesDir().exists()) {
-                    config.log().warn(s("JetMojo.PackageFilesIgnoredForTomcat.Warning"));
+                    AbstractLog.instance().warn(s("JetMojo.PackageFilesIgnoredForTomcat.Warning"));
                 }
                 break;
             default:
@@ -413,7 +145,7 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
 
         if (config.optRtFiles() != null && config.optRtFiles().length > 0) {
             xpackArgs.add("-add-opt-rt-files");
-            xpackArgs.add(String.join(",", config.optRtFiles()));
+            xpackArgs.add(String.join(",", (CharSequence[]) config.optRtFiles()));
         }
 
         if (config.javaRuntimeSlimDown() != null) {
@@ -471,52 +203,25 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
             throw new ExcelsiorJetApiException(s("JetMojo.Package.Failure"));
         }
-        config.log().info(s("JetMojo.Build.Success"));
-        config.log().info(s("JetMojo.GetEI.Info", target.getAbsolutePath()));
+        AbstractLog.instance().info(s("JetMojo.Build.Success"));
+        AbstractLog.instance().info(s("JetMojo.GetEI.Info", target.getAbsolutePath()));
     }
 
-
-    static void compressZipfile(File sourceDir, File outputFile) throws IOException {
-        ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
-                new BufferedOutputStream(new FileOutputStream(outputFile)));
-        compressDirectoryToZipfile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile);
-        IOUtils.closeQuietly(zipFile);
-    }
-
-    private static void compressDirectoryToZipfile(String rootDir, String sourceDir, ZipArchiveOutputStream out) throws IOException {
-        File[] files = new File(sourceDir).listFiles();
-        assert files != null;
-        for (File file : files) {
-            if (file.isDirectory()) {
-                compressDirectoryToZipfile(rootDir, sourceDir + File.separator + file.getName(), out);
-            } else {
-                ZipArchiveEntry entry = new ZipArchiveEntry(file.getAbsolutePath().substring(rootDir.length() + 1));
-                if (Utils.isUnix() && file.canExecute()) {
-                    entry.setUnixMode(0100777);
-                }
-                out.putArchiveEntry(entry);
-                InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()));
-                IOUtils.copy(in, out);
-                IOUtils.closeQuietly(in);
-                out.closeArchiveEntry();
-            }
-        }
-    }
 
     private void createOSXAppBundle(JetHome jetHome, File buildDir) throws ExcelsiorJetApiException, CmdLineToolException {
         File appBundle = new File(config.jetOutputDir(), config.osxBundleConfiguration().fileName + ".app");
-        mkdir(appBundle);
+        Utils.mkdir(appBundle);
         try {
             Utils.cleanDirectory(appBundle);
         } catch (IOException e) {
             throw new ExcelsiorJetApiException(e.getMessage(), e);
         }
         File contents = new File(appBundle, "Contents");
-        mkdir(contents);
+        Utils.mkdir(contents);
         File contentsMacOs = new File(contents, "MacOS");
-        mkdir(contentsMacOs);
+        Utils.mkdir(contentsMacOs);
         File contentsResources = new File(contents, "Resources");
-        mkdir(contentsResources);
+        Utils.mkdir(contentsResources);
 
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
                 new FileOutputStream(new File(contents, "Info.plist")), "UTF-8"))) {
@@ -569,12 +274,12 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
 
         File appPkg = null;
         if (config.osxBundleConfiguration().developerId != null) {
-            config.log().info(s("JetMojo.SigningOSXBundle.Info"));
+            AbstractLog.instance().info(s("JetMojo.SigningOSXBundle.Info"));
             if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "--sign",
                     config.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(AbstractLog.instance()).execute() != 0) {
                 throw new ExcelsiorJetApiException(s("JetMojo.OSX.CodeSign.Failure"));
             }
-            config.log().info(s("JetMojo.CreatingOSXInstaller.Info"));
+            AbstractLog.instance().info(s("JetMojo.CreatingOSXInstaller.Info"));
             if (config.osxBundleConfiguration().publisherId != null) {
                 appPkg = new File(config.jetOutputDir(), config.finalName() + ".pkg");
                 if (new CmdLineTool("productbuild", "--sign", config.osxBundleConfiguration().publisherId,
@@ -584,51 +289,51 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
                     throw new ExcelsiorJetApiException(s("JetMojo.OSX.Packaging.Failure"));
                 }
             } else {
-                config.log().warn(s("JetMojo.NoPublisherId.Warning"));
+                AbstractLog.instance().warn(s("JetMojo.NoPublisherId.Warning"));
             }
         } else {
-            config.log().warn(s("JetMojo.NoDeveloperId.Warning"));
+            AbstractLog.instance().warn(s("JetMojo.NoDeveloperId.Warning"));
         }
-        config.log().info(s("JetMojo.Build.Success"));
+        AbstractLog.instance().info(s("JetMojo.Build.Success"));
         if (appPkg != null) {
-            config.log().info(s("JetMojo.GetOSXPackage.Info", appPkg.getAbsolutePath()));
+            AbstractLog.instance().info(s("JetMojo.GetOSXPackage.Info", appPkg.getAbsolutePath()));
         } else {
-            config.log().info(s("JetMojo.GetOSXBundle.Info", appBundle.getAbsolutePath()));
+            AbstractLog.instance().info(s("JetMojo.GetOSXBundle.Info", appBundle.getAbsolutePath()));
         }
 
     }
 
     private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, ExcelsiorJetApiException, CmdLineToolException {
         switch (config.excelsiorJetPackaging()) {
-            case ZIP:
-                config.log().info(s("JetMojo.ZipApp.Info"));
+            case JetTaskConfig.ZIP:
+                AbstractLog.instance().info(s("JetMojo.ZipApp.Info"));
                 File targetZip = new File(config.jetOutputDir(), config.finalName() + ".zip");
-                compressZipfile(packageDir, targetZip);
-                config.log().info(s("JetMojo.Build.Success"));
-                config.log().info(s("JetMojo.GetZip.Info", targetZip.getAbsolutePath()));
+                TaskUtils.compressZipfile(packageDir, targetZip);
+                AbstractLog.instance().info(s("JetMojo.Build.Success"));
+                AbstractLog.instance().info(s("JetMojo.GetZip.Info", targetZip.getAbsolutePath()));
                 break;
-            case EXCELSIOR_INSTALLER:
+            case JetTaskConfig.EXCELSIOR_INSTALLER:
                 packWithEI(jetHome, buildDir);
                 break;
-            case OSX_APP_BUNDLE:
+            case JetTaskConfig.OSX_APP_BUNDLE:
                 createOSXAppBundle(jetHome, buildDir);
                 break;
             default:
-                config.log().info(s("JetMojo.Build.Success"));
-                config.log().info(s("JetMojo.GetDir.Info", packageDir.getAbsolutePath()));
+                AbstractLog.instance().info(s("JetMojo.Build.Success"));
+                AbstractLog.instance().info(s("JetMojo.GetDir.Info", packageDir.getAbsolutePath()));
         }
 
         if (config.javaRuntimeSlimDown() != null) {
-            config.log().info(s("JetMojo.SlimDown.Info", new File(config.jetOutputDir(), config.javaRuntimeSlimDown().detachedPackage),
+            AbstractLog.instance().info(s("JetMojo.SlimDown.Info", new File(config.jetOutputDir(), config.javaRuntimeSlimDown().detachedPackage),
                     config.javaRuntimeSlimDown().detachedBaseURL));
         }
     }
 
     public void execute() throws ExcelsiorJetApiException {
-        JetHome jetHome = checkPrerequisites();
+        JetHome jetHome = config.validate();
 
         // creating output dirs
-        File buildDir = createBuildDir();
+        File buildDir = config.createBuildDir();
 
         File appDir = new File(config.jetOutputDir(), APP_DIR);
         //cleanup packageDir
@@ -639,12 +344,12 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
         }
 
         try {
-            switch (appType) {
+            switch (config.appType()) {
                 case PLAIN:
-                    compile(jetHome, buildDir, copyDependencies(buildDir, config.mainJar()));
+                    compile(jetHome, buildDir, TaskUtils.copyDependencies(buildDir, config.mainJar(), config.getArtifacts()));
                     break;
                 case TOMCAT:
-                    copyTomcatAndWar();
+                    config.copyTomcatAndWar();
                     compile(jetHome, buildDir, Collections.emptyList());
                     break;
                 default:
@@ -655,8 +360,8 @@ public class JetTask extends AbstractJetTask<JetTaskConfig> {
             packageBuild(jetHome, buildDir, appDir);
 
         } catch (Exception e) {
-            config.log().debug("JetTask execution error", e);
-            config.log().error(e.getMessage());
+            AbstractLog.instance().debug("JetTask execution error", e);
+            AbstractLog.instance().error(e.getMessage());
             throw new ExcelsiorJetApiException(s("JetMojo.Unexpected.Error"), e);
         }
     }

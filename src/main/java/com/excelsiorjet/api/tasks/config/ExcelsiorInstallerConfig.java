@@ -1,4 +1,6 @@
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config;
+
+import com.excelsiorjet.api.tasks.ExcelsiorJetApiException;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +38,7 @@ public class ExcelsiorInstallerConfig {
      *
      * @see #eulaEncoding eulaEncoding
      */
-    protected File eula;
+    public File eula;
 
     /**
      * Encoding of the EULA file. Permitted values:
@@ -61,7 +63,7 @@ public class ExcelsiorInstallerConfig {
      * If not set, and the file {@code ${project.basedir}/src/main/jetresources/installerSplash.bmp} exists,
      * that file is used by convention.
      */
-    protected File installerSplash;
+    public File installerSplash;
 
     void fillDefaults(AbstractJetTaskConfig config) throws ExcelsiorJetApiException {
         //check eula settings
@@ -78,7 +80,7 @@ public class ExcelsiorInstallerConfig {
         }
     }
 
-    String eulaFlag() throws ExcelsiorJetApiException {
+    public String eulaFlag() throws ExcelsiorJetApiException {
         String actualEncoding;
         try {
             actualEncoding = detectEncoding(eula);

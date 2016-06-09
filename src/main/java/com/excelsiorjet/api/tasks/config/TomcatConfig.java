@@ -1,5 +1,6 @@
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.ExcelsiorJetApiException;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;

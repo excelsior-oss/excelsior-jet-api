@@ -1,37 +1,26 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.cmd.*;
+import com.excelsiorjet.api.log.AbstractLog;
+import com.excelsiorjet.api.tasks.config.AbstractJetTaskConfig;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestRunTask extends AbstractJetTask<AbstractJetTaskConfig> {
-
-    private static final String TOMCAT_MAIN_CLASS = "org/apache/catalina/startup/Bootstrap";
+public class TestRunTask {
     private static final String BOOTSTRAP_JAR = "bootstrap.jar";
 
-    public TestRunTask(AbstractJetTaskConfig config) {
-        super(config);
-    }
+    private final AbstractJetTaskConfig config;
 
-    private void copyExtraPackageFiles(File buildDir) {
-        // We could just use Maven FileUtils.copyDirectory method but it copies a directory as a whole
-        // while here we copy only those files that were changed from previous build.
-        Path target = buildDir.toPath();
-        Path source = config.packageFilesDir().toPath();
-        try {
-            Utils.copyDirectory(source, target);
-        } catch (IOException e) {
-            config.log().warn(Txt.s("TestRunMojo.ErrorWhileCopying.Warning", source.toString(), target.toString(), e.getMessage()), e);
-        }
+    public TestRunTask(AbstractJetTaskConfig config) {
+        this.config = config;
     }
 
     public String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws ExcelsiorJetApiException {
@@ -72,20 +61,20 @@ public class TestRunTask extends AbstractJetTask<AbstractJetTaskConfig> {
     }
 
     public void execute() throws ExcelsiorJetApiException {
-        JetHome jetHome = checkPrerequisites();
+        JetHome jetHome = config.validate();
 
         // creating output dirs
-        File buildDir = createBuildDir();
+        File buildDir = config.createBuildDir();
 
         String classpath;
         List<String> additionalVMArgs;
         File workingDirectory;
-        switch (appType) {
+        switch (config.appType()) {
             case PLAIN:
-                List<ClasspathEntry> dependencies = copyDependencies(buildDir, config.mainJar());
+                List<ClasspathEntry> dependencies = TaskUtils.copyDependencies(buildDir, config.mainJar(), config.getArtifacts());
                 if (config.packageFilesDir().exists()) {
                     //application may access custom package files at runtime. So copy them as well.
-                    copyExtraPackageFiles(buildDir);
+                    TaskUtils.copyQuietly(config.packageFilesDir().toPath(), buildDir.toPath());
                 }
 
                 classpath = String.join(File.pathSeparator,
@@ -94,23 +83,22 @@ public class TestRunTask extends AbstractJetTask<AbstractJetTaskConfig> {
                 workingDirectory = buildDir;
                 break;
             case TOMCAT:
-                copyTomcatAndWar();
+                config.copyTomcatAndWar();
                 workingDirectory = new File(config.tomcatInBuildDir(), "bin");
                 classpath = getTomcatClassPath(jetHome, workingDirectory);
                 additionalVMArgs = getTomcatVMArgs();
-                config.setMainClass(TOMCAT_MAIN_CLASS);
                 break;
             default:
                 throw new AssertionError("Unknown app type");
         }
 
-        mkdir(config.execProfilesDir());
+        Utils.mkdir(config.execProfilesDir());
 
         XJava xjava = new XJava(jetHome);
         try {
             xjava.addTestRunArgs(new TestRunExecProfiles(config.execProfilesDir(), config.execProfilesName()))
-                    .withLog(config.log(),
-                            appType == ApplicationType.TOMCAT) // Tomcat outputs to std error, so to not confuse users,
+                    .withLog(AbstractLog.instance(),
+                            config.appType() == ApplicationType.TOMCAT) // Tomcat outputs to std error, so to not confuse users,
                     // we  redirect its output to std out in test run
                     .workingDirectory(workingDirectory);
         } catch (JetHomeException e) {
@@ -133,14 +121,14 @@ public class TestRunTask extends AbstractJetTask<AbstractJetTaskConfig> {
                     .map(arg -> arg.contains(" ") ? '"' + arg + '"' : arg)
                     .collect(Collectors.joining(" "));
 
-            config.log().info(Txt.s("TestRunMojo.Start.Info", cmdLine));
+            AbstractLog.instance().info(Txt.s("TestRunMojo.Start.Info", cmdLine));
 
             int errCode = xjava.execute();
             String finishText = Txt.s("TestRunMojo.Finish.Info", errCode);
             if (errCode != 0) {
-                config.log().warn(finishText);
+                AbstractLog.instance().warn(finishText);
             } else {
-                config.log().info(finishText);
+                AbstractLog.instance().info(finishText);
             }
         } catch (CmdLineToolException e) {
             throw new ExcelsiorJetApiException(e.getMessage());

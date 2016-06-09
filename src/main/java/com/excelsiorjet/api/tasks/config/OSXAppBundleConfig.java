@@ -19,7 +19,9 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config;
+
+import com.excelsiorjet.api.tasks.JetTask;
 
 import java.io.File;
 

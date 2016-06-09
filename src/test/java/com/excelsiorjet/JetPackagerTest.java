@@ -3,6 +3,7 @@ package com.excelsiorjet;
 import com.excelsiorjet.api.cmd.*;
 import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.util.Utils;
+import org.junit.After;
 import org.junit.Test;
 
 import java.io.File;
@@ -20,6 +21,9 @@ public class JetPackagerTest {
 
     private AbstractLog log = mock(AbstractLog.class);
 
+    private final String target = "hw-native";
+    private File targetDir = new File(TestUtils.workDir(), target);
+
     @Test
     public void testPackHelloWorld() throws CmdLineToolException, JetHomeException, IOException {
         assertEquals(0,
@@ -27,8 +31,6 @@ public class JetPackagerTest {
                 .workingDirectory(TestUtils.workDir())
                         .execute());
         File exe = new File(TestUtils.workDir(), Utils.mangleExeName("HelloWorld"));
-        final String target = "hw-native";
-        File targetDir = new File(TestUtils.workDir(), target);
         assertEquals(0,
                 new JetPackager("-add-file", exe.getAbsolutePath(), "/", "-target",
                         targetDir.getAbsolutePath()).execute());
@@ -37,6 +39,10 @@ public class JetPackagerTest {
         new CmdLineTool(exePacked.getAbsolutePath()).withLog(log).execute();
         verify(log).info("Hello world!");
         exe.delete();
+    }
+
+    @After
+    public void tearDown() throws Exception {
         Utils.cleanDirectory(targetDir);
     }
 

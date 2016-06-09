@@ -162,11 +162,10 @@ public class JetHome {
         try {
             String[] result = {null};
             CmdLineTool jetCompiler = new JetCompiler(this).withLog(new StdOutLog() {
-                public void info(CharSequence info) {
+                public void info(String info) {
                     if (result[0] == null) {
-                        String line = info.toString();
-                        if (line.contains("Excelsior JET ")) {
-                            result[0] = line;
+                        if (info.contains("Excelsior JET ")) {
+                            result[0] = info;
                         }
                     }
                 }
