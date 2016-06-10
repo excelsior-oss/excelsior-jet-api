@@ -32,7 +32,7 @@ public class TaskUtils {
      *
      * @return list of dependencies relative to buildDir
      */
-    protected static List<ClasspathEntry> copyDependencies(File buildDir, File mainJar, Stream<ClasspathEntry> dependencies) throws ExcelsiorJetApiException {
+    protected static List<ClasspathEntry> copyDependencies(File buildDir, File mainJar, Stream<ClasspathEntry> dependencies) throws JetTaskFailureException {
         File libDir = new File(buildDir, LIB_DIR);
         Utils.mkdir(libDir);
         ArrayList<ClasspathEntry> classpathEntries = new ArrayList<>();
@@ -46,11 +46,11 @@ public class TaskUtils {
             ;
             return classpathEntries;
         } catch (Exception e) {
-            throw new ExcelsiorJetApiException(s("JetMojo.ErrorCopyingDependency.Exception"), e);
+            throw new JetTaskFailureException(s("JetMojo.ErrorCopyingDependency.Exception"), e);
         }
     }
 
-    static String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws ExcelsiorJetApiException {
+    static String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws JetTaskFailureException {
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
             compilerArgs.forEach(out::println);
             for (ClasspathEntry dep : dependencies) {
@@ -63,7 +63,7 @@ public class TaskUtils {
                 out.println("!module " + mod);
             }
         } catch (IOException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
+            throw new JetTaskFailureException(e.getMessage());
         }
         return prj;
     }

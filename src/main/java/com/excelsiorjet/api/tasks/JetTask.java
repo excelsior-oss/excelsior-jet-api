@@ -7,7 +7,10 @@ import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
@@ -24,7 +27,7 @@ public class JetTask {
     /**
      * Invokes the Excelsior JET AOT compiler.
      */
-    private void compile(JetHome jetHome, File buildDir, List<ClasspathEntry> dependencies) throws ExcelsiorJetApiException, CmdLineToolException {
+    private void compile(JetHome jetHome, File buildDir, List<ClasspathEntry> dependencies) throws JetTaskFailureException, CmdLineToolException {
         ArrayList<String> compilerArgs = new ArrayList<>();
         ArrayList<String> modules = new ArrayList<>();
 
@@ -114,11 +117,11 @@ public class JetTask {
 
         if (new JetCompiler(jetHome, "=p", prj, jetVMPropOpt)
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new ExcelsiorJetApiException(s("JetMojo.Build.Failure"));
+            throw new JetTaskFailureException(s("JetMojo.Build.Failure"));
         }
     }
 
-    private ArrayList<String> getCommonXPackArgs() throws ExcelsiorJetApiException {
+    private ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
         ArrayList<String> xpackArgs = new ArrayList<>();
 
         switch (config.appType()) {
@@ -166,14 +169,14 @@ public class JetTask {
      * Packages the generated executable and required Excelsior JET runtime files
      * as a self-contained directory
      */
-    private void createAppDir(JetHome jetHome, File buildDir, File appDir) throws CmdLineToolException, ExcelsiorJetApiException {
+    private void createAppDir(JetHome jetHome, File buildDir, File appDir) throws CmdLineToolException, JetTaskFailureException {
         ArrayList<String> xpackArgs = getCommonXPackArgs();
         xpackArgs.addAll(Arrays.asList(
                 "-target", appDir.getAbsolutePath()
         ));
         if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new ExcelsiorJetApiException(s("JetMojo.Package.Failure"));
+            throw new JetTaskFailureException(s("JetMojo.Package.Failure"));
         }
     }
 
@@ -181,7 +184,7 @@ public class JetTask {
      * Packages the generated executable and required Excelsior JET runtime files
      * as a excelsior installer file.
      */
-    private void packWithEI(JetHome jetHome, File buildDir) throws CmdLineToolException, ExcelsiorJetApiException {
+    private void packWithEI(JetHome jetHome, File buildDir) throws CmdLineToolException, JetTaskFailureException {
         File target = new File(config.jetOutputDir(), Utils.mangleExeName(config.finalName()));
         ArrayList<String> xpackArgs = getCommonXPackArgs();
         if (config.excelsiorInstallerConfiguration().eula.exists()) {
@@ -201,20 +204,20 @@ public class JetTask {
         );
         if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new ExcelsiorJetApiException(s("JetMojo.Package.Failure"));
+            throw new JetTaskFailureException(s("JetMojo.Package.Failure"));
         }
         AbstractLog.instance().info(s("JetMojo.Build.Success"));
         AbstractLog.instance().info(s("JetMojo.GetEI.Info", target.getAbsolutePath()));
     }
 
 
-    private void createOSXAppBundle(JetHome jetHome, File buildDir) throws ExcelsiorJetApiException, CmdLineToolException {
+    private void createOSXAppBundle(JetHome jetHome, File buildDir) throws JetTaskFailureException, CmdLineToolException {
         File appBundle = new File(config.jetOutputDir(), config.osxBundleConfiguration().fileName + ".app");
         Utils.mkdir(appBundle);
         try {
             Utils.cleanDirectory(appBundle);
         } catch (IOException e) {
-            throw new ExcelsiorJetApiException(e.getMessage(), e);
+            throw new JetTaskFailureException(e.getMessage(), e);
         }
         File contents = new File(appBundle, "Contents");
         Utils.mkdir(contents);
@@ -251,7 +254,7 @@ public class JetTask {
                             "</dict>\n" +
                             "</plist>\n");
         } catch (IOException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
+            throw new JetTaskFailureException(e.getMessage());
         }
 
         ArrayList<String> xpackArgs = getCommonXPackArgs();
@@ -260,7 +263,7 @@ public class JetTask {
         ));
         if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new ExcelsiorJetApiException(s("JetMojo.Package.Failure"));
+            throw new JetTaskFailureException(s("JetMojo.Package.Failure"));
         }
 
         if (config.osxBundleConfiguration().icon.exists()) {
@@ -268,7 +271,7 @@ public class JetTask {
                 Files.copy(config.osxBundleConfiguration().icon.toPath(),
                         new File(contentsResources, config.osxBundleConfiguration().icon.getName()).toPath());
             } catch (IOException e) {
-                throw new ExcelsiorJetApiException(e.getMessage(), e);
+                throw new JetTaskFailureException(e.getMessage(), e);
             }
         }
 
@@ -277,7 +280,7 @@ public class JetTask {
             AbstractLog.instance().info(s("JetMojo.SigningOSXBundle.Info"));
             if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "--sign",
                     config.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(AbstractLog.instance()).execute() != 0) {
-                throw new ExcelsiorJetApiException(s("JetMojo.OSX.CodeSign.Failure"));
+                throw new JetTaskFailureException(s("JetMojo.OSX.CodeSign.Failure"));
             }
             AbstractLog.instance().info(s("JetMojo.CreatingOSXInstaller.Info"));
             if (config.osxBundleConfiguration().publisherId != null) {
@@ -286,7 +289,7 @@ public class JetTask {
                         "--component", appBundle.getAbsolutePath(), config.osxBundleConfiguration().installPath,
                         appPkg.getAbsolutePath())
                         .withLog(AbstractLog.instance()).execute() != 0) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.OSX.Packaging.Failure"));
+                    throw new JetTaskFailureException(s("JetMojo.OSX.Packaging.Failure"));
                 }
             } else {
                 AbstractLog.instance().warn(s("JetMojo.NoPublisherId.Warning"));
@@ -303,7 +306,7 @@ public class JetTask {
 
     }
 
-    private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, ExcelsiorJetApiException, CmdLineToolException {
+    private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
         switch (config.excelsiorJetPackaging()) {
             case JetTaskConfig.ZIP:
                 AbstractLog.instance().info(s("JetMojo.ZipApp.Info"));
@@ -329,7 +332,7 @@ public class JetTask {
         }
     }
 
-    public void execute() throws ExcelsiorJetApiException {
+    public void execute() throws JetTaskFailureException {
         JetHome jetHome = config.validate();
 
         // creating output dirs
@@ -340,7 +343,7 @@ public class JetTask {
         try {
             Utils.cleanDirectory(appDir);
         } catch (IOException e) {
-            throw new ExcelsiorJetApiException(e.getMessage(), e);
+            throw new JetTaskFailureException(e.getMessage(), e);
         }
 
         try {
@@ -362,7 +365,7 @@ public class JetTask {
         } catch (Exception e) {
             AbstractLog.instance().debug("JetTask execution error", e);
             AbstractLog.instance().error(e.getMessage());
-            throw new ExcelsiorJetApiException(s("JetMojo.Unexpected.Error"), e);
+            throw new JetTaskFailureException(s("JetMojo.Unexpected.Error"), e);
         }
     }
 }

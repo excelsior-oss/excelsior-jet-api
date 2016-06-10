@@ -6,7 +6,7 @@ import com.excelsiorjet.api.cmd.JetHomeException;
 import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.tasks.ApplicationType;
 import com.excelsiorjet.api.tasks.ClasspathEntry;
-import com.excelsiorjet.api.tasks.ExcelsiorJetApiException;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -18,8 +18,6 @@ import java.util.stream.Stream;
 import static com.excelsiorjet.api.util.Txt.s;
 
 public class AbstractJetTaskConfig {
-
-    String TOMCAT_MAIN_CLASS = "org/apache/catalina/startup/Bootstrap";
 
     private File mainWar;
 
@@ -69,7 +67,7 @@ public class AbstractJetTaskConfig {
         this.jvmArgs = jvmArgs;
     }
 
-    public File mainWar() {
+    private File mainWar() {
         return mainWar;
     }
 
@@ -101,7 +99,7 @@ public class AbstractJetTaskConfig {
         return groupId;
     }
 
-    public File buildDir() {
+    private File buildDir() {
         return buildDir;
     }
 
@@ -129,7 +127,7 @@ public class AbstractJetTaskConfig {
         return jvmArgs;
     }
 
-    public JetHome validate() throws ExcelsiorJetApiException {
+    public JetHome validate() throws JetTaskFailureException {
         Txt.log = AbstractLog.instance();
 
         // check jet home
@@ -138,7 +136,7 @@ public class AbstractJetTaskConfig {
             jetHomeObj = Utils.isEmpty(jetHome()) ? new JetHome() : new JetHome(jetHome());
 
         } catch (JetHomeException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
+            throw new JetTaskFailureException(e.getMessage());
         }
 
         switch (appType()) {
@@ -147,7 +145,7 @@ public class AbstractJetTaskConfig {
                 mainClass = mainClass.replace('.', '/');
                 break;
             case TOMCAT:
-                mainClass = TOMCAT_MAIN_CLASS;
+                mainClass = "org/apache/catalina/startup/Bootstrap";
                 break;
             default:
                 throw new AssertionError("Unknown application type");
@@ -156,11 +154,11 @@ public class AbstractJetTaskConfig {
         switch (packaging().toLowerCase()) {
             case "jar":
                 if (!mainJar().exists()) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.MainJarNotFound.Failure", mainJar().getAbsolutePath()));
+                    throw new JetTaskFailureException(s("JetMojo.MainJarNotFound.Failure", mainJar().getAbsolutePath()));
                 }
                 // check main class
                 if (Utils.isEmpty(mainClass())) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.MainNotSpecified.Failure"));
+                    throw new JetTaskFailureException(s("JetMojo.MainNotSpecified.Failure"));
                 }
 
                 break;
@@ -169,21 +167,21 @@ public class AbstractJetTaskConfig {
                 try {
                     edition = jetHomeObj.getEdition();
                 } catch (JetHomeException e) {
-                    throw new ExcelsiorJetApiException(e.getMessage());
+                    throw new JetTaskFailureException(e.getMessage());
                 }
                 if ((edition != JetEdition.EVALUATION) && (edition != JetEdition.ENTERPRISE)) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.TomcatNotSupported.Failure"));
+                    throw new JetTaskFailureException(s("JetMojo.TomcatNotSupported.Failure"));
                 }
 
                 if (!mainWar().exists()) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.MainWarNotFound.Failure", mainWar().getAbsolutePath()));
+                    throw new JetTaskFailureException(s("JetMojo.MainWarNotFound.Failure", mainWar().getAbsolutePath()));
                 }
 
                 tomcatConfiguration().fillDefaults();
 
                 break;
             default:
-                throw new ExcelsiorJetApiException(s("JetMojo.BadPackaging.Failure", packaging()));
+                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging()));
         }
 
 
@@ -194,18 +192,18 @@ public class AbstractJetTaskConfig {
      * Copies the master Tomcat server to the build directory and main project artifact (.war)
      * to the "webapps" folder of copied Tomcat.
      *
-     * @throws ExcelsiorJetApiException
+     * @throws JetTaskFailureException
      */
-    public void copyTomcatAndWar() throws ExcelsiorJetApiException {
+    public void copyTomcatAndWar() throws JetTaskFailureException {
         try {
             Utils.copyDirectory(Paths.get(tomcatConfiguration().tomcatHome), tomcatInBuildDir().toPath());
             String warName = (Utils.isEmpty(tomcatConfiguration().warDeployName)) ? mainWar().getName() : tomcatConfiguration().warDeployName;
             Utils.copyFile(mainWar().toPath(), new File(tomcatInBuildDir(), TomcatConfig.WEBAPPS_DIR + File.separator + warName).toPath());
         } catch (IOException e) {
-            throw new ExcelsiorJetApiException(s("JetMojo.ErrorCopyingTomcat.Exception"), e);
+            throw new JetTaskFailureException(s("JetMojo.ErrorCopyingTomcat.Exception"), e);
         }
     }
-    public File createBuildDir() throws ExcelsiorJetApiException {
+    public File createBuildDir() throws JetTaskFailureException {
         File buildDir = buildDir();
         Utils.mkdir(buildDir);
         return buildDir;
@@ -215,14 +213,14 @@ public class AbstractJetTaskConfig {
         return new File(buildDir(), tomcatConfiguration().tomcatHome);
     }
 
-    public ApplicationType appType() throws ExcelsiorJetApiException {
+    public ApplicationType appType() throws JetTaskFailureException {
         switch (packaging().toLowerCase()) {
             case "jar" :
                 return ApplicationType.PLAIN;
             case "war":
                 return ApplicationType.TOMCAT;
             default:
-                throw new ExcelsiorJetApiException(s("JetMojo.BadPackaging.Failure", packaging()));
+                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging()));
         }
     }
 

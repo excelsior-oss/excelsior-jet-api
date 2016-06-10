@@ -1,6 +1,6 @@
 package com.excelsiorjet.api.tasks.config;
 
-import com.excelsiorjet.api.tasks.ExcelsiorJetApiException;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -51,7 +51,7 @@ public class TomcatConfig {
      */
     public boolean genScripts = true;
 
-    void fillDefaults() throws ExcelsiorJetApiException {
+    void fillDefaults() throws JetTaskFailureException {
         // check Tomcat home
         if (Utils.isEmpty(tomcatHome)) {
             tomcatHome = System.getProperty("tomcat.home");
@@ -64,15 +64,15 @@ public class TomcatConfig {
         }
 
         if (Utils.isEmpty(tomcatHome)) {
-            throw new ExcelsiorJetApiException(s("JetMojo.TomcatNotSpecified.Failure"));
+            throw new JetTaskFailureException(s("JetMojo.TomcatNotSpecified.Failure"));
         }
 
         if (!new File(tomcatHome).exists()) {
-            throw new ExcelsiorJetApiException(s("JetMojo.TomcatDoesNotExist.Failure", tomcatHome));
+            throw new JetTaskFailureException(s("JetMojo.TomcatDoesNotExist.Failure", tomcatHome));
         }
 
         if (!new File(tomcatHome, WEBAPPS_DIR).exists()) {
-            throw new ExcelsiorJetApiException(s("JetMojo.TomcatWebappsDoesNotExist.Failure", tomcatHome));
+            throw new JetTaskFailureException(s("JetMojo.TomcatWebappsDoesNotExist.Failure", tomcatHome));
         }
 
         if (!Utils.isEmpty(warDeployName) && !warDeployName.endsWith(".war")) {

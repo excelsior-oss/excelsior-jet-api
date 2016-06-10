@@ -22,7 +22,7 @@
 package com.excelsiorjet.api.util;
 
 import com.excelsiorjet.api.log.AbstractLog;
-import com.excelsiorjet.api.tasks.ExcelsiorJetApiException;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 
 import java.io.File;
 import java.io.IOException;
@@ -165,10 +165,10 @@ public class Utils {
         } catch (Exception ignore) {}
     }
 
-    public static void mkdir(File dir) throws ExcelsiorJetApiException {
+    public static void mkdir(File dir) throws JetTaskFailureException {
         if (!dir.exists() && !dir.mkdirs()) {
             if (!dir.exists()) {
-                throw new ExcelsiorJetApiException(s("JetMojo.DirCreate.Error", dir.getAbsolutePath()));
+                throw new JetTaskFailureException(s("JetMojo.DirCreate.Error", dir.getAbsolutePath()));
             }
             AbstractLog.instance().warn(s("JetMojo.DirCreate.Warning", dir.getAbsolutePath()));
         }

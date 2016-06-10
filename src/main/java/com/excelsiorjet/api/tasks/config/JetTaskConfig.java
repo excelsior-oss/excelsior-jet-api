@@ -6,7 +6,7 @@ import com.excelsiorjet.api.cmd.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.tasks.ClasspathEntry;
-import com.excelsiorjet.api.tasks.ExcelsiorJetApiException;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -260,7 +260,7 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
         return jetOutputDir;
     }
 
-    public JetHome validate() throws ExcelsiorJetApiException {
+    public JetHome validate() throws JetTaskFailureException {
 
         JetHome jetHomeObj = super.validate();//super.validate();
 
@@ -307,7 +307,7 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
                 break;
 
             default:
-                throw new ExcelsiorJetApiException(s("JetMojo.UnknownPackagingMode.Failure", excelsiorJetPackaging()));
+                throw new JetTaskFailureException(s("JetMojo.UnknownPackagingMode.Failure", excelsiorJetPackaging()));
         }
 
         // check version info
@@ -331,7 +331,7 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
 
             if (protectData()) {
                 if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.NoDataProtectionInStandard.Failure"));
+                    throw new JetTaskFailureException(s("JetMojo.NoDataProtectionInStandard.Failure"));
                 } else {
                     if (cryptSeed() == null) {
                         setCryptSeed(Utils.randomAlphanumeric(64));
@@ -348,7 +348,7 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
             checkOSXBundleConfig();
 
         } catch (JetHomeException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
+            throw new JetTaskFailureException(e.getMessage());
         }
 
         return jetHomeObj;
@@ -418,7 +418,7 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
         return String.join(".", finalVersions);
     }
 
-    public void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, ExcelsiorJetApiException {
+    public void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer()) {
             if (jetHome.is64bit()) {
                 AbstractLog.instance().warn(s("JetMojo.NoGlobalIn64Bit.Warning"));
@@ -442,7 +442,7 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
                 setJavaRuntimeSlimDown(null);
             } else {
                 if (javaRuntimeSlimDown().detachedBaseURL == null) {
-                    throw new ExcelsiorJetApiException(s("JetMojo.DetachedBaseURLMandatory.Failure"));
+                    throw new JetTaskFailureException(s("JetMojo.DetachedBaseURLMandatory.Failure"));
                 }
 
                 if (javaRuntimeSlimDown().detachedPackage == null) {
@@ -457,18 +457,18 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
         if (globalOptimizer()) {
             TestRunExecProfiles execProfiles = new TestRunExecProfiles(execProfilesDir(), execProfilesName());
             if (!execProfiles.getUsg().exists()) {
-                throw new ExcelsiorJetApiException(s("JetMojo.NoTestRun.Failure"));
+                throw new JetTaskFailureException(s("JetMojo.NoTestRun.Failure"));
             }
         }
     }
 
-    public void checkTrialVersionConfig(JetHome jetHome) throws ExcelsiorJetApiException, JetHomeException {
+    public void checkTrialVersionConfig(JetHome jetHome) throws JetTaskFailureException, JetHomeException {
         if ((trialVersion() != null) && trialVersion().isEnabled()) {
             if ((trialVersion().expireInDays >= 0) && (trialVersion().expireDate != null)) {
-                throw new ExcelsiorJetApiException(s("JetMojo.AmbiguousExpireSetting.Failure"));
+                throw new JetTaskFailureException(s("JetMojo.AmbiguousExpireSetting.Failure"));
             }
             if (trialVersion().expireMessage == null || trialVersion().expireMessage.isEmpty()) {
-                throw new ExcelsiorJetApiException(s("JetMojo.NoExpireMessage.Failure"));
+                throw new JetTaskFailureException(s("JetMojo.NoExpireMessage.Failure"));
             }
 
             if (jetHome.getEdition() == JetEdition.STANDARD) {
@@ -480,7 +480,7 @@ public class JetTaskConfig extends AbstractJetTaskConfig {
         }
     }
 
-    public void checkExcelsiorInstallerConfig() throws ExcelsiorJetApiException {
+    public void checkExcelsiorInstallerConfig() throws JetTaskFailureException {
         if (excelsiorJetPackaging().equals(EXCELSIOR_INSTALLER)) {
             excelsiorInstallerConfiguration().fillDefaults(this);
         }

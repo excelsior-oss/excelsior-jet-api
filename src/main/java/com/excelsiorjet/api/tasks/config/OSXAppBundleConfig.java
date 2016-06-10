@@ -21,9 +21,8 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
-import com.excelsiorjet.api.tasks.JetTask;
-
 import java.io.File;
+
 
 /**
  * Configuration parameters of OS X App Bundle.
@@ -42,13 +41,13 @@ public class OSXAppBundleConfig {
 
     /**
      * OS X app bundle file name.
-     * Default is {@link JetTask#outputName}.
+     * Default is {@link com.excelsiorjet.api.tasks.JetTaskParams#outputName}.
      */
     public String fileName;
 
     /**
      * Value for the {@code CFBundleName} key in the resulting {@code Info.plist} file.
-     * Default is {@link JetTask#product}.
+     * Default is {@link com.excelsiorjet.api.tasks.JetTaskParams#product}.
      */
     public String bundleName;
 
@@ -60,7 +59,7 @@ public class OSXAppBundleConfig {
 
     /**
      * Value for the {@code CFBundleShortVersionString} key in the resulting {@code Info.plist} file.
-     * By default, derived from {@link JetTask#version}.
+     * By default, derived from {@link com.excelsiorjet.api.tasks.JetTaskParams#version}.
      */
     public String shortVersion;
 

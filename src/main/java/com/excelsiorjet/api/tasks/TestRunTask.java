@@ -8,7 +8,10 @@ import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
@@ -23,17 +26,17 @@ public class TestRunTask {
         this.config = config;
     }
 
-    public String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws ExcelsiorJetApiException {
+    public String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws JetTaskFailureException {
         File f = new File(tomcatBin, BOOTSTRAP_JAR);
         if (!f.exists()) {
-            throw new ExcelsiorJetApiException(Txt.s("TestRunMojo.Tomcat.NoBootstrapJar.Failure", tomcatBin.getAbsolutePath()));
+            throw new JetTaskFailureException(Txt.s("TestRunMojo.Tomcat.NoBootstrapJar.Failure", tomcatBin.getAbsolutePath()));
         }
 
         Manifest bootManifest;
         try {
             bootManifest = new JarFile(f).getManifest();
         } catch (IOException e) {
-            throw new ExcelsiorJetApiException(Txt.s("TestRunMojo.Tomcat.FailedToReadBootstrapJar.Failure", tomcatBin.getAbsolutePath(), e.getMessage()), e);
+            throw new JetTaskFailureException(Txt.s("TestRunMojo.Tomcat.FailedToReadBootstrapJar.Failure", tomcatBin.getAbsolutePath(), e.getMessage()), e);
         }
 
         ArrayList<String> classPath = new ArrayList<String>();
@@ -60,7 +63,7 @@ public class TestRunTask {
         );
     }
 
-    public void execute() throws ExcelsiorJetApiException {
+    public void execute() throws JetTaskFailureException {
         JetHome jetHome = config.validate();
 
         // creating output dirs
@@ -102,7 +105,7 @@ public class TestRunTask {
                     // we  redirect its output to std out in test run
                     .workingDirectory(workingDirectory);
         } catch (JetHomeException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
+            throw new JetTaskFailureException(e.getMessage());
         }
 
         xjava.addArgs(additionalVMArgs);
@@ -131,7 +134,7 @@ public class TestRunTask {
                 AbstractLog.instance().info(finishText);
             }
         } catch (CmdLineToolException e) {
-            throw new ExcelsiorJetApiException(e.getMessage());
+            throw new JetTaskFailureException(e.getMessage());
         }
     }
 }
