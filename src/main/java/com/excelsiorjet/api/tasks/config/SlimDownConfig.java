@@ -21,6 +21,8 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.JetTaskParams;
+
 /**
  * Configuration parameters of Java Runtime Slim-Down feature.
  *
@@ -41,21 +43,21 @@ public class SlimDownConfig {
      * </p>
      *
      * @see #detachedBaseURL
-     * @see JetTaskConfig#javaRuntimeSlimDown
+     * @see JetTaskParams#javaRuntimeSlimDown
      */
     public String[] detachComponents;
 
     /**
      * Set the base url for the detached package. This parameter is mandatory.
      * 
-     * @see JetTaskConfig#javaRuntimeSlimDown
+     * @see JetTaskParams#javaRuntimeSlimDown
      */
     public String detachedBaseURL;
 
     /**
      * Set the detached package name.
      * 
-     * @see JetTaskConfig#javaRuntimeSlimDown
+     * @see JetTaskParams#javaRuntimeSlimDown
      */
     public String detachedPackage;
 

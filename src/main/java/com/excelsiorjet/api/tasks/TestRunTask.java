@@ -2,7 +2,6 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.cmd.*;
 import com.excelsiorjet.api.log.AbstractLog;
-import com.excelsiorjet.api.tasks.config.AbstractJetTaskConfig;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -20,9 +19,9 @@ import java.util.stream.Stream;
 public class TestRunTask {
     private static final String BOOTSTRAP_JAR = "bootstrap.jar";
 
-    private final AbstractJetTaskConfig config;
+    private final BaseJetTaskParams config;
 
-    public TestRunTask(AbstractJetTaskConfig config) {
+    public TestRunTask(BaseJetTaskParams config) {
         this.config = config;
     }
 

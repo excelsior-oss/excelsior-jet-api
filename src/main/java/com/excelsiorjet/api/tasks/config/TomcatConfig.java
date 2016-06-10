@@ -12,7 +12,7 @@ import static com.excelsiorjet.api.util.Txt.s;
  */
 public class TomcatConfig {
 
-    static final String WEBAPPS_DIR = "webapps";
+    public static final String WEBAPPS_DIR = "webapps";
 
     /**
      * The location of the master Tomcat application server installation,
@@ -51,7 +51,7 @@ public class TomcatConfig {
      */
     public boolean genScripts = true;
 
-    void fillDefaults() throws JetTaskFailureException {
+    public void fillDefaults() throws JetTaskFailureException {
         // check Tomcat home
         if (Utils.isEmpty(tomcatHome)) {
             tomcatHome = System.getProperty("tomcat.home");

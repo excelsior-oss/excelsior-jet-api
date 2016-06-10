@@ -2,7 +2,6 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.cmd.*;
 import com.excelsiorjet.api.log.AbstractLog;
-import com.excelsiorjet.api.tasks.config.JetTaskConfig;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
@@ -16,9 +15,9 @@ import static com.excelsiorjet.api.util.Txt.s;
 
 public class JetTask {
 
-    private final JetTaskConfig config;
+    private final JetTaskParams config;
 
-    public JetTask(JetTaskConfig config) {
+    public JetTask(JetTaskParams config) {
         this.config = config;
     }
 
@@ -308,17 +307,17 @@ public class JetTask {
 
     private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
         switch (config.excelsiorJetPackaging()) {
-            case JetTaskConfig.ZIP:
+            case JetTaskParams.ZIP:
                 AbstractLog.instance().info(s("JetMojo.ZipApp.Info"));
                 File targetZip = new File(config.jetOutputDir(), config.finalName() + ".zip");
                 TaskUtils.compressZipfile(packageDir, targetZip);
                 AbstractLog.instance().info(s("JetMojo.Build.Success"));
                 AbstractLog.instance().info(s("JetMojo.GetZip.Info", targetZip.getAbsolutePath()));
                 break;
-            case JetTaskConfig.EXCELSIOR_INSTALLER:
+            case JetTaskParams.EXCELSIOR_INSTALLER:
                 packWithEI(jetHome, buildDir);
                 break;
-            case JetTaskConfig.OSX_APP_BUNDLE:
+            case JetTaskParams.OSX_APP_BUNDLE:
                 createOSXAppBundle(jetHome, buildDir);
                 break;
             default:

@@ -21,6 +21,9 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.BaseJetTaskParams;
+import com.excelsiorjet.api.tasks.JetTaskParamsBuilder;
+
 import java.io.File;
 
 
@@ -41,13 +44,13 @@ public class OSXAppBundleConfig {
 
     /**
      * OS X app bundle file name.
-     * Default is {@link com.excelsiorjet.api.tasks.JetTaskParams#outputName}.
+     * Default is {@link JetTaskParamsBuilder#outputName}.
      */
     public String fileName;
 
     /**
      * Value for the {@code CFBundleName} key in the resulting {@code Info.plist} file.
-     * Default is {@link com.excelsiorjet.api.tasks.JetTaskParams#product}.
+     * Default is {@link JetTaskParamsBuilder#product}.
      */
     public String bundleName;
 
@@ -59,7 +62,7 @@ public class OSXAppBundleConfig {
 
     /**
      * Value for the {@code CFBundleShortVersionString} key in the resulting {@code Info.plist} file.
-     * By default, derived from {@link com.excelsiorjet.api.tasks.JetTaskParams#version}.
+     * By default, derived from {@link JetTaskParamsBuilder#version}.
      */
     public String shortVersion;
 
@@ -115,7 +118,7 @@ public class OSXAppBundleConfig {
      */
     public String installPath = "/Applications";
 
-    void fillDefaults(AbstractJetTaskConfig config, String fileName, String bundleName, String version, String shortVersion) {
+    public void fillDefaults(BaseJetTaskParams config, String fileName, String bundleName, String version, String shortVersion) {
         if (this.fileName == null) {
             this.fileName = fileName;
         }
