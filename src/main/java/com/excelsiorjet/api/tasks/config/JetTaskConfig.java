@@ -5,105 +5,264 @@ import com.excelsiorjet.api.cmd.JetHome;
 import com.excelsiorjet.api.cmd.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.AbstractLog;
+import com.excelsiorjet.api.tasks.ClasspathEntry;
 import com.excelsiorjet.api.tasks.ExcelsiorJetApiException;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
-public interface JetTaskConfig extends AbstractJetTaskConfig {
+public class JetTaskConfig extends AbstractJetTaskConfig {
 
     //packaging types
-    String ZIP = "zip";
-    String NONE = "none";
-    String EXCELSIOR_INSTALLER = "excelsior-installer";
-    String OSX_APP_BUNDLE = "osx-app-bundle";
-    String NATIVE_BUNDLE = "native-bundle";
+    public static final String ZIP = "zip";
+    public static final String NONE = "none";
+    public static final String EXCELSIOR_INSTALLER = "excelsior-installer";
+    public static final String OSX_APP_BUNDLE = "osx-app-bundle";
+    public static final String NATIVE_BUNDLE = "native-bundle";
 
-    boolean isAddWindowsVersionInfo();
+    private boolean addWindowsVersionInfo;
 
-    void setAddWindowsVersionInfo(boolean addWindowsVersionInfoFlag);
+    private String excelsiorJetPackaging;
 
-    String excelsiorJetPackaging();
+    private String vendor;
 
-    void setExcelsiorJetPackaging(String excelsiorJetPackagin);
+    private String product;
 
-    String vendor();
+    private String artifactId;
 
-    void setVendor(String vendor);
+    private String winVIVersion;
 
-    String product();
+    private String winVICopyright;
 
-    void setProduct(String product);
+    private String inceptionYear;
 
-    String artifactId();
+    private String winVIDescription;
 
-    String winVIVersion();
+    private boolean globalOptimizer;
 
-    void setWinVIVersion(String winVIVersion);
+    private SlimDownConfig javaRuntimeSlimDown;
 
-    String winVICopyright();
+    private TrialVersionConfig trialVersion;
 
-    void setWinVICopyright(String winVICopyrigth);
+    private ExcelsiorInstallerConfig excelsiorInstallerConfiguration;
 
-    String inceptionYear();
+    private String version;
 
-    String winVIDescription();
+    private OSXAppBundleConfig osxBundleConfiguration;
 
-    void setWinVIDescription(String winVIDescription);
+    private String outputName;
 
-    boolean globalOptimizer();
+    private boolean multiApp;
 
-    void setGlobalOptimizer(boolean globalOptimizer);
+    private boolean profileStartup;
 
-    SlimDownConfig javaRuntimeSlimDown();
+    private boolean protectData;
 
-    void setJavaRuntimeSlimDown(SlimDownConfig slimDownConfig);
+    private String cryptSeed;
 
-    TrialVersionConfig trialVersion();
+    private File icon;
 
-    void setTrialVersion(TrialVersionConfig trialVersionConfig);
+    private boolean hideConsole;
 
-    ExcelsiorInstallerConfig excelsiorInstallerConfiguration();
+    private int profileStartupTimeout;
 
-    String version();
+    private String[] optRtFiles;
 
-    OSXAppBundleConfig osxBundleConfiguration();
+    private File jetOutputDir;
 
-    String outputName();
+    public JetTaskConfig(File mainWar, String jetHome, String packaging, File mainJar, String mainClass, TomcatConfig tomcatConfiguration, Stream<ClasspathEntry> artifacts, String groupId, File buildDir, String finalName, File basedir, File packageFilesDir, File execProfilesDir, String execProfilesName, String[] jvmArgs, boolean addWindowsVersionInfo, String excelsiorJetPackaging, String vendor, String product, String artifactId, String winVIVersion, String winVICopyright, String inceptionYear, String winVIDescription, boolean globalOptimizer, SlimDownConfig javaRuntimeSlimDown, TrialVersionConfig trialVersion, ExcelsiorInstallerConfig excelsiorInstallerConfiguration, String version, OSXAppBundleConfig osxBundleConfiguration, String outputName, boolean multiApp, boolean profileStartup, boolean protectData, String cryptSeed, File icon, boolean hideConsole, int profileStartupTimeout, String[] optRtFiles, File jetOutputDir) {
+        super(mainWar, jetHome, packaging, mainJar, mainClass, tomcatConfiguration, artifacts, groupId, buildDir, finalName, basedir, packageFilesDir, execProfilesDir, execProfilesName, jvmArgs);
+        this.addWindowsVersionInfo = addWindowsVersionInfo;
+        this.excelsiorJetPackaging = excelsiorJetPackaging;
+        this.vendor = vendor;
+        this.product = product;
+        this.artifactId = artifactId;
+        this.winVIVersion = winVIVersion;
+        this.winVICopyright = winVICopyright;
+        this.inceptionYear = inceptionYear;
+        this.winVIDescription = winVIDescription;
+        this.globalOptimizer = globalOptimizer;
+        this.javaRuntimeSlimDown = javaRuntimeSlimDown;
+        this.trialVersion = trialVersion;
+        this.excelsiorInstallerConfiguration = excelsiorInstallerConfiguration;
+        this.version = version;
+        this.osxBundleConfiguration = osxBundleConfiguration;
+        this.outputName = outputName;
+        this.multiApp = multiApp;
+        this.profileStartup = profileStartup;
+        this.protectData = protectData;
+        this.cryptSeed = cryptSeed;
+        this.icon = icon;
+        this.hideConsole = hideConsole;
+        this.profileStartupTimeout = profileStartupTimeout;
+        this.optRtFiles = optRtFiles;
+        this.jetOutputDir = jetOutputDir;
+    }
 
-    void setOutputName(String outputName);
+    public boolean isAddWindowsVersionInfo() {
+        return addWindowsVersionInfo;
+    }
 
-    boolean multiApp();
+    void setAddWindowsVersionInfo(boolean addWindowsVersionInfoFlag) {
+        addWindowsVersionInfoFlag = addWindowsVersionInfoFlag;
+    }
 
-    void setMultiApp(boolean multiApp);
+    public String excelsiorJetPackaging() {
+        return excelsiorJetPackaging;
+    }
 
-    boolean profileStartup();
+    public void setExcelsiorJetPackaging(String excelsiorJetPackaging) {
+        this.excelsiorJetPackaging = excelsiorJetPackaging;
+    }
 
-    void setProfileStartup(boolean profileStartup);
+    public String vendor() {
+        return vendor;
+    }
 
-    boolean protectData();
+    public void setVendor(String vendor) {
+        this.vendor = vendor;
+    }
 
-    String cryptSeed();
+    public String product() {
+        return product;
+    }
 
-    void setCryptSeed(String cryptSeed);
+    public void setProduct(String product) {
+        this.product = product;
+    }
 
-    File icon();
+    public String artifactId() {
+        return artifactId;
+    }
 
-    boolean hideConsole();
+    public String winVIVersion() {
+        return winVIVersion;
+    }
 
-    int profileStartupTimeout();
+    public void setWinVIVersion(String winVIVersion) {
+        this.winVIVersion = winVIVersion;
+    }
 
-    String[] optRtFiles();
+    public String winVICopyright() {
+        return winVICopyright;
+    }
 
-    File jetOutputDir();
+    public void setWinVICopyright(String winVICopyright) {
+        this.winVICopyright = winVICopyright;
+    }
 
-    default JetHome validate() throws ExcelsiorJetApiException {
+    public String inceptionYear() {
+        return inceptionYear;
+    }
 
-        JetHome jetHomeObj = AbstractJetTaskConfig.super.validate();//super.validate();
+    public String winVIDescription() {
+        return winVIDescription;
+    }
+
+    public void setWinVIDescription(String winVIDescription) {
+        this.winVIDescription = winVIDescription;
+    }
+
+    public boolean globalOptimizer() {
+        return globalOptimizer;
+    }
+
+    public void setGlobalOptimizer(boolean globalOptimizer) {
+        this.globalOptimizer = globalOptimizer;
+    }
+
+    public SlimDownConfig javaRuntimeSlimDown() {
+        return javaRuntimeSlimDown;
+    }
+
+    public void setJavaRuntimeSlimDown(SlimDownConfig slimDownConfig) {
+        this.javaRuntimeSlimDown = slimDownConfig;
+    }
+
+    public TrialVersionConfig trialVersion() {
+        return trialVersion;
+    }
+
+    public void setTrialVersion(TrialVersionConfig trialVersionConfig) {
+        this.trialVersion = trialVersionConfig;
+    }
+
+    public ExcelsiorInstallerConfig excelsiorInstallerConfiguration() {
+        return excelsiorInstallerConfiguration;
+    }
+
+    public String version() {
+        return version;
+    }
+
+    public OSXAppBundleConfig osxBundleConfiguration() {
+        return osxBundleConfiguration;
+    }
+
+    public String outputName() {
+        return outputName;
+    }
+
+    public void setOutputName(String outputName) {
+        this.outputName = outputName;
+    }
+
+    public boolean multiApp() {
+        return multiApp;
+    }
+
+    public void setMultiApp(boolean multiApp) {
+        this.multiApp = multiApp;
+    }
+
+    public boolean profileStartup() {
+        return profileStartup;
+    }
+
+    public void setProfileStartup(boolean profileStartup) {
+        this.profileStartup = profileStartup;
+    }
+
+    public boolean protectData() {
+        return protectData;
+    }
+
+    public String cryptSeed() {
+        return cryptSeed;
+    }
+
+    public void setCryptSeed(String cryptSeed) {
+        this.cryptSeed = cryptSeed;
+    }
+
+    public File icon() {
+        return icon;
+    }
+
+    public boolean hideConsole() {
+        return hideConsole;
+    }
+
+    public int profileStartupTimeout() {
+        return profileStartupTimeout;
+    }
+
+    public String[] optRtFiles() {
+        return optRtFiles;
+    }
+
+    public File jetOutputDir() {
+        return jetOutputDir;
+    }
+
+    public JetHome validate() throws ExcelsiorJetApiException {
+
+        JetHome jetHomeObj = super.validate();//super.validate();
 
         switch (appType()) {
             case PLAIN:
@@ -195,7 +354,7 @@ public interface JetTaskConfig extends AbstractJetTaskConfig {
         return jetHomeObj;
     }
 
-    default void checkVersionInfo(JetHome jetHome) throws JetHomeException {
+    public void checkVersionInfo(JetHome jetHome) throws JetHomeException {
         if (!Utils.isWindows()) {
             setAddWindowsVersionInfo(false);
         }
@@ -239,7 +398,7 @@ public interface JetTaskConfig extends AbstractJetTaskConfig {
         }
     }
 
-    default String deriveFourDigitVersion(String version) {
+    public String deriveFourDigitVersion(String version) {
         String[] versions = version.split("\\.");
         String[] finalVersions = new String[]{"0", "0", "0", "0"};
         for (int i = 0; i < Math.min(versions.length, 4); ++i) {
@@ -259,7 +418,7 @@ public interface JetTaskConfig extends AbstractJetTaskConfig {
         return String.join(".", finalVersions);
     }
 
-    default void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, ExcelsiorJetApiException {
+    public void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, ExcelsiorJetApiException {
         if (globalOptimizer()) {
             if (jetHome.is64bit()) {
                 AbstractLog.instance().warn(s("JetMojo.NoGlobalIn64Bit.Warning"));
@@ -303,7 +462,7 @@ public interface JetTaskConfig extends AbstractJetTaskConfig {
         }
     }
 
-    default void checkTrialVersionConfig(JetHome jetHome) throws ExcelsiorJetApiException, JetHomeException {
+    public void checkTrialVersionConfig(JetHome jetHome) throws ExcelsiorJetApiException, JetHomeException {
         if ((trialVersion() != null) && trialVersion().isEnabled()) {
             if ((trialVersion().expireInDays >= 0) && (trialVersion().expireDate != null)) {
                 throw new ExcelsiorJetApiException(s("JetMojo.AmbiguousExpireSetting.Failure"));
@@ -321,13 +480,13 @@ public interface JetTaskConfig extends AbstractJetTaskConfig {
         }
     }
 
-    default void checkExcelsiorInstallerConfig() throws ExcelsiorJetApiException {
+    public void checkExcelsiorInstallerConfig() throws ExcelsiorJetApiException {
         if (excelsiorJetPackaging().equals(EXCELSIOR_INSTALLER)) {
             excelsiorInstallerConfiguration().fillDefaults(this);
         }
     }
 
-    default void checkOSXBundleConfig() {
+    public void checkOSXBundleConfig() {
         if (excelsiorJetPackaging().equals(OSX_APP_BUNDLE)) {
             String fourDigitVersion = deriveFourDigitVersion(version());
             osxBundleConfiguration().fillDefaults(this, outputName(), product(),
