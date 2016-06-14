@@ -25,7 +25,7 @@ public class TestRunTask {
         this.config = config;
     }
 
-    public String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws JetTaskFailureException {
+    private String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws JetTaskFailureException, IOException {
         File f = new File(tomcatBin, BOOTSTRAP_JAR);
         if (!f.exists()) {
             throw new JetTaskFailureException(Txt.s("TestRunMojo.Tomcat.NoBootstrapJar.Failure", tomcatBin.getAbsolutePath()));
@@ -35,10 +35,10 @@ public class TestRunTask {
         try {
             bootManifest = new JarFile(f).getManifest();
         } catch (IOException e) {
-            throw new JetTaskFailureException(Txt.s("TestRunMojo.Tomcat.FailedToReadBootstrapJar.Failure", tomcatBin.getAbsolutePath(), e.getMessage()), e);
+            throw new IOException(Txt.s("TestRunMojo.Tomcat.FailedToReadBootstrapJar.Failure", tomcatBin.getAbsolutePath(), e.getMessage()), e);
         }
 
-        ArrayList<String> classPath = new ArrayList<String>();
+        ArrayList<String> classPath = new ArrayList<>();
         classPath.add(BOOTSTRAP_JAR);
 
         String bootstrapJarCP = bootManifest.getMainAttributes().getValue("CLASS-PATH");
@@ -56,13 +56,13 @@ public class TestRunTask {
                 "-Djet.classloader.id.provider=com/excelsior/jet/runtime/classload/customclassloaders/tomcat/TomcatCLIDProvider",
                 "-Dcatalina.base=" + tomcatDir,
                 "-Dcatalina.home=" + tomcatDir,
-                "-Djava.io.tmpdir="+ tomcatDir + File.separator + "temp",
+                "-Djava.io.tmpdir=" + tomcatDir + File.separator + "temp",
                 "-Djava.util.logging.config.file=../conf/logging.properties",
                 "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
         );
     }
 
-    public void execute() throws JetTaskFailureException {
+    public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
         JetHome jetHome = config.validate();
 
         // creating output dirs
@@ -118,22 +118,18 @@ public class TestRunTask {
         xjava.arg("-cp");
         xjava.arg(classpath);
         xjava.arg(config.mainClass());
-        try {
-            String cmdLine = xjava.getArgs().stream()
-                    .map(arg -> arg.contains(" ") ? '"' + arg + '"' : arg)
-                    .collect(Collectors.joining(" "));
+        String cmdLine = xjava.getArgs().stream()
+                .map(arg -> arg.contains(" ") ? '"' + arg + '"' : arg)
+                .collect(Collectors.joining(" "));
 
-            AbstractLog.instance().info(Txt.s("TestRunMojo.Start.Info", cmdLine));
+        AbstractLog.instance().info(Txt.s("TestRunMojo.Start.Info", cmdLine));
 
-            int errCode = xjava.execute();
-            String finishText = Txt.s("TestRunMojo.Finish.Info", errCode);
-            if (errCode != 0) {
-                AbstractLog.instance().warn(finishText);
-            } else {
-                AbstractLog.instance().info(finishText);
-            }
-        } catch (CmdLineToolException e) {
-            throw new JetTaskFailureException(e.getMessage());
+        int errCode = xjava.execute();
+        String finishText = Txt.s("TestRunMojo.Finish.Info", errCode);
+        if (errCode != 0) {
+            AbstractLog.instance().warn(finishText);
+        } else {
+            AbstractLog.instance().info(finishText);
         }
     }
 }

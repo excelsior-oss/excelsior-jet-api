@@ -26,7 +26,7 @@ public class JetTask {
     /**
      * Invokes the Excelsior JET AOT compiler.
      */
-    private void compile(JetHome jetHome, File buildDir, List<ClasspathEntry> dependencies) throws JetTaskFailureException, CmdLineToolException {
+    private void compile(JetHome jetHome, File buildDir, List<ClasspathEntry> dependencies) throws JetTaskFailureException, CmdLineToolException, FileNotFoundException {
         ArrayList<String> compilerArgs = new ArrayList<>();
         ArrayList<String> modules = new ArrayList<>();
 
@@ -183,7 +183,7 @@ public class JetTask {
      * Packages the generated executable and required Excelsior JET runtime files
      * as a excelsior installer file.
      */
-    private void packWithEI(JetHome jetHome, File buildDir) throws CmdLineToolException, JetTaskFailureException {
+    private void packWithEI(JetHome jetHome, File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
         File target = new File(config.jetOutputDir(), Utils.mangleExeName(config.finalName()));
         ArrayList<String> xpackArgs = getCommonXPackArgs();
         if (config.excelsiorInstallerConfiguration().eula.exists()) {
@@ -210,7 +210,7 @@ public class JetTask {
     }
 
 
-    private void createOSXAppBundle(JetHome jetHome, File buildDir) throws JetTaskFailureException, CmdLineToolException {
+    private void createOSXAppBundle(JetHome jetHome, File buildDir) throws JetTaskFailureException, CmdLineToolException, IOException {
         File appBundle = new File(config.jetOutputDir(), config.osxBundleConfiguration().fileName + ".app");
         Utils.mkdir(appBundle);
         try {
@@ -252,8 +252,6 @@ public class JetTask {
                                             "  <true/>" : "") +
                             "</dict>\n" +
                             "</plist>\n");
-        } catch (IOException e) {
-            throw new JetTaskFailureException(e.getMessage());
         }
 
         ArrayList<String> xpackArgs = getCommonXPackArgs();
@@ -266,12 +264,8 @@ public class JetTask {
         }
 
         if (config.osxBundleConfiguration().icon.exists()) {
-            try {
-                Files.copy(config.osxBundleConfiguration().icon.toPath(),
-                        new File(contentsResources, config.osxBundleConfiguration().icon.getName()).toPath());
-            } catch (IOException e) {
-                throw new JetTaskFailureException(e.getMessage(), e);
-            }
+            Files.copy(config.osxBundleConfiguration().icon.toPath(),
+                    new File(contentsResources, config.osxBundleConfiguration().icon.getName()).toPath());
         }
 
         File appPkg = null;
@@ -331,7 +325,7 @@ public class JetTask {
         }
     }
 
-    public void execute() throws JetTaskFailureException {
+    public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
         JetHome jetHome = config.validate();
 
         // creating output dirs
@@ -345,26 +339,19 @@ public class JetTask {
             throw new JetTaskFailureException(e.getMessage(), e);
         }
 
-        try {
-            switch (config.appType()) {
-                case PLAIN:
-                    compile(jetHome, buildDir, TaskUtils.copyDependencies(buildDir, config.mainJar(), config.getArtifacts()));
-                    break;
-                case TOMCAT:
-                    config.copyTomcatAndWar();
-                    compile(jetHome, buildDir, Collections.emptyList());
-                    break;
-                default:
-                    throw new AssertionError("Unknown application type");
-            }
-            createAppDir(jetHome, buildDir, appDir);
-
-            packageBuild(jetHome, buildDir, appDir);
-
-        } catch (Exception e) {
-            AbstractLog.instance().debug("JetTask execution error", e);
-            AbstractLog.instance().error(e.getMessage());
-            throw new JetTaskFailureException(s("JetMojo.Unexpected.Error"), e);
+        switch (config.appType()) {
+            case PLAIN:
+                compile(jetHome, buildDir, TaskUtils.copyDependencies(buildDir, config.mainJar(), config.getArtifacts()));
+                break;
+            case TOMCAT:
+                config.copyTomcatAndWar();
+                compile(jetHome, buildDir, Collections.emptyList());
+                break;
+            default:
+                throw new AssertionError("Unknown application type");
         }
+        createAppDir(jetHome, buildDir, appDir);
+
+        packageBuild(jetHome, buildDir, appDir);
     }
 }

@@ -190,15 +190,15 @@ public class BaseJetTaskParams {
      * Copies the master Tomcat server to the build directory and main project artifact (.war)
      * to the "webapps" folder of copied Tomcat.
      *
-     * @throws JetTaskFailureException
+     * @throws IOException
      */
-    void copyTomcatAndWar() throws JetTaskFailureException {
+    void copyTomcatAndWar() throws IOException {
         try {
             Utils.copyDirectory(Paths.get(tomcatConfiguration().tomcatHome), tomcatInBuildDir().toPath());
             String warName = (Utils.isEmpty(tomcatConfiguration().warDeployName)) ? mainWar().getName() : tomcatConfiguration().warDeployName;
             Utils.copyFile(mainWar().toPath(), new File(tomcatInBuildDir(), TomcatConfig.WEBAPPS_DIR + File.separator + warName).toPath());
         } catch (IOException e) {
-            throw new JetTaskFailureException(s("JetMojo.ErrorCopyingTomcat.Exception"), e);
+            throw new IOException(s("JetMojo.ErrorCopyingTomcat.Exception"), e);
         }
     }
     File createBuildDir() throws JetTaskFailureException {
@@ -213,7 +213,7 @@ public class BaseJetTaskParams {
 
     ApplicationType appType() throws JetTaskFailureException {
         switch (packaging().toLowerCase()) {
-            case "jar" :
+            case "jar":
                 return ApplicationType.PLAIN;
             case "war":
                 return ApplicationType.TOMCAT;

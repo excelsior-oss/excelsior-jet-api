@@ -14,16 +14,16 @@ import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
-public class TaskUtils {
+class TaskUtils {
 
-    protected static final String LIB_DIR = "lib";
+    private static final String LIB_DIR = "lib";
 
-    private static void copyDependency(File from, File to, File buildDir, List<ClasspathEntry> dependencies, boolean isLib) {
+    private static void copyDependency(File from, File to, File buildDir, List<ClasspathEntry> dependencies, boolean isLib) throws JetTaskIoException {
         try {
             Utils.copyFile(from.toPath(), to.toPath());
             dependencies.add(new ClasspathEntry(buildDir.toPath().relativize(to.toPath()).toFile(), isLib));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JetTaskIoException(e);
         }
     }
 
@@ -32,7 +32,7 @@ public class TaskUtils {
      *
      * @return list of dependencies relative to buildDir
      */
-    protected static List<ClasspathEntry> copyDependencies(File buildDir, File mainJar, Stream<ClasspathEntry> dependencies) throws JetTaskFailureException {
+    static List<ClasspathEntry> copyDependencies(File buildDir, File mainJar, Stream<ClasspathEntry> dependencies) throws JetTaskFailureException, IOException {
         File libDir = new File(buildDir, LIB_DIR);
         Utils.mkdir(libDir);
         ArrayList<ClasspathEntry> classpathEntries = new ArrayList<>();
@@ -45,8 +45,9 @@ public class TaskUtils {
                     )
             ;
             return classpathEntries;
-        } catch (Exception e) {
-            throw new JetTaskFailureException(s("JetMojo.ErrorCopyingDependency.Exception"), e);
+        } catch (JetTaskIoException e) {
+            // catch and unwrap io exception thrown by copyDependency in forEach lambda
+            throw new IOException(s("JetMojo.ErrorCopyingDependency.Exception"), e.getCause());
         }
     }
 
@@ -62,7 +63,7 @@ public class TaskUtils {
             for (String mod : modules) {
                 out.println("!module " + mod);
             }
-        } catch (IOException e) {
+        } catch (FileNotFoundException e) {
             throw new JetTaskFailureException(e.getMessage());
         }
         return prj;

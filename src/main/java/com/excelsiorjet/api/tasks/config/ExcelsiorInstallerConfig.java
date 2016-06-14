@@ -81,13 +81,9 @@ public class ExcelsiorInstallerConfig {
         }
     }
 
-    public String eulaFlag() throws JetTaskFailureException {
+    public String eulaFlag() throws JetTaskFailureException, IOException {
         String actualEncoding;
-        try {
-            actualEncoding = detectEncoding(eula);
-        } catch (IOException e) {
-            throw new JetTaskFailureException(s("JetMojo.Package.Eula.UnableToDetectEncoding", eula.getAbsolutePath()), e);
-        }
+        actualEncoding = detectEncoding(eula);
 
         if (!AUTO_DETECT_EULA_ENCODING.equals(eulaEncoding)) {
             if (!actualEncoding.equals(eulaEncoding)) {
