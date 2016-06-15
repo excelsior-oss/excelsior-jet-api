@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2016, Excelsior LLC.
+ *
+ *  This file is part of Excelsior JET API.
+ *
+ *  Excelsior JET API is free software:
+ *  you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Excelsior JET API is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Excelsior JET API.
+ *  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.cmd.JetEdition;
@@ -20,16 +41,21 @@ import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
+/**
+ * Class that represents Excelsior JET project, on which task like build or test run can operate.
+ */
 public class JetProject {
 
     //packaging types
+    public static final String NONE = "none";
     public static final String ZIP = "zip";
-    private static final String NONE = "none";
-    static final String EXCELSIOR_INSTALLER = "excelsior-installer";
-    static final String OSX_APP_BUNDLE = "osx-app-bundle";
-    private static final String NATIVE_BUNDLE = "native-bundle";
-    private static final String LIB_DIR = "lib";
+    public static final String EXCELSIOR_INSTALLER = "excelsior-installer";
+    public static final String OSX_APP_BUNDLE = "osx-app-bundle";
+    public static final String NATIVE_BUNDLE = "native-bundle";
 
+    public static final String LIB_DIR = "lib";
+
+    // common parameters
     private File jetOutputDir;
     private File mainWar;
     private String jetHome;
@@ -47,91 +73,39 @@ public class JetProject {
     private String execProfilesName;
     private String[] jvmArgs;
 
+    // compile and pack parameters
     private boolean addWindowsVersionInfo;
-
     private String excelsiorJetPackaging;
-
     private String vendor;
-
     private String product;
-
     private String artifactId;
-
     private String winVIVersion;
-
     private String winVICopyright;
-
     private String inceptionYear;
-
     private String winVIDescription;
-
     private boolean globalOptimizer;
-
     private SlimDownConfig javaRuntimeSlimDown;
-
     private TrialVersionConfig trialVersion;
-
     private ExcelsiorInstallerConfig excelsiorInstallerConfiguration;
-
     private String version;
-
     private OSXAppBundleConfig osxBundleConfiguration;
-
     private String outputName;
-
     private boolean multiApp;
-
     private boolean profileStartup;
-
     private boolean protectData;
-
     private String cryptSeed;
-
     private File icon;
-
     private boolean hideConsole;
-
     private int profileStartupTimeout;
-
     private String[] optRtFiles;
 
-
-    /////////////// Getters /////////////////////////////////
-
-    private File mainWar() {
-        return mainWar;
-    }
-
-    public String jetHome() {
-        return jetHome;
-    }
-
-    public String packaging() {
-        return packaging;
-    }
-
-    public File mainJar() {
-        return mainJar;
-    }
-
-    public String mainClass() {
+    /////////////// Public getters /////////////////////////////////
+    String mainClass() {
         return mainClass;
-    }
-
-    public TomcatConfig tomcatConfiguration() {
-        return tomcatConfiguration;
-    }
-
-    Stream<ClasspathEntry> getDependencies() {
-        return dependencies;
     }
 
     public String groupId() {
         return groupId;
-    }
-
-    private File buildDir() {
-        return buildDir;
     }
 
     public String finalName() {
@@ -142,7 +116,24 @@ public class JetProject {
         return basedir;
     }
 
-    public File packageFilesDir() {
+    public String vendor() {
+        return vendor;
+    }
+
+    public String product() {
+        return product;
+    }
+
+    /////////////// Getters /////////////////////////////////
+    TomcatConfig tomcatConfiguration() {
+        return tomcatConfiguration;
+    }
+
+    Stream<ClasspathEntry> getDependencies() {
+        return dependencies;
+    }
+
+    File packageFilesDir() {
         return packageFilesDir;
     }
 
@@ -154,7 +145,7 @@ public class JetProject {
         return execProfilesName;
     }
 
-    public String[] jvmArgs() {
+    String[] jvmArgs() {
         return jvmArgs;
     }
 
@@ -166,28 +157,12 @@ public class JetProject {
         return excelsiorJetPackaging;
     }
 
-    public String vendor() {
-        return vendor;
-    }
-
-    public String product() {
-        return product;
-    }
-
-    public String artifactId() {
-        return artifactId;
-    }
-
     String winVIVersion() {
         return winVIVersion;
     }
 
     String winVICopyright() {
         return winVICopyright;
-    }
-
-    private String inceptionYear() {
-        return inceptionYear;
     }
 
     String winVIDescription() {
@@ -211,7 +186,7 @@ public class JetProject {
         return excelsiorInstallerConfiguration;
     }
 
-    public String version() {
+    String version() {
         return version;
     }
 
@@ -227,7 +202,7 @@ public class JetProject {
         return multiApp;
     }
 
-    public boolean profileStartup() {
+    boolean profileStartup() {
         return profileStartup;
     }
 
@@ -239,7 +214,7 @@ public class JetProject {
         return cryptSeed;
     }
 
-    public File icon() {
+    File icon() {
         return icon;
     }
 
@@ -259,8 +234,7 @@ public class JetProject {
         return jetOutputDir;
     }
 
-////////// Builder methods ////////////////////
-
+    ////////// Builder methods ////////////////////
     public JetProject mainWar(File mainWar) {
         this.mainWar = mainWar;
         return this;
@@ -461,16 +435,14 @@ public class JetProject {
         return this;
     }
 
-///////////////// Validation ////////////////
-
+    ///////////////// Validation ////////////////
     public JetHome validate() throws JetTaskFailureException {
-
         Txt.log = AbstractLog.instance();
 
         // check jet home
         JetHome jetHomeObj;
         try {
-            jetHomeObj = Utils.isEmpty(jetHome()) ? new JetHome() : new JetHome(jetHome());
+            jetHomeObj = Utils.isEmpty(jetHome) ? new JetHome() : new JetHome(jetHome);
 
         } catch (JetHomeException e) {
             throw new JetTaskFailureException(e.getMessage());
@@ -488,10 +460,10 @@ public class JetProject {
                 throw new AssertionError("Unknown application type");
         }
 
-        switch (packaging().toLowerCase()) {
+        switch (packaging.toLowerCase()) {
             case "jar":
-                if (!mainJar().exists()) {
-                    throw new JetTaskFailureException(s("JetMojo.MainJarNotFound.Failure", mainJar().getAbsolutePath()));
+                if (!mainJar.exists()) {
+                    throw new JetTaskFailureException(s("JetMojo.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
                 }
                 // check main class
                 if (Utils.isEmpty(mainClass())) {
@@ -510,18 +482,16 @@ public class JetProject {
                     throw new JetTaskFailureException(s("JetMojo.TomcatNotSupported.Failure"));
                 }
 
-                if (!mainWar().exists()) {
-                    throw new JetTaskFailureException(s("JetMojo.MainWarNotFound.Failure", mainWar().getAbsolutePath()));
+                if (!mainWar.exists()) {
+                    throw new JetTaskFailureException(s("JetMojo.MainWarNotFound.Failure", mainWar.getAbsolutePath()));
                 }
 
                 tomcatConfiguration().fillDefaults();
 
                 break;
             default:
-                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging()));
+                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging));
         }
-
-
 
         switch (appType()) {
             case PLAIN:
@@ -532,7 +502,7 @@ public class JetProject {
                 break;
             case TOMCAT:
                 if (outputName() == null) {
-                    outputName= artifactId();
+                    outputName = artifactId;
                 }
                 break;
             default:
@@ -634,7 +604,7 @@ public class JetProject {
             }
             if (Utils.isEmpty(product())) {
                 // no project name, get it from artifactId.
-                product = artifactId();
+                product = artifactId;
             }
         }
         if (isAddWindowsVersionInfo()) {
@@ -646,7 +616,7 @@ public class JetProject {
             }
 
             if (winVICopyright() == null) {
-                String inceptionYear = inceptionYear();
+                String inceptionYear = this.inceptionYear;
                 String curYear = new SimpleDateFormat("yyyy").format(new Date());
                 String years = Utils.isEmpty(inceptionYear) ? curYear : inceptionYear + "," + curYear;
                 winVICopyright = "Copyright \\x00a9 " + years + " " + vendor();
@@ -763,6 +733,7 @@ public class JetProject {
             Utils.copyFile(from.toPath(), to.toPath());
             dependencies.add(new ClasspathEntry(buildDir.toPath().relativize(to.toPath()).toFile(), isLib));
         } catch (IOException e) {
+            // this method is called from lambda so wrap IOException into RuntimeException for conveniences
             throw new JetTaskIOException(e);
         }
     }
@@ -800,31 +771,35 @@ public class JetProject {
     void copyTomcatAndWar() throws IOException {
         try {
             Utils.copyDirectory(Paths.get(tomcatConfiguration().tomcatHome), tomcatInBuildDir().toPath());
-            String warName = (Utils.isEmpty(tomcatConfiguration().warDeployName)) ? mainWar().getName() : tomcatConfiguration().warDeployName;
-            Utils.copyFile(mainWar().toPath(), new File(tomcatInBuildDir(), TomcatConfig.WEBAPPS_DIR + File.separator + warName).toPath());
+            String warName = (Utils.isEmpty(tomcatConfiguration().warDeployName)) ? mainWar.getName() : tomcatConfiguration().warDeployName;
+            Utils.copyFile(mainWar.toPath(), new File(tomcatInBuildDir(), TomcatConfig.WEBAPPS_DIR + File.separator + warName).toPath());
         } catch (IOException e) {
             throw new IOException(s("JetMojo.ErrorCopyingTomcat.Exception"), e);
         }
     }
 
     File createBuildDir() throws JetTaskFailureException {
-        File buildDir = buildDir();
+        File buildDir = this.buildDir;
         Utils.mkdir(buildDir);
         return buildDir;
     }
 
     File tomcatInBuildDir() {
-        return new File(buildDir(), tomcatConfiguration().tomcatHome);
+        return new File(buildDir, tomcatConfiguration().tomcatHome);
     }
 
+    /**
+     * Detects application type. Currently uses packaging
+     */
     ApplicationType appType() throws JetTaskFailureException {
-        switch (packaging().toLowerCase()) {
+        switch (packaging.toLowerCase()) {
             case "jar":
                 return ApplicationType.PLAIN;
             case "war":
                 return ApplicationType.TOMCAT;
             default:
-                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging()));
+                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging));
         }
     }
+
 }

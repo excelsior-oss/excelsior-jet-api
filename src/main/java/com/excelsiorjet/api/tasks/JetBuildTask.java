@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2016, Excelsior LLC.
+ *
+ *  This file is part of Excelsior JET API.
+ *
+ *  Excelsior JET API is free software:
+ *  you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Excelsior JET API is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Excelsior JET API.
+ *  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.cmd.*;
@@ -13,6 +34,12 @@ import java.util.List;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
+/**
+ * Task for building Java (JVM) applications with Excelsior JET.
+ *
+ * @author Nikita Lipsky
+ * @author Aleksey Zhidkov
+ */
 public class JetBuildTask {
 
     private final JetProject project;
@@ -23,6 +50,16 @@ public class JetBuildTask {
 
     private static final String APP_DIR = "app";
 
+    /**
+     * Generates Excelsior JET project file in {@code buildDir}
+     *
+     * @param buildDir     directory where project file should be placed
+     * @param compilerArgs project compiler args
+     * @param dependencies project dependencies
+     * @param modules      project modules
+     * @param prj name for project file
+     * @throws JetTaskFailureException if {@code buildDir} is not exists.
+     */
     private static String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws JetTaskFailureException {
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
             compilerArgs.forEach(out::println);
@@ -343,6 +380,13 @@ public class JetBuildTask {
         }
     }
 
+    /**
+     * Builds project, that was specified in constructor
+     *
+     * @throws JetTaskFailureException if any task specific error conditions occurs
+     * @throws IOException if any I/O error occurs
+     * @throws CmdLineToolException if any error occurs while cmd line tool calls
+     */
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
         JetHome jetHome = project.validate();
 
