@@ -13,15 +13,33 @@ import java.util.List;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
-public class JetTask {
+public class JetBuildTask {
 
-    private final JetTaskParams config;
+    private final JetProject project;
 
-    public JetTask(JetTaskParams config) {
-        this.config = config;
+    public JetBuildTask(JetProject project) {
+        this.project = project;
     }
 
     private static final String APP_DIR = "app";
+
+    private static String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws JetTaskFailureException {
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
+            compilerArgs.forEach(out::println);
+            for (ClasspathEntry dep : dependencies) {
+                out.println("!classpathentry " + dep.getFile().toString());
+                out.println("  -optimize=" + (dep.isLib() ? "autodetect" : "all"));
+                out.println("  -protect=" + (dep.isLib() ? "nomatter" : "all"));
+                out.println("!end");
+            }
+            for (String mod : modules) {
+                out.println("!module " + mod);
+            }
+        } catch (FileNotFoundException e) {
+            throw new JetTaskFailureException(e.getMessage());
+        }
+        return prj;
+    }
 
     /**
      * Invokes the Excelsior JET AOT compiler.
@@ -30,17 +48,17 @@ public class JetTask {
         ArrayList<String> compilerArgs = new ArrayList<>();
         ArrayList<String> modules = new ArrayList<>();
 
-        switch (config.appType()) {
+        switch (project.appType()) {
             case PLAIN:
-                compilerArgs.add("-main=" + config.mainClass());
+                compilerArgs.add("-main=" + project.mainClass());
                 break;
             case TOMCAT:
                 compilerArgs.add("-apptype=tomcat");
-                compilerArgs.add("-appdir=" + config.tomcatInBuildDir());
-                if (config.tomcatConfiguration().hideConfig) {
+                compilerArgs.add("-appdir=" + project.tomcatInBuildDir());
+                if (project.tomcatConfiguration().hideConfig) {
                     compilerArgs.add("-hideconfiguration+");
                 }
-                if (!config.tomcatConfiguration().genScripts) {
+                if (!project.tomcatConfiguration().genScripts) {
                     compilerArgs.add("-gentomcatscripts-");
                 }
                 break;
@@ -50,48 +68,48 @@ public class JetTask {
 
 
         if (Utils.isWindows()) {
-            if (config.icon().isFile()) {
-                modules.add(config.icon().getAbsolutePath());
+            if (project.icon().isFile()) {
+                modules.add(project.icon().getAbsolutePath());
             }
-            if (config.hideConsole()) {
+            if (project.hideConsole()) {
                 compilerArgs.add("-gui+");
             }
         }
 
-        compilerArgs.add("-outputname=" + config.outputName());
+        compilerArgs.add("-outputname=" + project.outputName());
         compilerArgs.add("-decor=ht");
 
-        if (config.profileStartup()) {
+        if (project.profileStartup()) {
             compilerArgs.add("-saprofmode=ALWAYS");
-            compilerArgs.add("-saproftimeout=" + config.profileStartupTimeout());
+            compilerArgs.add("-saproftimeout=" + project.profileStartupTimeout());
         }
 
-        if (config.isAddWindowsVersionInfo()) {
-            compilerArgs.add("-versioninfocompanyname=" + config.vendor());
-            compilerArgs.add("-versioninfoproductname=" + config.product());
-            compilerArgs.add("-versioninfoproductversion=" + config.winVIVersion());
-            compilerArgs.add("-versioninfolegalcopyright=" + config.winVICopyright());
-            compilerArgs.add("-versioninfofiledescription=" + config.winVIDescription());
+        if (project.isAddWindowsVersionInfo()) {
+            compilerArgs.add("-versioninfocompanyname=" + project.vendor());
+            compilerArgs.add("-versioninfoproductname=" + project.product());
+            compilerArgs.add("-versioninfoproductversion=" + project.winVIVersion());
+            compilerArgs.add("-versioninfolegalcopyright=" + project.winVICopyright());
+            compilerArgs.add("-versioninfofiledescription=" + project.winVIDescription());
         }
 
-        if (config.multiApp()) {
+        if (project.multiApp()) {
             compilerArgs.add("-multiapp+");
         }
 
-        if (config.globalOptimizer()) {
+        if (project.globalOptimizer()) {
             compilerArgs.add("-global+");
         }
 
-        if (config.trialVersion() != null) {
-            compilerArgs.add("-expire=" + config.trialVersion().getExpire());
-            compilerArgs.add("-expiremsg=" + config.trialVersion().expireMessage);
+        if (project.trialVersion() != null) {
+            compilerArgs.add("-expire=" + project.trialVersion().getExpire());
+            compilerArgs.add("-expiremsg=" + project.trialVersion().expireMessage);
         }
 
-        if (config.protectData()) {
-            compilerArgs.add("-cryptseed=" + config.cryptSeed());
+        if (project.protectData()) {
+            compilerArgs.add("-cryptseed=" + project.cryptSeed());
         }
 
-        TestRunExecProfiles execProfiles = new TestRunExecProfiles(config.execProfilesDir(), config.execProfilesName());
+        TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
         if (execProfiles.getStartup().exists()) {
             compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
         }
@@ -100,8 +118,8 @@ public class JetTask {
         }
 
         String jetVMPropOpt = "-jetvmprop=";
-        if (config.jvmArgs() != null && config.jvmArgs().length > 0) {
-            jetVMPropOpt = jetVMPropOpt + String.join(" ", (CharSequence[]) config.jvmArgs());
+        if (project.jvmArgs() != null && project.jvmArgs().length > 0) {
+            jetVMPropOpt = jetVMPropOpt + String.join(" ", (CharSequence[]) project.jvmArgs());
 
             // JVM args may contain $(Root) prefix for system property value
             // (that should expand to installation directory location).
@@ -112,7 +130,7 @@ public class JetTask {
             compilerArgs.add("%" + jetVMPropOpt);
         }
 
-        String prj = TaskUtils.createJetCompilerProject(buildDir, compilerArgs, dependencies, modules, config.outputName() + ".prj");
+        String prj = createJetCompilerProject(buildDir, compilerArgs, dependencies, modules, project.outputName() + ".prj");
 
         if (new JetCompiler(jetHome, "=p", prj, jetVMPropOpt)
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
@@ -123,21 +141,21 @@ public class JetTask {
     private ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
         ArrayList<String> xpackArgs = new ArrayList<>();
 
-        switch (config.appType()) {
+        switch (project.appType()) {
             case PLAIN:
-                if (config.packageFilesDir().exists()) {
+                if (project.packageFilesDir().exists()) {
                     xpackArgs.add("-source");
-                    xpackArgs.add(config.packageFilesDir().getAbsolutePath());
+                    xpackArgs.add(project.packageFilesDir().getAbsolutePath());
                 }
 
                 xpackArgs.addAll(Arrays.asList(
-                        "-add-file", Utils.mangleExeName(config.outputName()), "/"
+                        "-add-file", Utils.mangleExeName(project.outputName()), "/"
                 ));
                 break;
             case TOMCAT:
                 xpackArgs.add("-source");
-                xpackArgs.add(config.tomcatInBuildDir().getAbsolutePath());
-                if (config.packageFilesDir().exists()) {
+                xpackArgs.add(project.tomcatInBuildDir().getAbsolutePath());
+                if (project.packageFilesDir().exists()) {
                     AbstractLog.instance().warn(s("JetMojo.PackageFilesIgnoredForTomcat.Warning"));
                 }
                 break;
@@ -145,19 +163,19 @@ public class JetTask {
                 throw new AssertionError("Unknown app type");
         }
 
-        if (config.optRtFiles() != null && config.optRtFiles().length > 0) {
+        if (project.optRtFiles() != null && project.optRtFiles().length > 0) {
             xpackArgs.add("-add-opt-rt-files");
-            xpackArgs.add(String.join(",", (CharSequence[]) config.optRtFiles()));
+            xpackArgs.add(String.join(",", (CharSequence[]) project.optRtFiles()));
         }
 
-        if (config.javaRuntimeSlimDown() != null) {
+        if (project.javaRuntimeSlimDown() != null) {
 
             xpackArgs.addAll(Arrays.asList(
-                    "-detached-base-url", config.javaRuntimeSlimDown().detachedBaseURL,
+                    "-detached-base-url", project.javaRuntimeSlimDown().detachedBaseURL,
                     "-detach-components",
-                    (config.javaRuntimeSlimDown().detachComponents != null && config.javaRuntimeSlimDown().detachComponents.length > 0) ?
-                            String.join(",", config.javaRuntimeSlimDown().detachComponents) : "auto",
-                    "-detached-package", new File(config.jetOutputDir(), config.javaRuntimeSlimDown().detachedPackage).getAbsolutePath()
+                    (project.javaRuntimeSlimDown().detachComponents != null && project.javaRuntimeSlimDown().detachComponents.length > 0) ?
+                            String.join(",", project.javaRuntimeSlimDown().detachComponents) : "auto",
+                    "-detached-package", new File(project.jetOutputDir(), project.javaRuntimeSlimDown().detachedPackage).getAbsolutePath()
             ));
         }
 
@@ -184,21 +202,21 @@ public class JetTask {
      * as a excelsior installer file.
      */
     private void packWithEI(JetHome jetHome, File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
-        File target = new File(config.jetOutputDir(), Utils.mangleExeName(config.finalName()));
+        File target = new File(project.jetOutputDir(), Utils.mangleExeName(project.finalName()));
         ArrayList<String> xpackArgs = getCommonXPackArgs();
-        if (config.excelsiorInstallerConfiguration().eula.exists()) {
-            xpackArgs.add(config.excelsiorInstallerConfiguration().eulaFlag());
-            xpackArgs.add(config.excelsiorInstallerConfiguration().eula.getAbsolutePath());
+        if (project.excelsiorInstallerConfiguration().eula.exists()) {
+            xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
+            xpackArgs.add(project.excelsiorInstallerConfiguration().eula.getAbsolutePath());
         }
-        if (Utils.isWindows() && config.excelsiorInstallerConfiguration().installerSplash.exists()) {
+        if (Utils.isWindows() && project.excelsiorInstallerConfiguration().installerSplash.exists()) {
             xpackArgs.add("-splash");
-            xpackArgs.add(config.excelsiorInstallerConfiguration().installerSplash.getAbsolutePath());
+            xpackArgs.add(project.excelsiorInstallerConfiguration().installerSplash.getAbsolutePath());
         }
         xpackArgs.addAll(Arrays.asList(
                 "-backend", "excelsior-installer",
-                "-company", config.vendor(),
-                "-product", config.product(),
-                "-version", config.version(),
+                "-company", project.vendor(),
+                "-product", project.product(),
+                "-version", project.version(),
                 "-target", target.getAbsolutePath())
         );
         if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
@@ -209,9 +227,8 @@ public class JetTask {
         AbstractLog.instance().info(s("JetMojo.GetEI.Info", target.getAbsolutePath()));
     }
 
-
     private void createOSXAppBundle(JetHome jetHome, File buildDir) throws JetTaskFailureException, CmdLineToolException, IOException {
-        File appBundle = new File(config.jetOutputDir(), config.osxBundleConfiguration().fileName + ".app");
+        File appBundle = new File(project.jetOutputDir(), project.osxBundleConfiguration().fileName + ".app");
         Utils.mkdir(appBundle);
         try {
             Utils.cleanDirectory(appBundle);
@@ -235,19 +252,19 @@ public class JetTask {
                             "  <key>CFBundlePackageType</key>\n" +
                             "  <string>APPL</string>\n" +
                             "  <key>CFBundleExecutable</key>\n" +
-                            "  <string>" + config.outputName() + "</string>\n" +
+                            "  <string>" + project.outputName() + "</string>\n" +
                             "  <key>CFBundleName</key>\n" +
-                            "  <string>" + config.osxBundleConfiguration().bundleName + "</string>\n" +
+                            "  <string>" + project.osxBundleConfiguration().bundleName + "</string>\n" +
                             "  <key>CFBundleIdentifier</key>\n" +
-                            "  <string>" + config.osxBundleConfiguration().identifier + "</string>\n" +
+                            "  <string>" + project.osxBundleConfiguration().identifier + "</string>\n" +
                             "  <key>CFBundleVersionString</key>\n" +
-                            "  <string>" + config.osxBundleConfiguration().version + "</string>\n" +
+                            "  <string>" + project.osxBundleConfiguration().version + "</string>\n" +
                             "  <key>CFBundleShortVersionString</key>\n" +
-                            "  <string>" + config.osxBundleConfiguration().shortVersion + "</string>\n" +
-                            (config.osxBundleConfiguration().icon.exists() ?
+                            "  <string>" + project.osxBundleConfiguration().shortVersion + "</string>\n" +
+                            (project.osxBundleConfiguration().icon.exists() ?
                                     "  <key>CFBundleIconFile</key>\n" +
-                                            "  <string>" + config.osxBundleConfiguration().icon.getName() + "</string>\n" : "") +
-                            (config.osxBundleConfiguration().highResolutionCapable ?
+                                            "  <string>" + project.osxBundleConfiguration().icon.getName() + "</string>\n" : "") +
+                            (project.osxBundleConfiguration().highResolutionCapable ?
                                     "  <key>NSHighResolutionCapable</key>\n" +
                                             "  <true/>" : "") +
                             "</dict>\n" +
@@ -263,23 +280,23 @@ public class JetTask {
             throw new JetTaskFailureException(s("JetMojo.Package.Failure"));
         }
 
-        if (config.osxBundleConfiguration().icon.exists()) {
-            Files.copy(config.osxBundleConfiguration().icon.toPath(),
-                    new File(contentsResources, config.osxBundleConfiguration().icon.getName()).toPath());
+        if (project.osxBundleConfiguration().icon.exists()) {
+            Files.copy(project.osxBundleConfiguration().icon.toPath(),
+                    new File(contentsResources, project.osxBundleConfiguration().icon.getName()).toPath());
         }
 
         File appPkg = null;
-        if (config.osxBundleConfiguration().developerId != null) {
+        if (project.osxBundleConfiguration().developerId != null) {
             AbstractLog.instance().info(s("JetMojo.SigningOSXBundle.Info"));
             if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "--sign",
-                    config.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(AbstractLog.instance()).execute() != 0) {
+                    project.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(AbstractLog.instance()).execute() != 0) {
                 throw new JetTaskFailureException(s("JetMojo.OSX.CodeSign.Failure"));
             }
             AbstractLog.instance().info(s("JetMojo.CreatingOSXInstaller.Info"));
-            if (config.osxBundleConfiguration().publisherId != null) {
-                appPkg = new File(config.jetOutputDir(), config.finalName() + ".pkg");
-                if (new CmdLineTool("productbuild", "--sign", config.osxBundleConfiguration().publisherId,
-                        "--component", appBundle.getAbsolutePath(), config.osxBundleConfiguration().installPath,
+            if (project.osxBundleConfiguration().publisherId != null) {
+                appPkg = new File(project.jetOutputDir(), project.finalName() + ".pkg");
+                if (new CmdLineTool("productbuild", "--sign", project.osxBundleConfiguration().publisherId,
+                        "--component", appBundle.getAbsolutePath(), project.osxBundleConfiguration().installPath,
                         appPkg.getAbsolutePath())
                         .withLog(AbstractLog.instance()).execute() != 0) {
                     throw new JetTaskFailureException(s("JetMojo.OSX.Packaging.Failure"));
@@ -299,19 +316,20 @@ public class JetTask {
 
     }
 
+
     private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
-        switch (config.excelsiorJetPackaging()) {
-            case JetTaskParams.ZIP:
+        switch (project.excelsiorJetPackaging()) {
+            case JetProject.ZIP:
                 AbstractLog.instance().info(s("JetMojo.ZipApp.Info"));
-                File targetZip = new File(config.jetOutputDir(), config.finalName() + ".zip");
-                TaskUtils.compressZipfile(packageDir, targetZip);
+                File targetZip = new File(project.jetOutputDir(), project.finalName() + ".zip");
+                Utils.compressZipfile(packageDir, targetZip);
                 AbstractLog.instance().info(s("JetMojo.Build.Success"));
                 AbstractLog.instance().info(s("JetMojo.GetZip.Info", targetZip.getAbsolutePath()));
                 break;
-            case JetTaskParams.EXCELSIOR_INSTALLER:
+            case JetProject.EXCELSIOR_INSTALLER:
                 packWithEI(jetHome, buildDir);
                 break;
-            case JetTaskParams.OSX_APP_BUNDLE:
+            case JetProject.OSX_APP_BUNDLE:
                 createOSXAppBundle(jetHome, buildDir);
                 break;
             default:
@@ -319,19 +337,19 @@ public class JetTask {
                 AbstractLog.instance().info(s("JetMojo.GetDir.Info", packageDir.getAbsolutePath()));
         }
 
-        if (config.javaRuntimeSlimDown() != null) {
-            AbstractLog.instance().info(s("JetMojo.SlimDown.Info", new File(config.jetOutputDir(), config.javaRuntimeSlimDown().detachedPackage),
-                    config.javaRuntimeSlimDown().detachedBaseURL));
+        if (project.javaRuntimeSlimDown() != null) {
+            AbstractLog.instance().info(s("JetMojo.SlimDown.Info", new File(project.jetOutputDir(), project.javaRuntimeSlimDown().detachedPackage),
+                    project.javaRuntimeSlimDown().detachedBaseURL));
         }
     }
 
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
-        JetHome jetHome = config.validate();
+        JetHome jetHome = project.validate();
 
         // creating output dirs
-        File buildDir = config.createBuildDir();
+        File buildDir = project.createBuildDir();
 
-        File appDir = new File(config.jetOutputDir(), APP_DIR);
+        File appDir = new File(project.jetOutputDir(), APP_DIR);
         //cleanup packageDir
         try {
             Utils.cleanDirectory(appDir);
@@ -339,12 +357,12 @@ public class JetTask {
             throw new JetTaskFailureException(e.getMessage(), e);
         }
 
-        switch (config.appType()) {
+        switch (project.appType()) {
             case PLAIN:
-                compile(jetHome, buildDir, TaskUtils.copyDependencies(buildDir, config.mainJar(), config.getArtifacts()));
+                compile(jetHome, buildDir, project.copyDependencies());
                 break;
             case TOMCAT:
-                config.copyTomcatAndWar();
+                project.copyTomcatAndWar();
                 compile(jetHome, buildDir, Collections.emptyList());
                 break;
             default:
@@ -354,4 +372,5 @@ public class JetTask {
 
         packageBuild(jetHome, buildDir, appDir);
     }
+
 }

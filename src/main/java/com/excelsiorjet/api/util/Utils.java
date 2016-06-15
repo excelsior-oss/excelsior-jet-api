@@ -23,11 +23,11 @@ package com.excelsiorjet.api.util;
 
 import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.utils.IOUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
@@ -171,6 +171,43 @@ public class Utils {
                 throw new JetTaskFailureException(s("JetMojo.DirCreate.Error", dir.getAbsolutePath()));
             }
             AbstractLog.instance().warn(s("JetMojo.DirCreate.Warning", dir.getAbsolutePath()));
+        }
+    }
+
+    private static void compressDirectoryToZipfile(String rootDir, String sourceDir, ZipArchiveOutputStream out) throws IOException {
+        File[] files = new File(sourceDir).listFiles();
+        assert files != null;
+        for (File file : files) {
+            if (file.isDirectory()) {
+                compressDirectoryToZipfile(rootDir, sourceDir + File.separator + file.getName(), out);
+            } else {
+                ZipArchiveEntry entry = new ZipArchiveEntry(file.getAbsolutePath().substring(rootDir.length() + 1));
+                if (isUnix() && file.canExecute()) {
+                    entry.setUnixMode(0100777);
+                }
+                out.putArchiveEntry(entry);
+                InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()));
+                IOUtils.copy(in, out);
+                IOUtils.closeQuietly(in);
+                out.closeArchiveEntry();
+            }
+        }
+    }
+
+    public static void compressZipfile(File sourceDir, File outputFile) throws IOException {
+        ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
+                new BufferedOutputStream(new FileOutputStream(outputFile)));
+        compressDirectoryToZipfile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile);
+        IOUtils.closeQuietly(zipFile);
+    }
+
+    public static void copyQuietly(Path source, Path target) {
+        // We could just use Maven FileUtils.copyDirectory method but it copies a directory as a whole
+        // while here we copy only those files that were changed from previous build.
+        try {
+            copyDirectory(source, target);
+        } catch (IOException e) {
+            AbstractLog.instance().warn(s("TestRunMojo.ErrorWhileCopying.Warning", source.toString(), target.toString(), e.getMessage()), e);
         }
     }
 }

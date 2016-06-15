@@ -19,10 +19,10 @@ import java.util.stream.Stream;
 public class TestRunTask {
     private static final String BOOTSTRAP_JAR = "bootstrap.jar";
 
-    private final BaseJetTaskParams config;
+    private final JetProject project;
 
-    public TestRunTask(BaseJetTaskParams config) {
-        this.config = config;
+    public TestRunTask(JetProject project) {
+        this.project = project;
     }
 
     private String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws JetTaskFailureException, IOException {
@@ -51,7 +51,7 @@ public class TestRunTask {
     }
 
     public List<String> getTomcatVMArgs() {
-        String tomcatDir = config.tomcatInBuildDir().getAbsolutePath();
+        String tomcatDir = project.tomcatInBuildDir().getAbsolutePath();
         return Arrays.asList(
                 "-Djet.classloader.id.provider=com/excelsior/jet/runtime/classload/customclassloaders/tomcat/TomcatCLIDProvider",
                 "-Dcatalina.base=" + tomcatDir,
@@ -63,20 +63,20 @@ public class TestRunTask {
     }
 
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
-        JetHome jetHome = config.validate();
+        JetHome jetHome = project.validate();
 
         // creating output dirs
-        File buildDir = config.createBuildDir();
+        File buildDir = project.createBuildDir();
 
         String classpath;
         List<String> additionalVMArgs;
         File workingDirectory;
-        switch (config.appType()) {
+        switch (project.appType()) {
             case PLAIN:
-                List<ClasspathEntry> dependencies = TaskUtils.copyDependencies(buildDir, config.mainJar(), config.getArtifacts());
-                if (config.packageFilesDir().exists()) {
+                List<ClasspathEntry> dependencies = project.copyDependencies();
+                if (project.packageFilesDir().exists()) {
                     //application may access custom package files at runtime. So copy them as well.
-                    TaskUtils.copyQuietly(config.packageFilesDir().toPath(), buildDir.toPath());
+                    Utils.copyQuietly(project.packageFilesDir().toPath(), buildDir.toPath());
                 }
 
                 classpath = String.join(File.pathSeparator,
@@ -85,8 +85,8 @@ public class TestRunTask {
                 workingDirectory = buildDir;
                 break;
             case TOMCAT:
-                config.copyTomcatAndWar();
-                workingDirectory = new File(config.tomcatInBuildDir(), "bin");
+                project.copyTomcatAndWar();
+                workingDirectory = new File(project.tomcatInBuildDir(), "bin");
                 classpath = getTomcatClassPath(jetHome, workingDirectory);
                 additionalVMArgs = getTomcatVMArgs();
                 break;
@@ -94,13 +94,13 @@ public class TestRunTask {
                 throw new AssertionError("Unknown app type");
         }
 
-        Utils.mkdir(config.execProfilesDir());
+        Utils.mkdir(project.execProfilesDir());
 
         XJava xjava = new XJava(jetHome);
         try {
-            xjava.addTestRunArgs(new TestRunExecProfiles(config.execProfilesDir(), config.execProfilesName()))
+            xjava.addTestRunArgs(new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName()))
                     .withLog(AbstractLog.instance(),
-                            config.appType() == ApplicationType.TOMCAT) // Tomcat outputs to std error, so to not confuse users,
+                            project.appType() == ApplicationType.TOMCAT) // Tomcat outputs to std error, so to not confuse users,
                     // we  redirect its output to std out in test run
                     .workingDirectory(workingDirectory);
         } catch (JetHomeException e) {
@@ -110,14 +110,14 @@ public class TestRunTask {
         xjava.addArgs(additionalVMArgs);
 
         //add jvm args substituting $(Root) occurences with buildDir
-        xjava.addArgs(Stream.of(config.jvmArgs())
+        xjava.addArgs(Stream.of(project.jvmArgs())
                 .map(s -> s.replace("$(Root)", buildDir.getAbsolutePath()))
                 .collect(Collectors.toList())
         );
 
         xjava.arg("-cp");
         xjava.arg(classpath);
-        xjava.arg(config.mainClass());
+        xjava.arg(project.mainClass());
         String cmdLine = xjava.getArgs().stream()
                 .map(arg -> arg.contains(" ") ? '"' + arg + '"' : arg)
                 .collect(Collectors.joining(" "));

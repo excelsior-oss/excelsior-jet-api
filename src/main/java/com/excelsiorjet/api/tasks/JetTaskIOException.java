@@ -5,9 +5,9 @@ import java.io.IOException;
 /**
  * Unchecked IOException wrapper to throw in methods, that are called from lambdas
  */
-class JetTaskIoException extends RuntimeException {
+class JetTaskIOException extends RuntimeException {
 
-    JetTaskIoException(IOException cause) {
+    JetTaskIOException(IOException cause) {
         super(cause);
     }
 

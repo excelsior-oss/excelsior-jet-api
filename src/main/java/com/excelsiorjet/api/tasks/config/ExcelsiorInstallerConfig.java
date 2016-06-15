@@ -1,6 +1,6 @@
 package com.excelsiorjet.api.tasks.config;
 
-import com.excelsiorjet.api.tasks.BaseJetTaskParams;
+import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 
 import java.io.File;
@@ -66,7 +66,7 @@ public class ExcelsiorInstallerConfig {
      */
     public File installerSplash;
 
-    public void fillDefaults(BaseJetTaskParams config) throws JetTaskFailureException {
+    public void fillDefaults(JetProject config) throws JetTaskFailureException {
         //check eula settings
         if (!VALID_EULA_ENCODING_VALUES.contains(eulaEncoding)) {
             throw new JetTaskFailureException(s("JetMojo.Package.Eula.UnsupportedEncoding", eulaEncoding));
