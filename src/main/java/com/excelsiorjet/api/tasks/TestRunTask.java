@@ -50,14 +50,14 @@ public class TestRunTask {
     private String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws JetTaskFailureException, IOException {
         File f = new File(tomcatBin, BOOTSTRAP_JAR);
         if (!f.exists()) {
-            throw new JetTaskFailureException(Txt.s("TestRunMojo.Tomcat.NoBootstrapJar.Failure", tomcatBin.getAbsolutePath()));
+            throw new JetTaskFailureException(Txt.s("TestRunTask.Tomcat.NoBootstrapJar.Failure", tomcatBin.getAbsolutePath()));
         }
 
         Manifest bootManifest;
         try {
             bootManifest = new JarFile(f).getManifest();
         } catch (IOException e) {
-            throw new IOException(Txt.s("TestRunMojo.Tomcat.FailedToReadBootstrapJar.Failure", tomcatBin.getAbsolutePath(), e.getMessage()), e);
+            throw new IOException(Txt.s("TestRunTask.Tomcat.FailedToReadBootstrapJar.Failure", tomcatBin.getAbsolutePath(), e.getMessage()), e);
         }
 
         ArrayList<String> classPath = new ArrayList<>();
@@ -144,10 +144,10 @@ public class TestRunTask {
                 .map(arg -> arg.contains(" ") ? '"' + arg + '"' : arg)
                 .collect(Collectors.joining(" "));
 
-        AbstractLog.instance().info(Txt.s("TestRunMojo.Start.Info", cmdLine));
+        AbstractLog.instance().info(Txt.s("TestRunTask.Start.Info", cmdLine));
 
         int errCode = xjava.execute();
-        String finishText = Txt.s("TestRunMojo.Finish.Info", errCode);
+        String finishText = Txt.s("TestRunTask.Finish.Info", errCode);
         if (errCode != 0) {
             AbstractLog.instance().warn(finishText);
         } else {

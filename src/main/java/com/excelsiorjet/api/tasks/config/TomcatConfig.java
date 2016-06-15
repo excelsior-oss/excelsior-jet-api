@@ -85,15 +85,15 @@ public class TomcatConfig {
         }
 
         if (Utils.isEmpty(tomcatHome)) {
-            throw new JetTaskFailureException(s("JetMojo.TomcatNotSpecified.Failure"));
+            throw new JetTaskFailureException(s("JetApi.TomcatNotSpecified.Failure"));
         }
 
         if (!new File(tomcatHome).exists()) {
-            throw new JetTaskFailureException(s("JetMojo.TomcatDoesNotExist.Failure", tomcatHome));
+            throw new JetTaskFailureException(s("JetApi.TomcatDoesNotExist.Failure", tomcatHome));
         }
 
         if (!new File(tomcatHome, WEBAPPS_DIR).exists()) {
-            throw new JetTaskFailureException(s("JetMojo.TomcatWebappsDoesNotExist.Failure", tomcatHome));
+            throw new JetTaskFailureException(s("JetApi.TomcatWebappsDoesNotExist.Failure", tomcatHome));
         }
 
         if (!Utils.isEmpty(warDeployName) && !warDeployName.endsWith(".war")) {

@@ -168,9 +168,9 @@ public class Utils {
     public static void mkdir(File dir) throws JetTaskFailureException {
         if (!dir.exists() && !dir.mkdirs()) {
             if (!dir.exists()) {
-                throw new JetTaskFailureException(s("JetMojo.DirCreate.Error", dir.getAbsolutePath()));
+                throw new JetTaskFailureException(s("JetApi.DirCreate.Error", dir.getAbsolutePath()));
             }
-            AbstractLog.instance().warn(s("JetMojo.DirCreate.Warning", dir.getAbsolutePath()));
+            AbstractLog.instance().warn(s("JetApi.DirCreate.Warning", dir.getAbsolutePath()));
         }
     }
 
@@ -207,7 +207,7 @@ public class Utils {
         try {
             copyDirectory(source, target);
         } catch (IOException e) {
-            AbstractLog.instance().warn(s("TestRunMojo.ErrorWhileCopying.Warning", source.toString(), target.toString(), e.getMessage()), e);
+            AbstractLog.instance().warn(s("TestRunTask.ErrorWhileCopying.Warning", source.toString(), target.toString(), e.getMessage()), e);
         }
     }
 }

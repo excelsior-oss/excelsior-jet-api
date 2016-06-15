@@ -171,7 +171,7 @@ public class JetBuildTask {
 
         if (new JetCompiler(jetHome, "=p", prj, jetVMPropOpt)
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new JetTaskFailureException(s("JetMojo.Build.Failure"));
+            throw new JetTaskFailureException(s("JetBuildTask.Build.Failure"));
         }
     }
 
@@ -193,7 +193,7 @@ public class JetBuildTask {
                 xpackArgs.add("-source");
                 xpackArgs.add(project.tomcatInBuildDir().getAbsolutePath());
                 if (project.packageFilesDir().exists()) {
-                    AbstractLog.instance().warn(s("JetMojo.PackageFilesIgnoredForTomcat.Warning"));
+                    AbstractLog.instance().warn(s("TestRunTask.PackageFilesIgnoredForTomcat.Warning"));
                 }
                 break;
             default:
@@ -230,7 +230,7 @@ public class JetBuildTask {
         ));
         if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new JetTaskFailureException(s("JetMojo.Package.Failure"));
+            throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
     }
 
@@ -258,10 +258,10 @@ public class JetBuildTask {
         );
         if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new JetTaskFailureException(s("JetMojo.Package.Failure"));
+            throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
-        AbstractLog.instance().info(s("JetMojo.Build.Success"));
-        AbstractLog.instance().info(s("JetMojo.GetEI.Info", target.getAbsolutePath()));
+        AbstractLog.instance().info(s("JetBuildTask.Build.Success"));
+        AbstractLog.instance().info(s("JetBuildTask.GetEI.Info", target.getAbsolutePath()));
     }
 
     private void createOSXAppBundle(JetHome jetHome, File buildDir) throws JetTaskFailureException, CmdLineToolException, IOException {
@@ -314,7 +314,7 @@ public class JetBuildTask {
         ));
         if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
                 .workingDirectory(buildDir).withLog(AbstractLog.instance()).execute() != 0) {
-            throw new JetTaskFailureException(s("JetMojo.Package.Failure"));
+            throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
 
         if (project.osxBundleConfiguration().icon.exists()) {
@@ -324,31 +324,31 @@ public class JetBuildTask {
 
         File appPkg = null;
         if (project.osxBundleConfiguration().developerId != null) {
-            AbstractLog.instance().info(s("JetMojo.SigningOSXBundle.Info"));
+            AbstractLog.instance().info(s("JetBuildTask.SigningOSXBundle.Info"));
             if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "--sign",
                     project.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(AbstractLog.instance()).execute() != 0) {
-                throw new JetTaskFailureException(s("JetMojo.OSX.CodeSign.Failure"));
+                throw new JetTaskFailureException(s("JetBuildTask.OSX.CodeSign.Failure"));
             }
-            AbstractLog.instance().info(s("JetMojo.CreatingOSXInstaller.Info"));
+            AbstractLog.instance().info(s("JetBuildTask.CreatingOSXInstaller.Info"));
             if (project.osxBundleConfiguration().publisherId != null) {
                 appPkg = new File(project.jetOutputDir(), project.finalName() + ".pkg");
                 if (new CmdLineTool("productbuild", "--sign", project.osxBundleConfiguration().publisherId,
                         "--component", appBundle.getAbsolutePath(), project.osxBundleConfiguration().installPath,
                         appPkg.getAbsolutePath())
                         .withLog(AbstractLog.instance()).execute() != 0) {
-                    throw new JetTaskFailureException(s("JetMojo.OSX.Packaging.Failure"));
+                    throw new JetTaskFailureException(s("JetBuildTask.OSX.Packaging.Failure"));
                 }
             } else {
-                AbstractLog.instance().warn(s("JetMojo.NoPublisherId.Warning"));
+                AbstractLog.instance().warn(s("JetBuildTask.NoPublisherId.Warning"));
             }
         } else {
-            AbstractLog.instance().warn(s("JetMojo.NoDeveloperId.Warning"));
+            AbstractLog.instance().warn(s("JetBuildTask.NoDeveloperId.Warning"));
         }
-        AbstractLog.instance().info(s("JetMojo.Build.Success"));
+        AbstractLog.instance().info(s("JetBuildTask.Build.Success"));
         if (appPkg != null) {
-            AbstractLog.instance().info(s("JetMojo.GetOSXPackage.Info", appPkg.getAbsolutePath()));
+            AbstractLog.instance().info(s("JetBuildTask.GetOSXPackage.Info", appPkg.getAbsolutePath()));
         } else {
-            AbstractLog.instance().info(s("JetMojo.GetOSXBundle.Info", appBundle.getAbsolutePath()));
+            AbstractLog.instance().info(s("JetBuildTask.GetOSXBundle.Info", appBundle.getAbsolutePath()));
         }
 
     }
@@ -357,11 +357,11 @@ public class JetBuildTask {
     private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
         switch (project.excelsiorJetPackaging()) {
             case JetProject.ZIP:
-                AbstractLog.instance().info(s("JetMojo.ZipApp.Info"));
+                AbstractLog.instance().info(s("JetBuildTask.ZipApp.Info"));
                 File targetZip = new File(project.jetOutputDir(), project.finalName() + ".zip");
                 Utils.compressZipfile(packageDir, targetZip);
-                AbstractLog.instance().info(s("JetMojo.Build.Success"));
-                AbstractLog.instance().info(s("JetMojo.GetZip.Info", targetZip.getAbsolutePath()));
+                AbstractLog.instance().info(s("JetBuildTask.Build.Success"));
+                AbstractLog.instance().info(s("JetBuildTask.GetZip.Info", targetZip.getAbsolutePath()));
                 break;
             case JetProject.EXCELSIOR_INSTALLER:
                 packWithEI(jetHome, buildDir);
@@ -370,12 +370,12 @@ public class JetBuildTask {
                 createOSXAppBundle(jetHome, buildDir);
                 break;
             default:
-                AbstractLog.instance().info(s("JetMojo.Build.Success"));
-                AbstractLog.instance().info(s("JetMojo.GetDir.Info", packageDir.getAbsolutePath()));
+                AbstractLog.instance().info(s("JetBuildTask.Build.Success"));
+                AbstractLog.instance().info(s("JetBuildTask.GetDir.Info", packageDir.getAbsolutePath()));
         }
 
         if (project.javaRuntimeSlimDown() != null) {
-            AbstractLog.instance().info(s("JetMojo.SlimDown.Info", new File(project.jetOutputDir(), project.javaRuntimeSlimDown().detachedPackage),
+            AbstractLog.instance().info(s("JetBuildTask.SlimDown.Info", new File(project.jetOutputDir(), project.javaRuntimeSlimDown().detachedPackage),
                     project.javaRuntimeSlimDown().detachedBaseURL));
         }
     }

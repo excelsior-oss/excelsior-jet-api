@@ -90,7 +90,7 @@ public class ExcelsiorInstallerConfig {
     public void fillDefaults(JetProject config) throws JetTaskFailureException {
         //check eula settings
         if (!VALID_EULA_ENCODING_VALUES.contains(eulaEncoding)) {
-            throw new JetTaskFailureException(s("JetMojo.Package.Eula.UnsupportedEncoding", eulaEncoding));
+            throw new JetTaskFailureException(s("JetApi.Package.Eula.UnsupportedEncoding", eulaEncoding));
         }
 
         if (eula == null) {
@@ -108,7 +108,7 @@ public class ExcelsiorInstallerConfig {
 
         if (!AUTO_DETECT_EULA_ENCODING.equals(eulaEncoding)) {
             if (!actualEncoding.equals(eulaEncoding)) {
-                throw new JetTaskFailureException(s("JetMojo.Package.Eula.EncodingDoesNotMatchActual", actualEncoding, eulaEncoding));
+                throw new JetTaskFailureException(s("JetApi.Package.Eula.EncodingDoesNotMatchActual", actualEncoding, eulaEncoding));
             }
         }
 
@@ -117,7 +117,7 @@ public class ExcelsiorInstallerConfig {
         } else if (StandardCharsets.US_ASCII.name().equals(actualEncoding)) {
             return EULA_FLAG;
         } else {
-            throw new JetTaskFailureException(s("JetMojo.Package.Eula.UnsupportedEncoding", eulaEncoding));
+            throw new JetTaskFailureException(s("JetApi.Package.Eula.UnsupportedEncoding", eulaEncoding));
         }
     }
 

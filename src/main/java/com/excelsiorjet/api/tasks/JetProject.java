@@ -463,11 +463,11 @@ public class JetProject {
         switch (packaging.toLowerCase()) {
             case "jar":
                 if (!mainJar.exists()) {
-                    throw new JetTaskFailureException(s("JetMojo.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
+                    throw new JetTaskFailureException(s("JetApi.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
                 }
                 // check main class
                 if (Utils.isEmpty(mainClass())) {
-                    throw new JetTaskFailureException(s("JetMojo.MainNotSpecified.Failure"));
+                    throw new JetTaskFailureException(s("JetApi.MainNotSpecified.Failure"));
                 }
 
                 break;
@@ -479,18 +479,18 @@ public class JetProject {
                     throw new JetTaskFailureException(e.getMessage());
                 }
                 if ((edition != JetEdition.EVALUATION) && (edition != JetEdition.ENTERPRISE)) {
-                    throw new JetTaskFailureException(s("JetMojo.TomcatNotSupported.Failure"));
+                    throw new JetTaskFailureException(s("JetApi.TomcatNotSupported.Failure"));
                 }
 
                 if (!mainWar.exists()) {
-                    throw new JetTaskFailureException(s("JetMojo.MainWarNotFound.Failure", mainWar.getAbsolutePath()));
+                    throw new JetTaskFailureException(s("JetApi.MainWarNotFound.Failure", mainWar.getAbsolutePath()));
                 }
 
                 tomcatConfiguration().fillDefaults();
 
                 break;
             default:
-                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging));
+                throw new JetTaskFailureException(s("JetApi.BadPackaging.Failure", packaging));
         }
 
         switch (appType()) {
@@ -516,13 +516,13 @@ public class JetProject {
                 break;
             case EXCELSIOR_INSTALLER:
                 if (Utils.isOSX()) {
-                    AbstractLog.instance().warn(s("JetMojo.NoExcelsiorInstallerOnOSX.Warning"));
+                    AbstractLog.instance().warn(s("JetApi.NoExcelsiorInstallerOnOSX.Warning"));
                     excelsiorJetPackaging = ZIP;
                 }
                 break;
             case OSX_APP_BUNDLE:
                 if (!Utils.isOSX()) {
-                    AbstractLog.instance().warn(s("JetMojo.OSXBundleOnNotOSX.Warning"));
+                    AbstractLog.instance().warn(s("JetApi.OSXBundleOnNotOSX.Warning"));
                     excelsiorJetPackaging = ZIP;
                 }
                 break;
@@ -536,7 +536,7 @@ public class JetProject {
                 break;
 
             default:
-                throw new JetTaskFailureException(s("JetMojo.UnknownPackagingMode.Failure", excelsiorJetPackaging()));
+                throw new JetTaskFailureException(s("JetApi.UnknownPackagingMode.Failure", excelsiorJetPackaging()));
         }
 
         // check version info
@@ -544,23 +544,23 @@ public class JetProject {
             checkVersionInfo(jetHomeObj);
 
             if (multiApp() && (jetHomeObj.getEdition() == JetEdition.STANDARD)) {
-                AbstractLog.instance().warn(s("JetMojo.NoMultiappInStandard.Warning"));
+                AbstractLog.instance().warn(s("JetApi.NoMultiappInStandard.Warning"));
                 multiApp = false;
             }
 
             if (profileStartup()) {
                 if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
-                    AbstractLog.instance().warn(s("JetMojo.NoStartupAcceleratorInStandard.Warning"));
+                    AbstractLog.instance().warn(s("JetApi.NoStartupAcceleratorInStandard.Warning"));
                     profileStartup = false;
                 } else if (Utils.isOSX()) {
-                    AbstractLog.instance().warn(s("JetMojo.NoStartupAcceleratorOnOSX.Warning"));
+                    AbstractLog.instance().warn(s("JetApi.NoStartupAcceleratorOnOSX.Warning"));
                     profileStartup = false;
                 }
             }
 
             if (protectData()) {
                 if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
-                    throw new JetTaskFailureException(s("JetMojo.NoDataProtectionInStandard.Failure"));
+                    throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
                 } else {
                     if (cryptSeed() == null) {
                         cryptSeed = Utils.randomAlphanumeric(64);
@@ -588,7 +588,7 @@ public class JetProject {
             addWindowsVersionInfo = false;
         }
         if (isAddWindowsVersionInfo() && (jetHome.getEdition() == JetEdition.STANDARD)) {
-            AbstractLog.instance().warn(s("JetMojo.NoVersionInfoInStandard.Warning"));
+            AbstractLog.instance().warn(s("JetApi.NoVersionInfoInStandard.Warning"));
             addWindowsVersionInfo = false;
         }
         if (isAddWindowsVersionInfo() || EXCELSIOR_INSTALLER.equals(excelsiorJetPackaging()) || OSX_APP_BUNDLE.equals(excelsiorJetPackaging())) {
@@ -611,7 +611,7 @@ public class JetProject {
             //Coerce winVIVersion to v1.v2.v3.v4 format.
             String finalVersion = deriveFourDigitVersion(winVIVersion());
             if (!winVIVersion().equals(finalVersion)) {
-                AbstractLog.instance().warn(s("JetMojo.NotCompatibleExeVersion.Warning", winVIVersion(), finalVersion));
+                AbstractLog.instance().warn(s("JetApi.NotCompatibleExeVersion.Warning", winVIVersion(), finalVersion));
                 winVIVersion = finalVersion;
             }
 
@@ -650,10 +650,10 @@ public class JetProject {
     private void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer()) {
             if (jetHome.is64bit()) {
-                AbstractLog.instance().warn(s("JetMojo.NoGlobalIn64Bit.Warning"));
+                AbstractLog.instance().warn(s("JetApi.NoGlobalIn64Bit.Warning"));
                 globalOptimizer = false;
             } else if (jetHome.getEdition() == JetEdition.STANDARD) {
-                AbstractLog.instance().warn(s("JetMojo.NoGlobalInStandard.Warning"));
+                AbstractLog.instance().warn(s("JetApi.NoGlobalInStandard.Warning"));
                 globalOptimizer = false;
             }
         }
@@ -664,14 +664,14 @@ public class JetProject {
 
         if (javaRuntimeSlimDown() != null) {
             if (jetHome.is64bit()) {
-                AbstractLog.instance().warn(s("JetMojo.NoSlimDownIn64Bit.Warning"));
+                AbstractLog.instance().warn(s("JetApi.NoSlimDownIn64Bit.Warning"));
                 javaRuntimeSlimDown = null;
             } else if (jetHome.getEdition() == JetEdition.STANDARD) {
-                AbstractLog.instance().warn(s("JetMojo.NoSlimDownInStandard.Warning"));
+                AbstractLog.instance().warn(s("JetApi.NoSlimDownInStandard.Warning"));
                 javaRuntimeSlimDown = null;
             } else {
                 if (javaRuntimeSlimDown().detachedBaseURL == null) {
-                    throw new JetTaskFailureException(s("JetMojo.DetachedBaseURLMandatory.Failure"));
+                    throw new JetTaskFailureException(s("JetApi.DetachedBaseURLMandatory.Failure"));
                 }
 
                 if (javaRuntimeSlimDown().detachedPackage == null) {
@@ -686,7 +686,7 @@ public class JetProject {
         if (globalOptimizer()) {
             TestRunExecProfiles execProfiles = new TestRunExecProfiles(execProfilesDir(), execProfilesName());
             if (!execProfiles.getUsg().exists()) {
-                throw new JetTaskFailureException(s("JetMojo.NoTestRun.Failure"));
+                throw new JetTaskFailureException(s("JetApi.NoTestRun.Failure"));
             }
         }
     }
@@ -694,14 +694,14 @@ public class JetProject {
     private void checkTrialVersionConfig(JetHome jetHome) throws JetTaskFailureException, JetHomeException {
         if ((trialVersion() != null) && trialVersion().isEnabled()) {
             if ((trialVersion().expireInDays >= 0) && (trialVersion().expireDate != null)) {
-                throw new JetTaskFailureException(s("JetMojo.AmbiguousExpireSetting.Failure"));
+                throw new JetTaskFailureException(s("JetApi.AmbiguousExpireSetting.Failure"));
             }
             if (trialVersion().expireMessage == null || trialVersion().expireMessage.isEmpty()) {
-                throw new JetTaskFailureException(s("JetMojo.NoExpireMessage.Failure"));
+                throw new JetTaskFailureException(s("JetApi.NoExpireMessage.Failure"));
             }
 
             if (jetHome.getEdition() == JetEdition.STANDARD) {
-                AbstractLog.instance().warn(s("JetMojo.NoTrialsInStandard.Warning"));
+                AbstractLog.instance().warn(s("JetApi.NoTrialsInStandard.Warning"));
                 trialVersion = null;
             }
         } else {
@@ -722,7 +722,7 @@ public class JetProject {
                     deriveFourDigitVersion(version()),
                     deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
             if (!osxBundleConfiguration().icon.exists()) {
-                AbstractLog.instance().warn(s("JetMojo.NoIconForOSXAppBundle.Warning"));
+                AbstractLog.instance().warn(s("JetApi.NoIconForOSXAppBundle.Warning"));
             }
         }
 
@@ -758,7 +758,7 @@ public class JetProject {
             return classpathEntries;
         } catch (JetTaskIOException e) {
             // catch and unwrap io exception thrown by copyDependency in forEach lambda
-            throw new IOException(s("JetMojo.ErrorCopyingDependency.Exception"), e.getCause());
+            throw new IOException(s("JetApi.ErrorCopyingDependency.Exception"), e.getCause());
         }
     }
 
@@ -798,7 +798,7 @@ public class JetProject {
             case "war":
                 return ApplicationType.TOMCAT;
             default:
-                throw new JetTaskFailureException(s("JetMojo.BadPackaging.Failure", packaging));
+                throw new JetTaskFailureException(s("JetApi.BadPackaging.Failure", packaging));
         }
     }
 
