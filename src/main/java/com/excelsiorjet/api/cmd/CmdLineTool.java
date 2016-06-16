@@ -21,7 +21,7 @@
 */
 package com.excelsiorjet.api.cmd;
 
-import com.excelsiorjet.api.log.AbstractLog;
+import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
@@ -29,14 +29,14 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.*;
 
 /**
- * A wrapper around {@link ProcessBuilder} that redirects output to given log {@link AbstractLog}.
+ * A wrapper around {@link ProcessBuilder} that redirects output to given log {@link Log}.
  *
  * @author Nikita Lipsky
  */
 public class CmdLineTool {
 
     private ArrayList<String> args;
-    private AbstractLog log;
+    private Log log;
     private File workDir;
     private boolean errToOut = false;
     private HashMap<String, String> env = new HashMap<>();
@@ -45,13 +45,13 @@ public class CmdLineTool {
         this.args = new ArrayList<>(Arrays.asList(args));
     }
 
-    public CmdLineTool withLog(AbstractLog log, boolean errToOut) {
+    public CmdLineTool withLog(Log log, boolean errToOut) {
         this.log = log;
         this.errToOut = errToOut;
         return this;
     }
 
-    public CmdLineTool withLog(AbstractLog log) {
+    public CmdLineTool withLog(Log log) {
         return withLog(log, false);
     }
 

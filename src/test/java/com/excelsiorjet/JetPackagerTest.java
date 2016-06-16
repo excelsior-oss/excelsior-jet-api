@@ -1,7 +1,7 @@
 package com.excelsiorjet;
 
 import com.excelsiorjet.api.cmd.*;
-import com.excelsiorjet.api.log.AbstractLog;
+import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.util.Utils;
 import org.junit.After;
 import org.junit.Test;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
  */
 public class JetPackagerTest {
 
-    private AbstractLog log = mock(AbstractLog.class);
+    private Log log = mock(Log.class);
 
     private final String target = "hw-native";
     private File targetDir = new File(TestUtils.workDir(), target);

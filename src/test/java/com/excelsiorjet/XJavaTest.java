@@ -1,11 +1,7 @@
 package com.excelsiorjet;
 
-import com.excelsiorjet.api.cmd.CmdLineToolException;
-import com.excelsiorjet.api.cmd.JetHome;
-import com.excelsiorjet.api.cmd.JetHomeException;
-import com.excelsiorjet.api.cmd.XJava;
-import com.excelsiorjet.api.log.AbstractLog;
-import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.cmd.*;
+import com.excelsiorjet.api.log.Log;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -19,7 +15,7 @@ import static org.mockito.Mockito.verify;
  */
 public class XJavaTest {
 
-    private AbstractLog log = mock(AbstractLog.class);
+    private Log log = mock(Log.class);
     private JetHome jetHome;
 
     public XJavaTest() throws JetHomeException {

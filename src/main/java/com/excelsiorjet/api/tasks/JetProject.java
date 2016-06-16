@@ -25,7 +25,6 @@ import com.excelsiorjet.api.cmd.JetEdition;
 import com.excelsiorjet.api.cmd.JetHome;
 import com.excelsiorjet.api.cmd.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
-import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
@@ -39,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
@@ -56,47 +56,303 @@ public class JetProject {
     public static final String LIB_DIR = "lib";
 
     // common parameters
+
+    /**
+     * Directory for temporary files generated during the build process
+     * and the target directory for the resulting package.
+     */
     private File jetOutputDir;
+
+    /**
+     * The main web application archive.
+     */
     private File mainWar;
+
+    /**
+     * Excelsior JET installation directory.
+     * If unspecified, the plugin uses the following algorithm to set the value of this property:
+     * <ul>
+     *   <li> If the jet.home system property is set, use its value</li>
+     *   <li> Otherwise, if the JET_HOME environment variable is set, use its value</li>
+     *   <li> Otherwise scan the PATH environment variable for a suitable Excelsior JET installation</li>
+     * </ul>
+     */
     private String jetHome;
-    private String packaging;
+
+    /**
+     * The main application jar.
+     */
     private File mainJar;
+
+    /**
+     * The main application class.
+     */
     private String mainClass;
+
+    /**
+     * Tomcat web applications specific parameters.
+     *
+     * @see TomcatConfig#tomcatHome
+     * @see TomcatConfig#warDeployName
+     * @see TomcatConfig#hideConfig
+     * @see TomcatConfig#genScripts
+     */
     private TomcatConfig tomcatConfiguration;
+
+    /**
+     * Project dependencies
+     */
     private Stream<ClasspathEntry> dependencies;
+
+    /**
+     * Project group id
+     */
     private String groupId;
+
+    /**
+     * Excelsior project build dir
+     */
     private File buildDir;
+
+    /**
+     * Name of final executable
+     */
     private String finalName;
+
+    /**
+     * Base dir of the project. Resource paths are resolved relative to this dir
+     */
     private File basedir;
+
+    /**
+     * Directory containing additional package files - README, license, media, help files, native libraries, and the like.
+     * The plugin will copy its contents recursively to the final application package.
+     */
     private File packageFilesDir;
+
+    /**
+     * The target location for application execution profiles gathered during Test Run.
+     * It is recommended to commit the collected profiles (.usg, .startup) to VCS to enable the {@code {@link JetBuildTask}}
+     * to re-use them during subsequent builds without performing a Test Run.
+     *
+     * @see TestRunTask
+     */
     private File execProfilesDir;
+
+    /**
+     * The base file name of execution profiles. By default, ${project.artifactId} is used.
+     */
     private String execProfilesName;
+
+    /**
+     * Defines system properties and JVM arguments to be passed to the Excelsior JET JVM at runtime, e.g.:
+     * {@code -Dmy.prop1 -Dmy.prop2=value -ea -Xmx1G -Xss128M -Djet.gc.ratio=11}.
+     * <p>
+     * Please note that only some of the non-standard Oracle HotSpot JVM arguments
+     * (those prefixed with {@code -X}) are recognized.
+     * For instance, the {@code -Xms} argument setting the initial Java heap size on HotSpot
+     * has no meaning for the Excelsior JET JVM, which has a completely different
+     * memory management policy. At the same time, Excelsior JET provides its own system properties
+     * for GC tuning, such as {@code -Djet.gc.ratio}.
+     * </p>
+     */
     private String[] jvmArgs;
 
+    /**
+     * Applicatoin type
+     * @see ApplicationType
+     */
+    private ApplicationType appType;
+
     // compile and pack parameters
+    /**
+     * (Windows) If set to {@code true}, a version-information resource will be added to the final executable.
+     *
+     * @see #vendor vendor
+     * @see #product product
+     * @see #winVIVersion winVIVersion
+     * @see #winVICopyright winVICopyright
+     * @see #winVIDescription winVIDescription
+     */
     private boolean addWindowsVersionInfo;
+
+    /**
+     * Application packaging mode. Permitted values are:
+     * <dl>
+     * <dt>zip</dt>
+     * <dd>zip archive with a self-contained application package (default)</dd>
+     * <dt>excelsior-installer</dt>
+     * <dd>self-extracting installer with standard GUI for Windows
+     * and command-line interface for Linux</dd>
+     * <dt>osx-app-bundle</dt>
+     * <dd>OS X application bundle</dd>
+     * <dt>native-bundle</dt>
+     * <dd>Excelsior Installer setups for Windows and Linux, application bundle for OS X</dd>
+     * <dt>none</dt>
+     * <dd>skip packaging altogether</dd>
+     * </dl>
+     */
     private String excelsiorJetPackaging;
+
+    /**
+     * Application vendor name. Required for Windows version-information resource and Excelsior Installer.
+     */
     private String vendor;
+
+    /**
+     * Product name. Required for Windows version-information resource and Excelsior Installer.
+     */
     private String product;
+
+    /**
+     * Default name of application.
+     */
     private String artifactId;
+
+    /**
+     * (Windows) Version number string for the version-information resource.
+     * (Both {@code ProductVersion} and {@code FileVersion} resource strings are set to the same value.)
+     * Must have {@code v1.v2.v3.v4} format where {@code vi} is a number.
+     * If not set, {@code ${project.version}} is used. If the value does not meet the required format,
+     * it is coerced. For instance, "1.2.3-SNAPSHOT" becomes "1.2.3.0"
+     *
+     * @see #version version
+     */
     private String winVIVersion;
+
+    /**
+     * (Windows) Legal copyright notice string for the version-information resource.
+     * By default, {@code "Copyright © {$project.inceptionYear},[curYear] [vendor]"} is used.
+     */
     private String winVICopyright;
+
+    /**
+     * Inception year
+     */
     private String inceptionYear;
+
+    /**
+     * (Windows) File description string for the version-information resource.
+     */
     private String winVIDescription;
+
+    /**
+     * (32-bit only) If set to {@code true}, the Global Optimizer is enabled,
+     * providing higher performance and lower memory usage for the compiled application.
+     * Performing a Test Run is mandatory when the Global Optimizer is enabled.
+     * The Global Optimizer is enabled automatically when you enable Java Runtime Slim-Down.
+     *
+     * @see TestRunTask
+     * @see #javaRuntimeSlimDown
+     */
     private boolean globalOptimizer;
+
+    /**
+     * (32-bit only) Java Runtime Slim-Down configuration parameters.
+     *
+     * @see SlimDownConfig#detachedBaseURL
+     * @see SlimDownConfig#detachComponents
+     * @see SlimDownConfig#detachedPackage
+     */
     private SlimDownConfig javaRuntimeSlimDown;
+
+    /**
+     * Trial version configuration parameters.
+     *
+     * @see TrialVersionConfig#expireInDays
+     * @see TrialVersionConfig#expireDate
+     * @see TrialVersionConfig#expireMessage
+     */
     private TrialVersionConfig trialVersion;
+
+    /**
+     * Excelsior Installer configuration parameters.
+     *
+     * @see ExcelsiorInstallerConfig#eula
+     * @see ExcelsiorInstallerConfig#eulaEncoding
+     * @see ExcelsiorInstallerConfig#installerSplash
+     */
     private ExcelsiorInstallerConfig excelsiorInstallerConfiguration;
+
+    /**
+     * Product version. Required for Excelsior Installer.
+     * Note: To specify a different (more precise) version number for the Windows executable version-information resource,
+     * use the {@link #winVIVersion} parameter.
+     */
     private String version;
+
+    /**
+     * OS X Application Bundle configuration parameters.
+     *
+     * @see OSXAppBundleConfig#fileName
+     * @see OSXAppBundleConfig#bundleName
+     * @see OSXAppBundleConfig#identifier
+     * @see OSXAppBundleConfig#shortVersion
+     * @see OSXAppBundleConfig#icon
+     * @see OSXAppBundleConfig#developerId
+     * @see OSXAppBundleConfig#publisherId
+     */
     private OSXAppBundleConfig osxBundleConfiguration;
+
+    /**
+     * Target executable name. If not set, the main class name is used.
+     */
     private String outputName;
+
+    /**
+     * If set to {@code true}, the multi-app mode is enabled for the resulting executable
+     * (it mimicks the command line syntax of the conventional {@code java} launcher).
+     */
     private boolean multiApp;
+
+    /**
+     * Enable/disable startup accelerator.
+     * If enabled, the compiled application will run after build
+     * for {@link #profileStartupTimeout} seconds for collecting a startup profile.
+     */
     private boolean profileStartup;
-    private boolean protectData;
-    private String cryptSeed;
-    private File icon;
-    private boolean hideConsole;
+
+    /**
+     * The duration of the after-build profiling session in seconds. Upon exhaustion,
+     * the application will be automatically terminated.
+     */
     private int profileStartupTimeout;
+
+    /**
+     * If set to {@code true}, enables protection of application data - reflection information,
+     * string literals, and resource files packed into the executable, if any.
+     *
+     * @see #cryptSeed
+     */
+    private boolean protectData;
+
+    /**
+     * Sets a seed string that will be used by the Excelsior JET compiler to generate a key for
+     * scrambling the data that the executable contains.
+     * If data protection is enabled, but {@code cryptSeed} is not set explicitly, a random value is used.
+     * <p>
+     * You may want to set a {@code cryptSeed} value if you need the data to be protected in a stable way.
+     * </p>
+     *
+     * @see #protectData
+     */
+    private String cryptSeed;
+
+    /**
+     * (Windows) .ico file to associate with the resulting executable file.
+     */
+    private File icon;
+
+    /**
+     * (Windows) If set to {@code true}, the resulting executable file will not have a console upon startup.
+     */
+    private boolean hideConsole;
+
+    /**
+     * Add optional JET Runtime components to the package. Available optional components:
+     * {@code runtime_utilities}, {@code fonts}, {@code awt_natives}, {@code api_classes}, {@code jce},
+     * {@code accessibility}, {@code javafx}, {@code javafx-webkit}, {@code nashorn}, {@code cldr}
+     */
     private String[] optRtFiles;
 
     /////////////// Public getters /////////////////////////////////
@@ -234,6 +490,10 @@ public class JetProject {
         return jetOutputDir;
     }
 
+    ApplicationType appType() throws JetTaskFailureException {
+        return appType;
+    }
+
     ////////// Builder methods ////////////////////
     public JetProject mainWar(File mainWar) {
         this.mainWar = mainWar;
@@ -242,11 +502,6 @@ public class JetProject {
 
     public JetProject jetHome(String jetHome) {
         this.jetHome = jetHome;
-        return this;
-    }
-
-    public JetProject packaging(String packaging) {
-        this.packaging = packaging;
         return this;
     }
 
@@ -435,9 +690,14 @@ public class JetProject {
         return this;
     }
 
+    public JetProject appType(ApplicationType appType) {
+        this.appType = appType;
+        return this;
+    }
+
     ///////////////// Validation ////////////////
     public JetHome validate() throws JetTaskFailureException {
-        Txt.log = AbstractLog.instance();
+        Txt.log = logger;
 
         // check jet home
         JetHome jetHomeObj;
@@ -460,8 +720,8 @@ public class JetProject {
                 throw new AssertionError("Unknown application type");
         }
 
-        switch (packaging.toLowerCase()) {
-            case "jar":
+        switch (appType) {
+            case PLAIN:
                 if (!mainJar.exists()) {
                     throw new JetTaskFailureException(s("JetApi.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
                 }
@@ -471,7 +731,7 @@ public class JetProject {
                 }
 
                 break;
-            case "war":
+            case TOMCAT:
                 JetEdition edition;
                 try {
                     edition = jetHomeObj.getEdition();
@@ -490,7 +750,7 @@ public class JetProject {
 
                 break;
             default:
-                throw new JetTaskFailureException(s("JetApi.BadPackaging.Failure", packaging));
+                throw new JetTaskFailureException(s("JetApi.BadPackaging.Failure", appType));
         }
 
         switch (appType()) {
@@ -516,13 +776,13 @@ public class JetProject {
                 break;
             case EXCELSIOR_INSTALLER:
                 if (Utils.isOSX()) {
-                    AbstractLog.instance().warn(s("JetApi.NoExcelsiorInstallerOnOSX.Warning"));
+                    logger.warn(s("JetApi.NoExcelsiorInstallerOnOSX.Warning"));
                     excelsiorJetPackaging = ZIP;
                 }
                 break;
             case OSX_APP_BUNDLE:
                 if (!Utils.isOSX()) {
-                    AbstractLog.instance().warn(s("JetApi.OSXBundleOnNotOSX.Warning"));
+                    logger.warn(s("JetApi.OSXBundleOnNotOSX.Warning"));
                     excelsiorJetPackaging = ZIP;
                 }
                 break;
@@ -544,16 +804,16 @@ public class JetProject {
             checkVersionInfo(jetHomeObj);
 
             if (multiApp() && (jetHomeObj.getEdition() == JetEdition.STANDARD)) {
-                AbstractLog.instance().warn(s("JetApi.NoMultiappInStandard.Warning"));
+                logger.warn(s("JetApi.NoMultiappInStandard.Warning"));
                 multiApp = false;
             }
 
             if (profileStartup()) {
                 if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
-                    AbstractLog.instance().warn(s("JetApi.NoStartupAcceleratorInStandard.Warning"));
+                    logger.warn(s("JetApi.NoStartupAcceleratorInStandard.Warning"));
                     profileStartup = false;
                 } else if (Utils.isOSX()) {
-                    AbstractLog.instance().warn(s("JetApi.NoStartupAcceleratorOnOSX.Warning"));
+                    logger.warn(s("JetApi.NoStartupAcceleratorOnOSX.Warning"));
                     profileStartup = false;
                 }
             }
@@ -588,7 +848,7 @@ public class JetProject {
             addWindowsVersionInfo = false;
         }
         if (isAddWindowsVersionInfo() && (jetHome.getEdition() == JetEdition.STANDARD)) {
-            AbstractLog.instance().warn(s("JetApi.NoVersionInfoInStandard.Warning"));
+            logger.warn(s("JetApi.NoVersionInfoInStandard.Warning"));
             addWindowsVersionInfo = false;
         }
         if (isAddWindowsVersionInfo() || EXCELSIOR_INSTALLER.equals(excelsiorJetPackaging()) || OSX_APP_BUNDLE.equals(excelsiorJetPackaging())) {
@@ -611,7 +871,7 @@ public class JetProject {
             //Coerce winVIVersion to v1.v2.v3.v4 format.
             String finalVersion = deriveFourDigitVersion(winVIVersion());
             if (!winVIVersion().equals(finalVersion)) {
-                AbstractLog.instance().warn(s("JetApi.NotCompatibleExeVersion.Warning", winVIVersion(), finalVersion));
+                logger.warn(s("JetApi.NotCompatibleExeVersion.Warning", winVIVersion(), finalVersion));
                 winVIVersion = finalVersion;
             }
 
@@ -650,10 +910,10 @@ public class JetProject {
     private void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer()) {
             if (jetHome.is64bit()) {
-                AbstractLog.instance().warn(s("JetApi.NoGlobalIn64Bit.Warning"));
+                logger.warn(s("JetApi.NoGlobalIn64Bit.Warning"));
                 globalOptimizer = false;
             } else if (jetHome.getEdition() == JetEdition.STANDARD) {
-                AbstractLog.instance().warn(s("JetApi.NoGlobalInStandard.Warning"));
+                logger.warn(s("JetApi.NoGlobalInStandard.Warning"));
                 globalOptimizer = false;
             }
         }
@@ -664,10 +924,10 @@ public class JetProject {
 
         if (javaRuntimeSlimDown() != null) {
             if (jetHome.is64bit()) {
-                AbstractLog.instance().warn(s("JetApi.NoSlimDownIn64Bit.Warning"));
+                logger.warn(s("JetApi.NoSlimDownIn64Bit.Warning"));
                 javaRuntimeSlimDown = null;
             } else if (jetHome.getEdition() == JetEdition.STANDARD) {
-                AbstractLog.instance().warn(s("JetApi.NoSlimDownInStandard.Warning"));
+                logger.warn(s("JetApi.NoSlimDownInStandard.Warning"));
                 javaRuntimeSlimDown = null;
             } else {
                 if (javaRuntimeSlimDown().detachedBaseURL == null) {
@@ -701,7 +961,7 @@ public class JetProject {
             }
 
             if (jetHome.getEdition() == JetEdition.STANDARD) {
-                AbstractLog.instance().warn(s("JetApi.NoTrialsInStandard.Warning"));
+                logger.warn(s("JetApi.NoTrialsInStandard.Warning"));
                 trialVersion = null;
             }
         } else {
@@ -722,7 +982,7 @@ public class JetProject {
                     deriveFourDigitVersion(version()),
                     deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
             if (!osxBundleConfiguration().icon.exists()) {
-                AbstractLog.instance().warn(s("JetApi.NoIconForOSXAppBundle.Warning"));
+                logger.warn(s("JetApi.NoIconForOSXAppBundle.Warning"));
             }
         }
 
@@ -786,20 +1046,6 @@ public class JetProject {
 
     File tomcatInBuildDir() {
         return new File(buildDir, tomcatConfiguration().tomcatHome);
-    }
-
-    /**
-     * Detects application type. Currently uses packaging
-     */
-    ApplicationType appType() throws JetTaskFailureException {
-        switch (packaging.toLowerCase()) {
-            case "jar":
-                return ApplicationType.PLAIN;
-            case "war":
-                return ApplicationType.TOMCAT;
-            default:
-                throw new JetTaskFailureException(s("JetApi.BadPackaging.Failure", packaging));
-        }
     }
 
 }

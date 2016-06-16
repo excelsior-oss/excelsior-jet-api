@@ -1,8 +1,8 @@
 package com.excelsiorjet;
 
-import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
+import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.util.Utils;
 import org.junit.Test;
 
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
  */
 public class CmdLineToolTest {
 
-    private AbstractLog log = mock(AbstractLog.class);
+    private Log log = mock(Log.class);
 
     @Test(expected = CmdLineToolException.class)
     public void executeNotExist() throws CmdLineToolException {

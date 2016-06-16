@@ -25,10 +25,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 /**
- * Implementation of {@code {@link AbstractLog}} that prints messages into standard out and error streams
+ * Implementation of {@code {@link Log }} that prints messages into standard out and error streams
  * @author Aleksey Zhidkov
  */
-public class StdOutLog extends AbstractLog {
+public class StdOutLog extends Log {
 
     @Override
     public void debug(String msg, Throwable t) {

@@ -21,7 +21,6 @@
  */
 package com.excelsiorjet.api.util;
 
-import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -31,6 +30,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
+import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 public class Utils {
@@ -170,7 +170,7 @@ public class Utils {
             if (!dir.exists()) {
                 throw new JetTaskFailureException(s("JetApi.DirCreate.Error", dir.getAbsolutePath()));
             }
-            AbstractLog.instance().warn(s("JetApi.DirCreate.Warning", dir.getAbsolutePath()));
+            logger.warn(s("JetApi.DirCreate.Warning", dir.getAbsolutePath()));
         }
     }
 
@@ -207,7 +207,7 @@ public class Utils {
         try {
             copyDirectory(source, target);
         } catch (IOException e) {
-            AbstractLog.instance().warn(s("TestRunTask.ErrorWhileCopying.Warning", source.toString(), target.toString(), e.getMessage()), e);
+            logger.warn(s("TestRunTask.ErrorWhileCopying.Warning", source.toString(), target.toString(), e.getMessage()), e);
         }
     }
 }

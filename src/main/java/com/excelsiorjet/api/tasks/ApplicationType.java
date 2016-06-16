@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks;
 /**
  * Supported application types enumeration
  */
-enum ApplicationType {
+public enum ApplicationType {
 
     /**
      * Plain Java application, that runs standalone

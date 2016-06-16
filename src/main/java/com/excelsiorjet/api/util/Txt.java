@@ -21,7 +21,7 @@
 */
 package com.excelsiorjet.api.util;
 
-import com.excelsiorjet.api.log.AbstractLog;
+import com.excelsiorjet.api.log.Log;
 
 /**
  * @author Nikita Lipsky
@@ -29,7 +29,7 @@ import com.excelsiorjet.api.log.AbstractLog;
 public class Txt {
 
     private static Messages messages = new Messages("Strings");
-    public static AbstractLog log;
+    public static Log log;
 
     public static String s(String id, Object... params) {
         String str = messages.format(id, params);

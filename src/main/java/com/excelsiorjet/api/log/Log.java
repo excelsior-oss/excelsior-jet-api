@@ -25,9 +25,9 @@ package com.excelsiorjet.api.log;
  * Class that abstracts logging system of specific build tool.
  * @author Aleksey Zhidkov
  */
-public abstract class AbstractLog {
+public abstract class Log {
 
-    private static AbstractLog instance;
+    public static Log logger;
 
     /**
      * Should print given msg and exception with debug level
@@ -54,15 +54,4 @@ public abstract class AbstractLog {
      */
     public abstract void error(String msg);
 
-    /**
-     * Should be call by build tool entry point before any calls to tasks or cmd line tools
-     * @param instance
-     */
-    public static void setInstance(AbstractLog instance) {
-        AbstractLog.instance = instance;
-    }
-
-    public static AbstractLog instance() {
-        return instance;
-    }
 }

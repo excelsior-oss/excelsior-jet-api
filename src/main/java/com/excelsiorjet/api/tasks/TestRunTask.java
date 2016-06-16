@@ -22,7 +22,6 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.cmd.*;
-import com.excelsiorjet.api.log.AbstractLog;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -37,6 +36,35 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.excelsiorjet.api.log.Log.logger;
+
+/**
+ * Task for performing a Test Run before building the application.
+ * Running your Java application before optimization helps Excelsior JET:
+ * <ul>
+ *  <li>
+ *      Verify that your application can run on the Excelsior JET JVM flawlessly
+ *      (i.e. it has no implicit dependencies on the Oracle JVM implementation
+ *      and your project has no configuration issues specific to Excelsior JET).
+ *  </li>
+ *  <li>
+ *      Collect profile information to optimize your app more effectively.
+ *  </li>
+ *  <li>
+ *      Enable application startup time optimization.
+ *      Performing a Test Run can reduce the startup time by a factor of up to two.
+ *  </li>
+ * </ul>
+ * It is recommended to commit the collected profiles (.usg, .startup) to VCS so as to
+ * enable the {@code JetBuildTask} to re-use them during subsequent builds without performing the Test Run.
+ * </p>
+ *
+ *  Note: During a Test Run, the application is executed in a special profiling mode,
+ *        so disregard its modest start-up time and performance.
+ *
+ * @author Nikita Lipsky
+ * @author Aleksey Zhidkov
+ */
 public class TestRunTask {
 
     private static final String BOOTSTRAP_JAR = "bootstrap.jar";
@@ -121,7 +149,7 @@ public class TestRunTask {
         XJava xjava = new XJava(jetHome);
         try {
             xjava.addTestRunArgs(new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName()))
-                    .withLog(AbstractLog.instance(),
+                    .withLog(logger,
                             project.appType() == ApplicationType.TOMCAT) // Tomcat outputs to std error, so to not confuse users,
                     // we  redirect its output to std out in test run
                     .workingDirectory(workingDirectory);
@@ -144,14 +172,14 @@ public class TestRunTask {
                 .map(arg -> arg.contains(" ") ? '"' + arg + '"' : arg)
                 .collect(Collectors.joining(" "));
 
-        AbstractLog.instance().info(Txt.s("TestRunTask.Start.Info", cmdLine));
+        logger.info(Txt.s("TestRunTask.Start.Info", cmdLine));
 
         int errCode = xjava.execute();
         String finishText = Txt.s("TestRunTask.Finish.Info", errCode);
         if (errCode != 0) {
-            AbstractLog.instance().warn(finishText);
+            logger.warn(finishText);
         } else {
-            AbstractLog.instance().info(finishText);
+            logger.info(finishText);
         }
     }
 }
