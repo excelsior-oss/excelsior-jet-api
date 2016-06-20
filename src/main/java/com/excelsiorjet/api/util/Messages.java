@@ -53,6 +53,10 @@ class Messages {
         }
     }
 
+    public Messages(ResourceBundle messageRB) {
+        this.messageRB = messageRB;
+    }
+
     /**
      * Obtains a string with the given {@code id} and formats it using the given {@code params}.
      * @param id key value in Strings.properties

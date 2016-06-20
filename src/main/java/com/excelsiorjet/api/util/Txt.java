@@ -23,16 +23,29 @@ package com.excelsiorjet.api.util;
 
 import com.excelsiorjet.api.log.Log;
 
+import java.util.ResourceBundle;
+
 /**
  * @author Nikita Lipsky
  */
 public class Txt {
 
     private static Messages messages = new Messages("Strings");
+    private static Messages altMessages;
     public static Log log;
 
+    public static void setAdditionalMessages(ResourceBundle rb) {
+        altMessages = new Messages(rb);
+    }
+
     public static String s(String id, Object... params) {
-        String str = messages.format(id, params);
+        String str = null;
+        if (altMessages != null) {
+            str = altMessages.format(id, params);
+        }
+        if (str == null) {
+            str = messages.format(id, params);
+        }
         if (str != null) {
             return str;
         } else {

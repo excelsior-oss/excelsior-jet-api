@@ -25,6 +25,7 @@ import com.excelsiorjet.api.cmd.JetEdition;
 import com.excelsiorjet.api.cmd.JetHome;
 import com.excelsiorjet.api.cmd.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
@@ -33,10 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -404,6 +402,16 @@ public class JetProject {
     private String[] optRtFiles;
 
     /**
+     * Sets a build tool specific logger and build tool specific messages overriding common ones
+     * that should be shown to an user.
+     */
+    public static void configureEnvironment(Log log, ResourceBundle messages) {
+        Log.logger = log;
+        Txt.log = log;
+        Txt.setAdditionalMessages(messages);
+    }
+
+    /**
      * Constructor with required parameters of the project.
      * Usually they can be derived from the whole project(pom.xml, gradle.script).
      *
@@ -435,8 +443,6 @@ public class JetProject {
      * Validates project parameters and sets the default values derived from other parameters.
      */
     public JetHome validate() throws JetTaskFailureException {
-        Txt.log = logger;
-
         // check jet home
         JetHome jetHomeObj;
         try {
