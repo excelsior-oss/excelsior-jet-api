@@ -239,7 +239,7 @@ public class JetBuildTask {
      * as a excelsior installer file.
      */
     private void packWithEI(JetHome jetHome, File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
-        File target = new File(project.jetOutputDir(), Utils.mangleExeName(project.finalName()));
+        File target = new File(project.jetOutputDir(), Utils.mangleExeName(project.artifactName()));
         ArrayList<String> xpackArgs = getCommonXPackArgs();
         if (project.excelsiorInstallerConfiguration().eula.exists()) {
             xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
@@ -331,7 +331,7 @@ public class JetBuildTask {
             }
             logger.info(s("JetBuildTask.CreatingOSXInstaller.Info"));
             if (project.osxBundleConfiguration().publisherId != null) {
-                appPkg = new File(project.jetOutputDir(), project.finalName() + ".pkg");
+                appPkg = new File(project.jetOutputDir(), project.artifactName() + ".pkg");
                 if (new CmdLineTool("productbuild", "--sign", project.osxBundleConfiguration().publisherId,
                         "--component", appBundle.getAbsolutePath(), project.osxBundleConfiguration().installPath,
                         appPkg.getAbsolutePath())
@@ -358,7 +358,7 @@ public class JetBuildTask {
         switch (project.excelsiorJetPackaging()) {
             case JetProject.ZIP:
                 logger.info(s("JetBuildTask.ZipApp.Info"));
-                File targetZip = new File(project.jetOutputDir(), project.finalName() + ".zip");
+                File targetZip = new File(project.jetOutputDir(), project.artifactName() + ".zip");
                 Utils.compressZipfile(packageDir, targetZip);
                 logger.info(s("JetBuildTask.Build.Success"));
                 logger.info(s("JetBuildTask.GetZip.Info", targetZip.getAbsolutePath()));

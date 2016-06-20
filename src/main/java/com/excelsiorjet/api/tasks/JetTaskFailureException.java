@@ -22,7 +22,8 @@
 package com.excelsiorjet.api.tasks;
 
 /**
- * Exception that indicates error conditions specific to Excelsior JET
+ * Exception that can be thrown during {@link JetProject} validation or during execution of a
+ * specific Excelsior JET task such as {@link JetBuildTask}, {@link TestRunTask}.
  */
 public class JetTaskFailureException extends Exception {
 

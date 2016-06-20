@@ -55,7 +55,7 @@ public class ExcelsiorInstallerConfig {
      * The license agreement file. Used for Excelsior Installer.
      * File containing the end-user license agreement, for Excelsior Installer to display during installation.
      * The file must be a plain text file either in US-ASCII or UTF-16LE encoding.
-     * If not set, and the file {@code ${project.basedir}/src/main/jetresources/eula.txt} exists,
+     * If not set, and the file {@code eula.txt} in {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      *
      * @see #eulaEncoding eulaEncoding
@@ -82,23 +82,23 @@ public class ExcelsiorInstallerConfig {
 
     /**
      * (Windows) Excelsior Installer splash screen image in BMP format.
-     * If not set, and the file {@code ${project.basedir}/src/main/jetresources/installerSplash.bmp} exists,
+     * If not set, and the file {@code installerSplash.bmp} in {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      */
     public File installerSplash;
 
-    public void fillDefaults(JetProject config) throws JetTaskFailureException {
+    public void fillDefaults(JetProject project) throws JetTaskFailureException {
         //check eula settings
         if (!VALID_EULA_ENCODING_VALUES.contains(eulaEncoding)) {
             throw new JetTaskFailureException(s("JetApi.Package.Eula.UnsupportedEncoding", eulaEncoding));
         }
 
         if (eula == null) {
-            eula = new File(config.basedir(), "src/main/jetresources/eula.txt");
+            eula = new File(project.jetResourcesDir(), "eula.txt");
         }
 
         if (installerSplash == null) {
-            installerSplash = new File(config.basedir(), "src/main/jetresources/installerSplash.bmp");
+            installerSplash = new File(project.jetResourcesDir(), "installerSplash.bmp");
         }
     }
 

@@ -22,17 +22,17 @@
 package com.excelsiorjet.api.tasks;
 
 /**
- * Supported application types enumeration
+ * Supported application types enumeration.
  */
 public enum ApplicationType {
 
     /**
-     * Plain Java application, that runs standalone
+     * Plain Java application, that runs standalone.
      */
     PLAIN,
 
     /**
-     * Servlet-based Java application, that runs within Tomcat servlet container
+     * Servlet-based Java application, that runs within Tomcat servlet container.
      */
     TOMCAT
 

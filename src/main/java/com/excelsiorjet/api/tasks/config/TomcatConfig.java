@@ -29,7 +29,9 @@ import java.io.File;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * Tomcat web applications specific parameters
+ * Tomcat web applications specific parameters.
+ *
+ * @author Nikita Lipsky
  */
 public class TomcatConfig {
 

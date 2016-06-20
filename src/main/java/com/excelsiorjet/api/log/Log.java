@@ -22,7 +22,8 @@
 package com.excelsiorjet.api.log;
 
 /**
- * Class that abstracts logging system of specific build tool.
+ * Abstraction of a logging system of a specific build tool.
+ *
  * @author Aleksey Zhidkov
  */
 public abstract class Log {

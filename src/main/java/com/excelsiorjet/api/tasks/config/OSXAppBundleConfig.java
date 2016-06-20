@@ -73,7 +73,7 @@ public class OSXAppBundleConfig {
 
     /**
      * Value for the {@code CFBundleIconFile} key in the resulting {@code Info.plist} file.
-     * Default is {@code ${project.basedir}/src/main/jetresources/icon.icns}.
+     * Default is {@code icon.icns} in {@link JetProject#jetResourcesDir} folder.
      */
     public File icon;
 
@@ -117,7 +117,7 @@ public class OSXAppBundleConfig {
      */
     public String installPath = "/Applications";
 
-    public void fillDefaults(JetProject config, String fileName, String bundleName, String version, String shortVersion) {
+    public void fillDefaults(JetProject project, String fileName, String bundleName, String version, String shortVersion) {
         if (this.fileName == null) {
             this.fileName = fileName;
         }
@@ -125,10 +125,10 @@ public class OSXAppBundleConfig {
             this.bundleName = bundleName;
         }
         if (this.identifier == null) {
-            this.identifier = config.groupId() + "." + config.finalName();
+            this.identifier = project.groupId() + "." + project.artifactName();
         }
         if (this.icon == null) {
-            this.icon = new File(config.basedir(), "src/main/jetresources/icon.icns");
+            this.icon = new File(project.jetResourcesDir(), "icon.icns");
         }
         if (this.version == null) {
             this.version = version;
