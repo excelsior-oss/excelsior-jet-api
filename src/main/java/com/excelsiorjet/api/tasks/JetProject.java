@@ -404,7 +404,7 @@ public class JetProject {
 
     /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
-     * that should be shown to an user.
+     * that should be shown to a user.
      */
     public static void configureEnvironment(Log log, ResourceBundle messages) {
         Log.logger = log;

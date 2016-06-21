@@ -55,6 +55,7 @@ import static com.excelsiorjet.api.log.Log.logger;
  *      Performing a Test Run can reduce the startup time by a factor of up to two.
  *  </li>
  * </ul>
+ * <p>
  * It is recommended to commit the collected profiles (.usg, .startup) to VCS so as to
  * enable the {@code JetBuildTask} to re-use them during subsequent builds without performing the Test Run.
  * </p>
