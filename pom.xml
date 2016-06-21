@@ -3,19 +3,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.excelsiorjet</groupId>
-    <artifactId>api</artifactId>
+    <artifactId>excelsior-jet-api</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Excelsior JET API</name>
 
-    <!-- todo: -->
-    <!--<url>http://www.excelsiorjet.com/maven-plugin</url>-->
-    <!--    <url>https://github.com/${github-repo-owner}/${github-repo}</url>
-        <description>
-            Excelsior JET API provides Maven users with an easy way to compile their applications
-            down to optimized native Windows, OS X, or Linux executables with Excelsior JET.
-        </description>-->
+    <url>https://github.com/${github-repo-owner}/${github-repo}</url>
+    <description>
+        The Excelsior JET API enables easy integration with (Java) build tools such as Maven and Gradle.
+    </description>
 
     <licenses>
         <license>
@@ -39,22 +36,19 @@
         </developer>
     </developers>
 
-    <!-- todo: -->
-    <!--    <scm>
-            <connection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</connection>
-            <developerConnection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</developerConnection>
-            <url>https://github.com/${github-repo-owner}/${github-repo}</url>
-            <tag>HEAD</tag>
-        </scm>-->
+    <scm>
+        <connection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</connection>
+        <developerConnection>scm:git:https://github.com/${github-repo-owner}/${github-repo}.git</developerConnection>
+        <url>https://github.com/${github-repo-owner}/${github-repo}</url>
+        <tag>HEAD</tag>
+    </scm>
 
-    <!-- todo: -->
-    <!--    <issueManagement>
-            <system>GitHub</system>
-            <url>https://github.com/${github-repo-owner}/${github-repo}/issues</url>
-        </issueManagement>-->
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/${github-repo-owner}/${github-repo}/issues</url>
+    </issueManagement>
 
-    <!-- todo: -->
-    <!--    <distributionManagement>
+    <distributionManagement>
             <snapshotRepository>
                 <id>ossrh</id>
                 <url>https://oss.sonatype.org/content/repositories/snapshots</url>
@@ -63,14 +57,14 @@
                 <id>ossrh</id>
                 <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
             </repository>
-        </distributionManagement>-->
+    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
         <github-repo-owner>excelsior-oss</github-repo-owner>
-        <github-repo>excelsior-jet-maven-plugin</github-repo>
+        <github-repo>excelsior-jet-api</github-repo>
     </properties>
 
     <dependencies>
