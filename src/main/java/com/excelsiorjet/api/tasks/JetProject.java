@@ -38,6 +38,7 @@ import java.util.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Collection of Excelsior JET compiler and packager parameters that can be configured by external build tool.
@@ -413,28 +414,23 @@ public class JetProject {
 
     /**
      * Constructor with required parameters of the project.
-     * Usually they can be derived from the whole project(pom.xml, gradle.script).
+     * Usually they can be derived from the whole project(pom.xml, build.gradle).
      *
-     * @param name project name
+     * @param projectName project name
      * @param groupId project groupId
      * @param version project version
      * @param appType application type
      * @param targetDir target directory of the whole project
      * @param jetResourcesDir directory with jet specific resources
      */
-    public JetProject(String name, String groupId, String version, ApplicationType appType, File targetDir, File jetResourcesDir) {
-        this.projectName = name;
-        this.groupId = groupId;
-        this.version = version;
-        this.appType = appType;
-        this.targetDir = targetDir;
-        this.jetResourcesDir = jetResourcesDir;
-        //check that parameters are not null
-        Arrays.asList(name, groupId, version, appType, targetDir, jetResourcesDir).forEach(par -> {
-            if (par == null) {
-                throw new IllegalArgumentException();
-            }
-        });
+    public JetProject(String projectName, String groupId, String version, ApplicationType appType, File targetDir, File jetResourcesDir) {
+        this.projectName = requireNonNull(projectName, "projectName cannot be null");
+        this.groupId = requireNonNull(groupId, "groupId cannot be null");
+        this.version = requireNonNull(version, "version cannot be null");
+        this.appType = requireNonNull(appType, "appType cannot be null");
+        this.targetDir = requireNonNull(targetDir, "targetDir cannot be null");
+        this.jetResourcesDir = requireNonNull(jetResourcesDir, "jetResourcesDir cannot be null");
+
     }
 
     ///////////////// Validation ////////////////
@@ -443,6 +439,10 @@ public class JetProject {
      * Validates project parameters and sets the default values derived from other parameters.
      */
     public JetHome validate() throws JetTaskFailureException {
+        if ((Log.logger == null) || (Txt.log == null)) {
+            throw new IllegalStateException("Please call JetProject.configureEnvironment() before using JetProject");
+        }
+
         // check jet home
         JetHome jetHomeObj;
         try {
