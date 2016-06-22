@@ -41,18 +41,18 @@ import static com.excelsiorjet.api.util.Txt.s;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Collection of Excelsior JET compiler and packager parameters that can be configured by external build tool.
- * It is assumed that the parameters are configured as a part of a plugin into that build tool such as Maven or
- * Gradle. So the parameters are usually a part of a bigger project (mentioned bellow as the whole project) such
- * as pom.xml or build.gradle.
+ * <p>Collection of Excelsior JET compiler and packager parameters that can be configured by an external build tool,
+ * such as Maven or Gradle. More precisely, it is assumed that a plugin into that build tool configures these parameters,
+ * so there is a section specific to that plugin in a bigger project, such as {@code pom.xml} or {@code build.gradle},
+ * mentioned below as the <em>enclosing</em> project.</p>
  *
- * An instance of the class can be constructed with the build pattern methods and used by Excelsior JET tasks
- * such as {@link JetBuildTask}, {@link TestRunTask}.
+ * <p>An instance of this class can be constructed with the build pattern methods and used by Excelsior JET tasks
+ * such as {@link JetBuildTask}, {@link TestRunTask}.</p>
  *
- * The class performs validation of the parameters via {@link #validate()} method.
- * During validation, it sets default parameters values derived from other parameters,
- * so it is not needed to set all the parameters.
- * Though some parameters are required as {@link #mainClass} for Plain Java SE applications.
+ * <p>The class performs validation of the parameters via the {@link #validate()} method.
+ * During validation, it sets default parameter values derived from other parameters,
+ * so it is not necessary to set all the parameters.
+ * That said, some parameters are required. For instance, {@link #mainClass} is required for plain Java SE applications.</p>
  *
  * @see JetBuildTask
  * @see TestRunTask
@@ -109,7 +109,7 @@ public class JetProject {
     private ApplicationType appType;
 
     /**
-     * Build (target) directory of the whole project where Java sources are built into class files
+     * Build (target) directory of the enclosing project where Java sources are built into class files
      * and a project artifact. It is assumed that main artifact (jar or war) is placed
      * to this directory before Excelsior JET build.
      */
@@ -145,14 +145,14 @@ public class JetProject {
     private File packageFilesDir;
 
     /**
-     * Project final artifact name. Used as default name for {@link #mainJar} and {@link #mainWar}
-     * and as name of final artifacts that is created by {@link JetBuildTask} such as zip file, installer name and so on.
+     * Name of the final artifact of the enclosing project. Used as the default value for {@link #mainJar} and {@link #mainWar},
+     * and to derive the default names of final artifacts created by {@link JetBuildTask} such as zip file, installer, and so on.
      */
     private String artifactName;
 
     /**
      * The main application jar for plain Java SE applications.
-     * By default, {artifactName}.jar is used.
+     * By default, {@link artifactName}.jar is used.
      *
      * @see ApplicationType#PLAIN
      */
@@ -414,13 +414,13 @@ public class JetProject {
 
     /**
      * Constructor with required parameters of the project.
-     * Usually they can be derived from the whole project(pom.xml, build.gradle).
+     * Usually they can be derived from the enclosing project(pom.xml, build.gradle).
      *
      * @param projectName project name
      * @param groupId project groupId
      * @param version project version
      * @param appType application type
-     * @param targetDir target directory of the whole project
+     * @param targetDir target directory of the enclosing project
      * @param jetResourcesDir directory with jet specific resources
      */
     public JetProject(String projectName, String groupId, String version, ApplicationType appType, File targetDir, File jetResourcesDir) {
