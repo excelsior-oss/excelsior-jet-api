@@ -152,7 +152,7 @@ public class JetProject {
 
     /**
      * The main application jar for plain Java SE applications.
-     * By default, {@link artifactName}.jar is used.
+     * By default, {@link #artifactName}.jar is used.
      *
      * @see ApplicationType#PLAIN
      */
