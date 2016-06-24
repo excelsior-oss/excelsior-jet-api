@@ -430,7 +430,6 @@ public class JetProject {
         this.appType = requireNonNull(appType, "appType cannot be null");
         this.targetDir = requireNonNull(targetDir, "targetDir cannot be null");
         this.jetResourcesDir = requireNonNull(jetResourcesDir, "jetResourcesDir cannot be null");
-
     }
 
     ///////////////// Validation ////////////////
