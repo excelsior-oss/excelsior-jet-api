@@ -60,9 +60,14 @@ public class JetBuildTask {
      * @param prj name for project file
      * @throws JetTaskFailureException if {@code buildDir} is not exists.
      */
-    private static String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws JetTaskFailureException {
+    private String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws JetTaskFailureException {
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
             compilerArgs.forEach(out::println);
+            if (project.compilerOptions() != null) {
+                for (String option : project.compilerOptions()) {
+                    out.println(option);
+                }
+            }
             for (ClasspathEntry dep : dependencies) {
                 out.println("!classpathentry " + dep.getFile().toString());
                 out.println("  -optimize=" + (dep.isLib() ? "autodetect" : "all"));
@@ -202,7 +207,15 @@ public class JetBuildTask {
 
         if (project.optRtFiles() != null && project.optRtFiles().length > 0) {
             xpackArgs.add("-add-opt-rt-files");
-            xpackArgs.add(String.join(",", (CharSequence[]) project.optRtFiles()));
+            xpackArgs.add(String.join(",", project.optRtFiles()));
+        }
+
+        if (project.locales().length > 0) {
+            xpackArgs.add("-add-locales");
+            xpackArgs.add(String.join(",", project.locales()));
+        } else {
+            xpackArgs.add("-remove-locales");
+            xpackArgs.add("all");
         }
 
         if (project.javaRuntimeSlimDown() != null) {
