@@ -19,7 +19,7 @@ that configure a build of a Java project with Excelsior JET.
 
 So first, you need to create an instance of `JetProject`, the constructor of which has the following arguments:
 
-* `projectName` -  name if the project
+* `projectName` -  name of the project
 * `groupId` - project group id. Unique identifier that can be shared by multiple projects.
                Usually a reverse domain name is used as a group id, such as "com.example".
 * `version` - project version
