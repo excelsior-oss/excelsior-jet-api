@@ -24,7 +24,6 @@ package com.excelsiorjet.api.util;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.*;
 import java.nio.file.*;
@@ -187,8 +186,8 @@ public class Utils {
                 }
                 out.putArchiveEntry(entry);
                 InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()));
-                IOUtils.copy(in, out);
-                IOUtils.closeQuietly(in);
+                copy(in, out);
+                closeQuietly(in);
                 out.closeArchiveEntry();
             }
         }
@@ -198,7 +197,7 @@ public class Utils {
         ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
                 new BufferedOutputStream(new FileOutputStream(outputFile)));
         compressDirectoryToZipfile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile);
-        IOUtils.closeQuietly(zipFile);
+        closeQuietly(zipFile);
     }
 
     public static void copyQuietly(Path source, Path target) {
