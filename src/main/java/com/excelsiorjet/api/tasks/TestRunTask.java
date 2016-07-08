@@ -114,7 +114,7 @@ public class TestRunTask {
     }
 
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
-        JetHome jetHome = project.validate();
+        JetHome jetHome = project.validate(false);
 
         // creating output dirs
         File buildDir = project.createBuildDir();

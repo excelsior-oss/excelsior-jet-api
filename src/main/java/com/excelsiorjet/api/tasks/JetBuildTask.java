@@ -388,7 +388,7 @@ public class JetBuildTask {
      * @throws CmdLineToolException if any error occurs while cmd line tool calls
      */
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
-        JetHome jetHome = project.validate();
+        JetHome jetHome = project.validate(true);
 
         // creating output dirs
         File buildDir = project.createBuildDir();

@@ -49,7 +49,7 @@ import static java.util.Objects.requireNonNull;
  * <p>An instance of this class can be constructed with the build pattern methods and used by Excelsior JET tasks
  * such as {@link JetBuildTask}, {@link TestRunTask}.</p>
  *
- * <p>The class performs validation of the parameters via the {@link #validate()} method.
+ * <p>The class performs validation of the parameters via the {@link #validate(boolean)} method.
  * During validation, it sets default parameter values derived from other parameters,
  * so it is not necessary to set all the parameters.
  * That said, some parameters are required. For instance, {@link #mainClass} is required for plain Java SE applications.</p>
@@ -436,8 +436,9 @@ public class JetProject {
 
     /**
      * Validates project parameters and sets the default values derived from other parameters.
+     * @param validateForBuild if set to {@code false} the method does not validate parameters that are used only for project build
      */
-    public JetHome validate() throws JetTaskFailureException {
+    public JetHome validate(boolean validateForBuild) throws JetTaskFailureException {
         if ((Log.logger == null) || (Txt.log == null)) {
             throw new IllegalStateException("Please call JetProject.configureEnvironment() before using JetProject");
         }
@@ -520,34 +521,6 @@ public class JetProject {
             packageFilesDir = new File(jetResourcesDir, PACKAGE_FILES_DIR);
         }
 
-        if (execProfilesDir == null) {
-            execProfilesDir = jetResourcesDir;
-        }
-
-        if (Utils.isEmpty(execProfilesName)) {
-            execProfilesName = projectName;
-        }
-
-        if (icon == null) {
-            icon = new File(jetResourcesDir, "icon.ico");
-        }
-
-        switch (appType) {
-            case PLAIN:
-                if (outputName == null) {
-                    int lastSlash = mainClass.lastIndexOf('/');
-                    outputName = lastSlash < 0 ? mainClass : mainClass.substring(lastSlash + 1);
-                }
-                break;
-            case TOMCAT:
-                if (outputName == null) {
-                    outputName = projectName;
-                }
-                break;
-            default:
-                throw new AssertionError("Unknown application type");
-        }
-
         if (excelsiorJetPackaging == null) {
             excelsiorJetPackaging = ZIP;
         }
@@ -580,6 +553,42 @@ public class JetProject {
 
             default:
                 throw new JetTaskFailureException(s("JetApi.UnknownPackagingMode.Failure", excelsiorJetPackaging));
+        }
+
+        if (execProfilesDir == null) {
+            execProfilesDir = jetResourcesDir;
+        }
+
+        if (Utils.isEmpty(execProfilesName)) {
+            execProfilesName = projectName;
+        }
+        if (validateForBuild) {
+            validateForBuild(jetHomeObj);
+        }
+
+        return jetHomeObj;
+    }
+
+    private void validateForBuild(JetHome jetHomeObj) throws JetTaskFailureException {
+
+        if (icon == null) {
+            icon = new File(jetResourcesDir, "icon.ico");
+        }
+
+        switch (appType) {
+            case PLAIN:
+                if (outputName == null) {
+                    int lastSlash = mainClass.lastIndexOf('/');
+                    outputName = lastSlash < 0 ? mainClass : mainClass.substring(lastSlash + 1);
+                }
+                break;
+            case TOMCAT:
+                if (outputName == null) {
+                    outputName = projectName;
+                }
+                break;
+            default:
+                throw new AssertionError("Unknown application type");
         }
 
         // check version info
@@ -622,8 +631,6 @@ public class JetProject {
         } catch (JetHomeException e) {
             throw new JetTaskFailureException(e.getMessage());
         }
-
-        return jetHomeObj;
     }
 
     private void checkVersionInfo(JetHome jetHome) throws JetHomeException {
