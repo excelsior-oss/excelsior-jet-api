@@ -58,10 +58,10 @@ public class JetBuildTask {
      * @param compilerArgs project compiler args
      * @param dependencies project dependencies
      * @param modules      project modules
-     * @param prj name for project file
      * @throws JetTaskFailureException if {@code buildDir} is not exists.
      */
-    private String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws JetTaskFailureException {
+    private String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules) throws JetTaskFailureException {
+        String prj = project.outputName() + ".prj";
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
             compilerArgs.forEach(out::println);
             if (project.compilerOptions() != null) {
@@ -215,7 +215,7 @@ public class JetBuildTask {
             compilerArgs.add("%" + jetVMPropOpt);
         }
 
-        String prj = createJetCompilerProject(buildDir, compilerArgs, dependencies, modules, project.outputName() + ".prj");
+        String prj = createJetCompilerProject(buildDir, compilerArgs, dependencies, modules);
 
         if (new JetCompiler(jetHome, "=p", prj, jetVMPropOpt)
                 .workingDirectory(buildDir).withLog(logger).execute() != 0) {

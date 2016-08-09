@@ -721,7 +721,7 @@ public class JetProject {
             logger.warn(s("JetApi.NoVersionInfoInStandard.Warning"));
             addWindowsVersionInfo = false;
         }
-        if (addWindowsVersionInfo || (EXCELSIOR_INSTALLER == excelsiorJetPackaging()) || (OSX_APP_BUNDLE == excelsiorJetPackaging())) {
+        if (addWindowsVersionInfo || excelsiorJetPackaging().isNativeBundle()) {
             if (Utils.isEmpty(vendor)) {
                 //no organization name. Get it from groupId that cannot be empty.
                 String[] groupId = groupId().split("\\.");

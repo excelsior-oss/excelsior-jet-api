@@ -21,23 +21,25 @@
 */
 package com.excelsiorjet.api.tasks;
 
+import com.excelsiorjet.api.util.Utils;
+
 /**
- * Inline expansion type
+ * Inline expansion type.
  */
 public enum InlineExpansionType {
-    AGGRESSIVE,
     VERY_AGGRESSIVE,
+    AGGRESSIVE, //default
     MEDIUM,
     LOW,
     TINY_METHODS_ONLY;
 
     public String toString() {
-        return name().toLowerCase().replace('_', '-');
+        return Utils.enumConstantNameToParameter(name());
     }
 
     public static InlineExpansionType fromString(String inlineExpansion) {
         try {
-            return InlineExpansionType.valueOf(inlineExpansion.toUpperCase().replace('-', '_'));
+            return InlineExpansionType.valueOf(Utils.parameterToEnumConstantName(inlineExpansion));
         } catch (Exception e) {
             return null;
         }

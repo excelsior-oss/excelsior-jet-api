@@ -21,6 +21,8 @@
 */
 package com.excelsiorjet.api.tasks;
 
+import com.excelsiorjet.api.util.Utils;
+
 /**
  * Excelsior JET Packaging types.
  */
@@ -32,14 +34,18 @@ public enum PackagingType {
     NATIVE_BUNDLE;
 
     public String toString() {
-        return name().toLowerCase().replace('_', '-');
+        return Utils.enumConstantNameToParameter(name());
     }
 
     public static PackagingType fromString(String packaging) {
         try {
-            return PackagingType.valueOf(packaging.toUpperCase().replace('-', '_'));
+            return PackagingType.valueOf(Utils.parameterToEnumConstantName(packaging));
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public boolean isNativeBundle() {
+        return (this == EXCELSIOR_INSTALLER) || (this == OSX_APP_BUNDLE) || (this == NATIVE_BUNDLE);
     }
 }

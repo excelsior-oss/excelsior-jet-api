@@ -209,4 +209,13 @@ public class Utils {
             logger.warn(s("TestRunTask.ErrorWhileCopying.Warning", source.toString(), target.toString(), e.getMessage()), e);
         }
     }
+
+    public static String parameterToEnumConstantName(String parameter) {
+        return parameter.toUpperCase().replace('-', '_');
+    }
+
+    public static String enumConstantNameToParameter(String constantName) {
+        return constantName.toLowerCase().replace('_', '-');
+    }
+
 }

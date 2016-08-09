@@ -21,6 +21,8 @@
 */
 package com.excelsiorjet.api.tasks;
 
+import com.excelsiorjet.api.util.Utils;
+
 /**
  * Stacktrace support types.
  */
@@ -30,12 +32,12 @@ public enum StackTraceSupportType {
     NONE;
 
     public String toString() {
-        return name().toLowerCase();
+        return Utils.enumConstantNameToParameter(name());
     }
 
     public static StackTraceSupportType fromString(String stackTraceSupport) {
         try {
-            return StackTraceSupportType.valueOf(stackTraceSupport.toUpperCase());
+            return StackTraceSupportType.valueOf(Utils.parameterToEnumConstantName(stackTraceSupport));
         } catch (Exception e) {
             return null;
         }
