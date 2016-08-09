@@ -37,6 +37,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
+import static com.excelsiorjet.api.tasks.PackagingType.*;
 import static com.excelsiorjet.api.util.Txt.s;
 import static java.util.Objects.requireNonNull;
 
@@ -58,13 +59,6 @@ import static java.util.Objects.requireNonNull;
  * @see TestRunTask
  */
 public class JetProject {
-
-    //packaging types
-    public static final String NONE = "none";
-    public static final String ZIP = "zip";
-    public static final String EXCELSIOR_INSTALLER = "excelsior-installer";
-    public static final String OSX_APP_BUNDLE = "osx-app-bundle";
-    public static final String NATIVE_BUNDLE = "native-bundle";
 
     private static final String JET_OUTPUT_DIR = "jet";
     private static final String BUILD_DIR = "build";
@@ -391,12 +385,56 @@ public class JetProject {
     private File icon;
 
     /**
+     * Splash file to show on start up of the executable.
+     *
+     * By default, "splash.png" of {@link #jetResourcesDir} folder is used.  If it does not exist but
+     * the splash image has been specified in the manifest of the application's JAR file,
+     * the respective image will be obtained automatically.
+     */
+    private File splash;
+
+    /**
+     * The JET Runtime supports three modes of stack trace printing: {@code minimal}, {@code full}, and {@code none}.
+     * <p>
+     * In the {@code minimal} mode (default), line numbers and names of some methods are omitted in call stack entries,
+     * but class names are exact.
+     * </p>
+     * <p>
+     * In the {@code full} mode, the stack trace info includes all line numbers and method names.
+     * However, enabling the full stack trace has a side effect of substantial growth of the resulting
+     * executable size by approximately 30%.
+     * </p>
+     * <p
+     * In the {@code none} mode, Throwable.printStackTrace() methods print a few fake elements.
+     * It may result in performance improvement, if the application throws and catches exceptions repeatedly.
+     * Note, however, that some third-party APIs may rely on stack trace printing, for example,
+     * Log4J API that provides logging services.
+     * </p>
+     */
+    private String stackTraceSupport;
+
+    /**
+     * Controls the aggressiveness of method inlining.
+     * Available values are:
+     *   {@code aggressive} (default), {@code very-aggressive}, {@code medium}, {@code low}, {@code tiny-methods-only}
+     * <p>
+     * If you need to reduce the size of the executable,
+     * set the {@code low} or {@code tiny-methods-only} option. Note that it does not necessarily worsen application performance.
+     * </p>
+     */
+    private String inlineExpansion;
+
+    /**
      * (Windows) If set to {@code true}, the resulting executable file will not have a console upon startup.
      */
     private boolean hideConsole;
 
     /**
-     * Add optional JET Runtime components to the package. Available optional components:
+     * Add optional JET Runtime components to the package.
+     * By default only {@code jce} component (Java Crypto Extension) is added.
+     * You may pass a special value {@code all} to include all available optional components at once
+     * or {@code none} to not include any of them.
+     * Available optional components:
      * {@code runtime_utilities}, {@code fonts}, {@code awt_natives}, {@code api_classes}, {@code jce},
      * {@code accessibility}, {@code javafx}, {@code javafx-webkit}, {@code nashorn}, {@code cldr}
      */
@@ -405,18 +443,19 @@ public class JetProject {
     /**
      * Add locales and charsets.
      * By default only {@code European} locales are added.
-     * You may pass a special value {@code all} to include all available locales at once.
+     * You may pass a special value {@code all} to include all available locales at once
+     * or {@code none} to not include any of locales.
      * Available locales and charsets:
      *    {@code European}, {@code Indonesian}, {@code Malay}, {@code Hebrew}, {@code Arabic},
      *    {@code Chinese}, {@code Japanese}, {@code Korean}, {@code Thai}, {@code Vietnamese}, {@code Hindi},
      *    {@code Extended_Chinese}, {@code Extended_Japanese}, {@code Extended_Korean}, {@code Extended_Thai},
      *    {@code Extended_IBM}, {@code Extended_Macintosh}, {@code Latin_3}
      */
-    private String[] locales = new String[]{"European"};
+    private String[] locales;
 
     /**
      * Additional compiler options and equations.
-     * The most of compiler options and equations are mapped to some parameters of the projects,
+     * The most of compiler options and equations are mapped to some parameters of the project,
      * so usually there is no need to specify them with this parameter.
      * However the compiler has some advanced options and equations that are not mapped to the project parameters
      * that you may find in Excelsior JET Users Guide or that was suggested by Excelsior JET Support team.
@@ -547,32 +586,32 @@ public class JetProject {
         }
 
         if (excelsiorJetPackaging == null) {
-            excelsiorJetPackaging = ZIP;
+            excelsiorJetPackaging = ZIP.toString();
         }
 
         //check packaging type
-        switch (excelsiorJetPackaging) {
+        switch (excelsiorJetPackaging()) {
             case ZIP:
             case NONE:
                 break;
             case EXCELSIOR_INSTALLER:
                 if (Utils.isOSX()) {
                     logger.warn(s("JetApi.NoExcelsiorInstallerOnOSX.Warning"));
-                    excelsiorJetPackaging = ZIP;
+                    excelsiorJetPackaging = ZIP.toString();
                 }
                 break;
             case OSX_APP_BUNDLE:
                 if (!Utils.isOSX()) {
                     logger.warn(s("JetApi.OSXBundleOnNotOSX.Warning"));
-                    excelsiorJetPackaging = ZIP;
+                    excelsiorJetPackaging = ZIP.toString();
                 }
                 break;
 
             case NATIVE_BUNDLE:
                 if (Utils.isOSX()) {
-                    excelsiorJetPackaging = OSX_APP_BUNDLE;
+                    excelsiorJetPackaging = OSX_APP_BUNDLE.toString();
                 } else {
-                    excelsiorJetPackaging = EXCELSIOR_INSTALLER;
+                    excelsiorJetPackaging = EXCELSIOR_INSTALLER.toString();
                 }
                 break;
 
@@ -600,6 +639,10 @@ public class JetProject {
             icon = new File(jetResourcesDir, "icon.ico");
         }
 
+        if (splash == null) {
+            splash = new File(jetResourcesDir, "splash.png");
+        }
+
         switch (appType) {
             case PLAIN:
                 if (outputName == null) {
@@ -614,6 +657,18 @@ public class JetProject {
                 break;
             default:
                 throw new AssertionError("Unknown application type");
+        }
+
+        if (stackTraceSupport == null) {
+            stackTraceSupport = StackTraceSupportType.MINIMAL.toString();
+        } else if (stackTraceSupport() == null) {
+            throw new JetTaskFailureException(s("JetApi.UnknownStackTraceSupportValue.Failure", stackTraceSupport));
+        }
+
+        if (inlineExpansion == null) {
+            inlineExpansion = InlineExpansionType.AGGRESSIVE.toString();
+        } else if (inlineExpansion() == null) {
+            throw new JetTaskFailureException(s("JetApi.UnknownInlineExpansionValue.Failure", inlineExpansion));
         }
 
         // check version info
@@ -666,7 +721,7 @@ public class JetProject {
             logger.warn(s("JetApi.NoVersionInfoInStandard.Warning"));
             addWindowsVersionInfo = false;
         }
-        if (addWindowsVersionInfo || EXCELSIOR_INSTALLER.equals(excelsiorJetPackaging) || OSX_APP_BUNDLE.equals(excelsiorJetPackaging)) {
+        if (addWindowsVersionInfo || (EXCELSIOR_INSTALLER == excelsiorJetPackaging()) || (OSX_APP_BUNDLE == excelsiorJetPackaging())) {
             if (Utils.isEmpty(vendor)) {
                 //no organization name. Get it from groupId that cannot be empty.
                 String[] groupId = groupId().split("\\.");
@@ -789,13 +844,13 @@ public class JetProject {
     }
 
     private void checkExcelsiorInstallerConfig() throws JetTaskFailureException {
-        if (excelsiorJetPackaging.equals(EXCELSIOR_INSTALLER)) {
+        if (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) {
             excelsiorInstallerConfiguration.fillDefaults(this);
         }
     }
 
     private void checkOSXBundleConfig() {
-        if (excelsiorJetPackaging.equals(OSX_APP_BUNDLE)) {
+        if (excelsiorJetPackaging() == OSX_APP_BUNDLE) {
             String fourDigitVersion = deriveFourDigitVersion(version);
             osxBundleConfiguration.fillDefaults(this, outputName, product,
                     deriveFourDigitVersion(version),
@@ -921,8 +976,8 @@ public class JetProject {
         return addWindowsVersionInfo;
     }
 
-    String excelsiorJetPackaging() {
-        return excelsiorJetPackaging;
+    PackagingType excelsiorJetPackaging() {
+        return PackagingType.fromString(excelsiorJetPackaging);
     }
 
     String winVIVersion() {
@@ -984,6 +1039,18 @@ public class JetProject {
 
     File icon() {
         return icon;
+    }
+
+    File splash() {
+        return splash;
+    }
+
+    StackTraceSupportType stackTraceSupport() {
+        return StackTraceSupportType.fromString(stackTraceSupport);
+    }
+
+    InlineExpansionType inlineExpansion() {
+        return InlineExpansionType.fromString(inlineExpansion);
     }
 
     boolean hideConsole() {
@@ -1168,6 +1235,21 @@ public class JetProject {
 
     public JetProject icon(File icon) {
         this.icon = icon;
+        return this;
+    }
+
+    public JetProject splash(File splash) {
+        this.splash = splash;
+        return this;
+    }
+
+    public JetProject stackTraceSupport(String stackTraceSupport) {
+        this.stackTraceSupport = stackTraceSupport;
+        return this;
+    }
+
+    public JetProject inlineExpansion(String inlineExpansion) {
+        this.inlineExpansion = inlineExpansion;
         return this;
     }
 
