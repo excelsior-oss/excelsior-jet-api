@@ -385,11 +385,11 @@ public class JetProject {
     private File icon;
 
     /**
-     * Splash file to show on start up of the executable.
+     * Splash image to display upon application start up.
      *
-     * By default, "splash.png" of {@link #jetResourcesDir} folder is used.  If it does not exist but
-     * the splash image has been specified in the manifest of the application's JAR file,
-     * the respective image will be obtained automatically.
+     * By default, the file "splash.png" from the {@link #jetResourcesDir} folder is used.
+     * If it does not exist, but a splash image is specified in the manifest
+     * of the application JAR file, that image will be used automatically.
      */
     private File splash;
 
@@ -397,18 +397,18 @@ public class JetProject {
      * The JET Runtime supports three modes of stack trace printing: {@code minimal}, {@code full}, and {@code none}.
      * <p>
      * In the {@code minimal} mode (default), line numbers and names of some methods are omitted in call stack entries,
-     * but class names are exact.
+     * but the class names are exact.
      * </p>
      * <p>
      * In the {@code full} mode, the stack trace info includes all line numbers and method names.
-     * However, enabling the full stack trace has a side effect of substantial growth of the resulting
-     * executable size by approximately 30%.
+     * However, enabling the full stack trace has a side effect - substantial growth of the resulting
+     * executable size, approximately by 30%.
      * </p>
-     * <p
+     * <p>
      * In the {@code none} mode, Throwable.printStackTrace() methods print a few fake elements.
-     * It may result in performance improvement, if the application throws and catches exceptions repeatedly.
-     * Note, however, that some third-party APIs may rely on stack trace printing, for example,
-     * Log4J API that provides logging services.
+     * It may result in performance improvement if the application throws and catches exceptions repeatedly.
+     * Note, however, that some third-party APIs may rely on stack trace printing. One example
+     * is the Log4J API that provides logging services.
      * </p>
      */
     private String stackTraceSupport;
@@ -416,7 +416,7 @@ public class JetProject {
     /**
      * Controls the aggressiveness of method inlining.
      * Available values are:
-     *   {@code aggressive} (default), {@code very-aggressive}, {@code medium}, {@code low}, {@code tiny-methods-only}
+     *   {@code aggressive} (default), {@code very-aggressive}, {@code medium}, {@code low}, {@code tiny-methods-only}.
      * <p>
      * If you need to reduce the size of the executable,
      * set the {@code low} or {@code tiny-methods-only} option. Note that it does not necessarily worsen application performance.
@@ -431,7 +431,7 @@ public class JetProject {
 
     /**
      * Add optional JET Runtime components to the package.
-     * By default only {@code jce} component (Java Crypto Extension) is added.
+     * By default, only the {@code jce} component (Java Crypto Extension) is added.
      * You may pass a special value {@code all} to include all available optional components at once
      * or {@code none} to not include any of them.
      * Available optional components:
@@ -444,7 +444,7 @@ public class JetProject {
      * Add locales and charsets.
      * By default only {@code European} locales are added.
      * You may pass a special value {@code all} to include all available locales at once
-     * or {@code none} to not include any of locales.
+     * or {@code none} to not include any additional locales.
      * Available locales and charsets:
      *    {@code European}, {@code Indonesian}, {@code Malay}, {@code Hebrew}, {@code Arabic},
      *    {@code Chinese}, {@code Japanese}, {@code Korean}, {@code Thai}, {@code Vietnamese}, {@code Hindi},
@@ -455,14 +455,16 @@ public class JetProject {
 
     /**
      * Additional compiler options and equations.
-     * The most of compiler options and equations are mapped to some parameters of the project,
+     * The commonly used compiler options and equations are mapped to the respective project parameters,
      * so usually there is no need to specify them with this parameter.
-     * However the compiler has some advanced options and equations that are not mapped to the project parameters
-     * that you may find in Excelsior JET Users Guide or that was suggested by Excelsior JET Support team.
-     * For those options, you may enumerate them with this parameter and they will be appended to
+     * However, the compiler also has some advanced options and equations 
+     * that you may find in the Excelsior JET User's Guide, plus some troubleshooting settings
+     * that the Excelsior JET Support team may suggest to you.
+     * You may enumerate such options and equations with this parameter and they will be appended to the
      * Excelsior JET project generated by {@link JetBuildTask}.
-     * However care must be taken with using this parameter to avoid conflicts of this parameter
-     * with other project parameters.
+     * <p>
+     * Care must be taken when using this parameter to avoid conflicts with other project parameters.
+     * </p>
      */
     private String[] compilerOptions;
 
