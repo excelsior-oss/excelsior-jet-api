@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -57,12 +58,17 @@ public class JetBuildTask {
      * @param compilerArgs project compiler args
      * @param dependencies project dependencies
      * @param modules      project modules
-     * @param prj name for project file
      * @throws JetTaskFailureException if {@code buildDir} is not exists.
      */
-    private static String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules, String prj) throws JetTaskFailureException {
+    private String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules) throws JetTaskFailureException {
+        String prj = project.outputName() + ".prj";
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
             compilerArgs.forEach(out::println);
+            if (project.compilerOptions() != null) {
+                for (String option : project.compilerOptions()) {
+                    out.println(option);
+                }
+            }
             for (ClasspathEntry dep : dependencies) {
                 out.println("!classpathentry " + dep.getFile().toString());
                 out.println("  -optimize=" + (dep.isLib() ? "autodetect" : "all"));
@@ -88,6 +94,13 @@ public class JetBuildTask {
         switch (project.appType()) {
             case PLAIN:
                 compilerArgs.add("-main=" + project.mainClass());
+
+                if (project.splash().isFile()) {
+                    compilerArgs.add("-splash=" + project.splash().getAbsolutePath());
+                } else {
+                    compilerArgs.add("-splashgetfrommanifest+");
+                }
+
                 break;
             case TOMCAT:
                 compilerArgs.add("-apptype=tomcat");
@@ -154,9 +167,44 @@ public class JetBuildTask {
             modules.add(execProfiles.getUsg().getAbsolutePath());
         }
 
+        switch (project.inlineExpansion()) {
+            case TINY_METHODS_ONLY:
+                compilerArgs.add("-inline-");
+                break;
+            case LOW:
+                compilerArgs.add("-inlinelimit=50");
+                compilerArgs.add("-inlinetolimit=250");
+                break;
+            case MEDIUM:
+                compilerArgs.add("-inlinelimit=100");
+                compilerArgs.add("-inlinetolimit=500");
+                break;
+            case VERY_AGGRESSIVE:
+                compilerArgs.add("-inlinelimit=250");
+                compilerArgs.add("-inlinetolimit=2000");
+            case AGGRESSIVE:
+                //use default
+                break;
+            default: throw new AssertionError("Unknown inline expansion type: " + project.inlineExpansion());
+        }
+
+        List<String> jvmArgs = project.jvmArgs() != null ? new ArrayList<>(Arrays.asList(project.jvmArgs())) : new ArrayList<>();
+
+        switch (project.stackTraceSupport()) {
+            case NONE:
+                jvmArgs.add("-Djet.stack.trace=false");
+                break;
+            case FULL:
+                compilerArgs.add("-genstacktrace+");
+                break;
+            case MINIMAL:
+                break;
+            default: throw new AssertionError("Unknown stack trace support type: " + project.stackTraceSupport());
+        }
+
         String jetVMPropOpt = "-jetvmprop=";
-        if (project.jvmArgs() != null && project.jvmArgs().length > 0) {
-            jetVMPropOpt = jetVMPropOpt + String.join(" ", (CharSequence[]) project.jvmArgs());
+        if (!jvmArgs.isEmpty()) {
+            jetVMPropOpt = jetVMPropOpt + String.join(" ", jvmArgs);
 
             // JVM args may contain $(Root) prefix for system property value
             // (that should expand to installation directory location).
@@ -167,12 +215,18 @@ public class JetBuildTask {
             compilerArgs.add("%" + jetVMPropOpt);
         }
 
-        String prj = createJetCompilerProject(buildDir, compilerArgs, dependencies, modules, project.outputName() + ".prj");
+        String prj = createJetCompilerProject(buildDir, compilerArgs, dependencies, modules);
 
         if (new JetCompiler(jetHome, "=p", prj, jetVMPropOpt)
                 .workingDirectory(buildDir).withLog(logger).execute() != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Build.Failure"));
         }
+    }
+
+    // checks that array contains only "none" value.
+    // Unfortunately, it is not possible to know if a user sets a parameter to an empty array from Maven.
+    private boolean checkNone(String[] values) {
+        return values.length == 1 && (values[0].equalsIgnoreCase("none"));
     }
 
     private ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
@@ -200,9 +254,34 @@ public class JetBuildTask {
                 throw new AssertionError("Unknown app type");
         }
 
-        if (project.optRtFiles() != null && project.optRtFiles().length > 0) {
-            xpackArgs.add("-add-opt-rt-files");
-            xpackArgs.add(String.join(",", (CharSequence[]) project.optRtFiles()));
+        if ((project.optRtFiles() != null) && (project.optRtFiles().length > 0)) {
+            if (checkNone(project.optRtFiles())) {
+                xpackArgs.add("-remove-opt-rt-files");
+                xpackArgs.add("all");
+            } else {
+                xpackArgs.add("-add-opt-rt-files");
+                xpackArgs.add(String.join(",", project.optRtFiles()));
+                if (Arrays.stream(project.optRtFiles()).noneMatch(s -> (s.equalsIgnoreCase("jce") || s.equalsIgnoreCase("all")))) {
+                    xpackArgs.add("-remove-opt-rt-files");
+                    //jce is included by default, so if it is not in the list remove it
+                    xpackArgs.add("jce");
+                }
+            }
+        }
+
+        if ((project.locales() != null) && (project.locales().length > 0)) {
+            if (checkNone(project.locales())) {
+                xpackArgs.add("-remove-locales");
+                xpackArgs.add("all");
+            } else {
+                xpackArgs.add("-add-locales");
+                xpackArgs.add(String.join(",", project.locales()));
+                if (Arrays.stream(project.locales()).noneMatch(s -> (s.equalsIgnoreCase("european") || s.equalsIgnoreCase("all")))) {
+                    xpackArgs.add("-remove-locales");
+                    //european is included by default, so if it is not in the list remove it
+                    xpackArgs.add("european");
+                }
+            }
         }
 
         if (project.javaRuntimeSlimDown() != null) {
@@ -356,17 +435,17 @@ public class JetBuildTask {
 
     private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
         switch (project.excelsiorJetPackaging()) {
-            case JetProject.ZIP:
+            case ZIP:
                 logger.info(s("JetBuildTask.ZipApp.Info"));
                 File targetZip = new File(project.jetOutputDir(), project.artifactName() + ".zip");
                 Utils.compressZipfile(packageDir, targetZip);
                 logger.info(s("JetBuildTask.Build.Success"));
                 logger.info(s("JetBuildTask.GetZip.Info", targetZip.getAbsolutePath()));
                 break;
-            case JetProject.EXCELSIOR_INSTALLER:
+            case EXCELSIOR_INSTALLER:
                 packWithEI(jetHome, buildDir);
                 break;
-            case JetProject.OSX_APP_BUNDLE:
+            case OSX_APP_BUNDLE:
                 createOSXAppBundle(jetHome, buildDir);
                 break;
             default:
