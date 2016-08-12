@@ -469,6 +469,11 @@ public class JetProject {
     private String[] compilerOptions;
 
     /**
+     * Command line arguments, that will be passed to program while startup accelerator profiling run and test run.
+     */
+    private String[] programArgs;
+
+    /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
      * that should be shown to a user.
      */
@@ -1083,6 +1088,10 @@ public class JetProject {
         return locales;
     }
 
+    public String[] programArgs() {
+        return programArgs;
+    }
+
 ////////// Builder methods ////////////////////
 
     public JetProject mainWar(File mainWar) {
@@ -1282,6 +1291,11 @@ public class JetProject {
 
     public JetProject locales(String[] locales) {
         this.locales = locales;
+        return this;
+    }
+
+    public JetProject programArgs(String[] programArgs) {
+        this.programArgs = programArgs;
         return this;
     }
 }

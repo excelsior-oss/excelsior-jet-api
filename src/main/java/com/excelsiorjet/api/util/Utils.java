@@ -218,4 +218,26 @@ public class Utils {
         return constantName.toLowerCase().replace('_', '-');
     }
 
+    /**
+     * Encloses string with double quotes (") if it contains space
+     */
+    public static String quoteCmdLineArgument(String arg) {
+        return arg.contains(" ") ? '"' + arg + '"' : arg;
+    }
+
+    /**
+     * Splits string containing value for {@link com.excelsiorjet.api.tasks.JetProject#programArgs}, where
+     * arguments is separated by comma and comma within argument is echoed by '\'.
+     *
+     * For example, "value1,value2.1\, value2.2"
+     * is parsed into 2 arguments: ["value1", "value2.1, value2.2"]
+     */
+    public static String[] parseProgramArgs(String programArgs) {
+        String[] args = programArgs.split("[^\\\\],");
+        String[] unechoedArgs = new String[args.length];
+        for (int i = 0; i < args.length; i++) {
+            unechoedArgs[i] = args[i].replaceAll("\\\\,", ",");
+        }
+        return unechoedArgs;
+    }
 }

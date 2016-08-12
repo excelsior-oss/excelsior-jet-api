@@ -169,8 +169,11 @@ public class TestRunTask {
         xjava.arg("-cp");
         xjava.arg(classpath);
         xjava.arg(project.mainClass());
+        for (String arg : project.programArgs()) {
+            xjava.arg(arg);
+        }
         String cmdLine = xjava.getArgs().stream()
-                .map(arg -> arg.contains(" ") ? '"' + arg + '"' : arg)
+                .map(Utils::quoteCmdLineArgument)
                 .collect(Collectors.joining(" "));
 
         logger.info(Txt.s("TestRunTask.Start.Info", cmdLine));
