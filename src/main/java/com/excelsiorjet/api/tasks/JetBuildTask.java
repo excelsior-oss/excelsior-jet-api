@@ -188,8 +188,8 @@ public class JetBuildTask {
             default: throw new AssertionError("Unknown inline expansion type: " + project.inlineExpansion());
         }
 
-        if (project.programArgs().length > 0) {
-            String quotedArgs = Arrays.stream(project.programArgs())
+        if (project.runArgs().length > 0) {
+            String quotedArgs = Arrays.stream(project.runArgs())
                     .map(Utils::quoteCmdLineArgument)
                     .collect(joining(" "));
             compilerArgs.add("-runarguments=" + quotedArgs);

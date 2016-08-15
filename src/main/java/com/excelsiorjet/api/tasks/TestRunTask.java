@@ -169,7 +169,7 @@ public class TestRunTask {
         xjava.arg("-cp");
         xjava.arg(classpath);
         xjava.arg(project.mainClass());
-        for (String arg : project.programArgs()) {
+        for (String arg : project.runArgs()) {
             xjava.arg(arg);
         }
         String cmdLine = xjava.getArgs().stream()
