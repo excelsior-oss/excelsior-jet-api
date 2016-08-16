@@ -469,9 +469,9 @@ public class JetProject {
     private String[] compilerOptions;
 
     /**
-     * Command line arguments, that will be passed to the application while startup accelerator profiling run and test run.
+     * Command line arguments that will be passed to the application during startup accelerator profiling and the test run.
      * You may also set the parameter via the {@code jet.runArgs} system property, where arguments
-     * are comma separated (use "\" to echo comma itself,
+     * are comma separated (use "\" to escape commas inside arguments,
      * i.e. {@code -Djet.runArgs="arg1,Hello\, World"} will be passed to your application as {@code arg1 "Hello, World"})
      */
     private String[] runArgs;

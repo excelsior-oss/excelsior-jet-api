@@ -221,15 +221,15 @@ public class Utils {
     }
 
     /**
-     * Encloses string with double quotes (") if it contains space
+     * Encloses string in double quotes (") if it contains space.
      */
     public static String quoteCmdLineArgument(String arg) {
         return arg.contains(" ") ? '"' + arg + '"' : arg;
     }
 
     /**
-     * Splits string containing value for {@link com.excelsiorjet.api.tasks.JetProject#runArgs}, where
-     * arguments is separated by comma and comma within argument is echoed by '\'.
+     * Splits a string containing value for {@link com.excelsiorjet.api.tasks.JetProject#runArgs},
+     * where arguments are separated by commas and commas within an argument are escaped with '\'.
      * <p>
      * For example, "value1,value2.1\, value2.2"
      * is parsed into 2 arguments: ["value1", "value2.1, value2.2"]
@@ -241,7 +241,7 @@ public class Utils {
             char c = runArgs.charAt(i);
             if (c == ',') {
                 if (i > 0 && runArgs.charAt(i - 1) == '\\') {
-                    // replace echoing '\' with ','
+                    // replace "\," with ","
                     buff.setCharAt(buff.length() - 1, c);
                 } else {
                     // split args
