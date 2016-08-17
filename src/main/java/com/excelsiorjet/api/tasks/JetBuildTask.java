@@ -30,10 +30,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
+import static java.util.stream.Collectors.*;
 
 /**
  * Task for building Java (JVM) applications with Excelsior JET.
@@ -186,6 +186,13 @@ public class JetBuildTask {
                 //use default
                 break;
             default: throw new AssertionError("Unknown inline expansion type: " + project.inlineExpansion());
+        }
+
+        if (project.runArgs().length > 0) {
+            String quotedArgs = Arrays.stream(project.runArgs())
+                    .map(Utils::quoteCmdLineArgument)
+                    .collect(joining(" "));
+            compilerArgs.add("-runarguments=" + quotedArgs);
         }
 
         List<String> jvmArgs = project.jvmArgs() != null ? new ArrayList<>(Arrays.asList(project.jvmArgs())) : new ArrayList<>();

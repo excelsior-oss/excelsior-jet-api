@@ -28,6 +28,8 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -218,4 +220,39 @@ public class Utils {
         return constantName.toLowerCase().replace('_', '-');
     }
 
+    /**
+     * Encloses string in double quotes (") if it contains space.
+     */
+    public static String quoteCmdLineArgument(String arg) {
+        return arg.contains(" ") ? '"' + arg + '"' : arg;
+    }
+
+    /**
+     * Splits a string containing value for {@link com.excelsiorjet.api.tasks.JetProject#runArgs},
+     * where arguments are separated by commas and commas within an argument are escaped with '\'.
+     * <p>
+     * For example, "value1,value2.1\, value2.2"
+     * is parsed into 2 arguments: ["value1", "value2.1, value2.2"]
+     */
+    public static String[] parseRunArgs(String runArgs) {
+        List<String> res = new ArrayList<>();
+        StringBuilder buff = new StringBuilder();
+        for (int i = 0; i < runArgs.length(); i++) {
+            char c = runArgs.charAt(i);
+            if (c == ',') {
+                if (i > 0 && runArgs.charAt(i - 1) == '\\') {
+                    // replace "\," with ","
+                    buff.setCharAt(buff.length() - 1, c);
+                } else {
+                    // split args
+                    res.add(buff.toString());
+                    buff = new StringBuilder();
+                }
+            } else {
+                buff.append(c);
+            }
+        }
+        res.add(buff.toString());
+        return res.toArray(new String[res.size()]);
+    }
 }

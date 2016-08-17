@@ -469,6 +469,14 @@ public class JetProject {
     private String[] compilerOptions;
 
     /**
+     * Command line arguments that will be passed to the application during startup accelerator profiling and the test run.
+     * You may also set the parameter via the {@code jet.runArgs} system property, where arguments
+     * are comma separated (use "\" to escape commas inside arguments,
+     * i.e. {@code -Djet.runArgs="arg1,Hello\, World"} will be passed to your application as {@code arg1 "Hello, World"})
+     */
+    private String[] runArgs;
+
+    /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
      * that should be shown to a user.
      */
@@ -623,6 +631,12 @@ public class JetProject {
 
         if (execProfilesDir == null) {
             execProfilesDir = jetResourcesDir;
+        }
+
+        // Override run args from system property
+        String runArgs = System.getProperty("jet.runArgs");
+        if (runArgs != null) {
+            this.runArgs = Utils.parseRunArgs(runArgs);
         }
 
         if (Utils.isEmpty(execProfilesName)) {
@@ -1083,6 +1097,10 @@ public class JetProject {
         return locales;
     }
 
+    public String[] runArgs() {
+        return runArgs;
+    }
+
 ////////// Builder methods ////////////////////
 
     public JetProject mainWar(File mainWar) {
@@ -1282,6 +1300,11 @@ public class JetProject {
 
     public JetProject locales(String[] locales) {
         this.locales = locales;
+        return this;
+    }
+
+    public JetProject runArgs(String[] runArgs) {
+        this.runArgs = runArgs;
         return this;
     }
 }
