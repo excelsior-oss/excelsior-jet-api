@@ -184,6 +184,14 @@ public class JetProject {
     private List<ClasspathEntry> dependencies;
 
     /**
+     * If you build your main artifact as so called fat jar so all your project dependencies are packed
+     * into your main artifact then the most-likely you do not need separate dependencies to be compiled
+     * with Excelsior JET because all needed classes and resources are already inside of your main artifact.
+     * For such a case you may set this parameter to {@code true}.
+     */
+    boolean ignoreProjectDependencies;
+
+    /**
      * The target location for application execution profiles gathered during Test Run.
      * It is recommended to commit the collected profiles (.usg, .startup) to VCS to enable the {@code {@link JetBuildTask}}
      * to re-use them during subsequent builds without performing a Test Run.
