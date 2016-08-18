@@ -21,14 +21,17 @@
 */
 package com.excelsiorjet.api.tasks;
 
-import com.excelsiorjet.api.cmd.*;
+import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.cmd.CmdLineToolException;
+import com.excelsiorjet.api.cmd.JetEdition;
+import com.excelsiorjet.api.cmd.JetHomeException;
+import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -37,6 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.log.Log.logger;
+import static java.util.Arrays.asList;
 
 /**
  * Task for performing a Test Run before building the application.
@@ -70,13 +74,15 @@ public class TestRunTask {
 
     private static final String BOOTSTRAP_JAR = "bootstrap.jar";
 
+    private final ExcelsiorJet excelsiorJet;
     private final JetProject project;
 
-    public TestRunTask(JetProject project) {
+    public TestRunTask(ExcelsiorJet excelsiorJet, JetProject project) throws JetTaskFailureException {
+        this.excelsiorJet = excelsiorJet;
         this.project = project;
     }
 
-    private String getTomcatClassPath(JetHome jetHome, File tomcatBin) throws JetTaskFailureException, IOException {
+    private String getTomcatClassPath(File tomcatBin) throws JetTaskFailureException, IOException {
         File f = new File(tomcatBin, BOOTSTRAP_JAR);
         if (!f.exists()) {
             throw new JetTaskFailureException(Txt.s("TestRunTask.Tomcat.NoBootstrapJar.Failure", tomcatBin.getAbsolutePath()));
@@ -94,16 +100,16 @@ public class TestRunTask {
 
         String bootstrapJarCP = bootManifest.getMainAttributes().getValue("CLASS-PATH");
         if (bootstrapJarCP != null) {
-            classPath.addAll(Arrays.asList(bootstrapJarCP.split("\\s+")));
+            classPath.addAll(asList(bootstrapJarCP.split("\\s+")));
         }
 
-        classPath.add(jetHome.getJetHome() + File.separator + "lib" + File.separator + "tomcat" + File.separator + "TomcatSupport.jar");
+        classPath.add(excelsiorJet.getJetHome() + File.separator + "lib" + File.separator + "tomcat" + File.separator + "TomcatSupport.jar");
         return String.join(File.pathSeparator, classPath);
     }
 
     public List<String> getTomcatVMArgs() {
         String tomcatDir = project.tomcatInBuildDir().getAbsolutePath();
-        return Arrays.asList(
+        return asList(
                 "-Djet.classloader.id.provider=com/excelsior/jet/runtime/classload/customclassloaders/tomcat/TomcatCLIDProvider",
                 "-Dcatalina.base=" + tomcatDir,
                 "-Dcatalina.home=" + tomcatDir,
@@ -114,7 +120,7 @@ public class TestRunTask {
     }
 
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
-        JetHome jetHome = project.validate(false);
+        project.validate(excelsiorJet, false);
 
         // creating output dirs
         File buildDir = project.createBuildDir();
@@ -124,21 +130,21 @@ public class TestRunTask {
         File workingDirectory;
         switch (project.appType()) {
             case PLAIN:
-                List<ClasspathEntry> dependencies = project.copyDependencies();
+                List<ClasspathEntry> dependencies = project.copyClasspathEntries();
                 if (project.packageFilesDir().exists()) {
                     //application may access custom package files at runtime. So copy them as well.
                     Utils.copyQuietly(project.packageFilesDir().toPath(), buildDir.toPath());
                 }
 
                 classpath = String.join(File.pathSeparator,
-                        dependencies.stream().map(d -> d.getFile().toString()).collect(Collectors.toList()));
+                        dependencies.stream().map(d -> d.path.toString()).collect(Collectors.toList()));
                 additionalVMArgs = Collections.emptyList();
                 workingDirectory = buildDir;
                 break;
             case TOMCAT:
                 project.copyTomcatAndWar();
                 workingDirectory = new File(project.tomcatInBuildDir(), "bin");
-                classpath = getTomcatClassPath(jetHome, workingDirectory);
+                classpath = getTomcatClassPath(workingDirectory);
                 additionalVMArgs = getTomcatVMArgs();
                 break;
             default:
@@ -147,43 +153,49 @@ public class TestRunTask {
 
         Utils.mkdir(project.execProfilesDir());
 
-        XJava xjava = new XJava(jetHome);
-        try {
-            xjava.addTestRunArgs(new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName()))
-                    .withLog(logger,
-                            project.appType() == ApplicationType.TOMCAT) // Tomcat outputs to std error, so to not confuse users,
-                    // we  redirect its output to std out in test run
-                    .workingDirectory(workingDirectory);
-        } catch (JetHomeException e) {
-            throw new JetTaskFailureException(e.getMessage());
-        }
-
-        xjava.addArgs(additionalVMArgs);
-
-        //add jvm args substituting $(Root) occurences with buildDir
-        xjava.addArgs(Stream.of(project.jvmArgs())
-                .map(s -> s.replace("$(Root)", buildDir.getAbsolutePath()))
-                .collect(Collectors.toList())
-        );
-
-        xjava.arg("-cp");
-        xjava.arg(classpath);
-        xjava.arg(project.mainClass());
-        for (String arg : project.runArgs()) {
-            xjava.arg(arg);
-        }
-        String cmdLine = xjava.getArgs().stream()
+        List<String> args = xjavaArgs(buildDir, classpath, additionalVMArgs);
+        String cmdLine = args.stream()
                 .map(Utils::quoteCmdLineArgument)
                 .collect(Collectors.joining(" "));
 
         logger.info(Txt.s("TestRunTask.Start.Info", cmdLine));
 
-        int errCode = xjava.execute();
+        // Tomcat outputs to std error, so to not confuse users,
+        // we  redirect its output to std out in test run
+        boolean errToOut = project.appType() == ApplicationType.PLAIN;
+        int errCode = excelsiorJet.testRun(workingDirectory, logger, errToOut, args.toArray(new String[args.size()]));
         String finishText = Txt.s("TestRunTask.Finish.Info", errCode);
         if (errCode != 0) {
             logger.warn(finishText);
         } else {
             logger.info(finishText);
         }
+    }
+
+    private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs) throws JetTaskFailureException {
+        List<String> args = new ArrayList<>();
+        try {
+            TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
+            if (excelsiorJet.getJetHome().getEdition() != JetEdition.STANDARD) {
+                args.add("-Djet.jit.profile.startup=" + execProfiles.getStartup().getAbsolutePath());
+            }
+            if (!excelsiorJet.getJetHome().is64bit()) {
+                args.add("-Djet.usage.list=" + execProfiles.getUsg().getAbsolutePath());
+            }
+        } catch (JetHomeException e) {
+            throw new JetTaskFailureException(e.getMessage());
+        }
+
+        args.addAll(additionalVMArgs);
+
+        //add jvm args substituting $(Root) occurences with buildDir
+        args.addAll(Stream.of(project.jvmArgs())
+                .map(s -> s.replace("$(Root)", buildDir.getAbsolutePath()))
+                .collect(Collectors.toList())
+        );
+
+        args.addAll(asList("-cp", classpath, project.mainClass()));
+        args.addAll(asList(project.runArgs()));
+        return args;
     }
 }

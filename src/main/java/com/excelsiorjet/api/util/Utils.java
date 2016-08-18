@@ -30,6 +30,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -254,5 +256,14 @@ public class Utils {
         }
         res.add(buff.toString());
         return res.toArray(new String[res.size()]);
+    }
+
+    /**
+     * @return String in format "([groupId],[artifactId],[version])" (all fields are optional)
+     */
+    public static String idStr(String groupId, String artifactId, String version) {
+        return Stream.of(groupId, artifactId, version).
+                filter(item -> item != null).
+                collect(Collectors.joining(":", "(", ")"));
     }
 }

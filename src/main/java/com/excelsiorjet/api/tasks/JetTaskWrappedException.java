@@ -21,14 +21,12 @@
 */
 package com.excelsiorjet.api.tasks;
 
-import java.io.IOException;
-
 /**
  * Unchecked IOException wrapper to throw in methods, that are called from lambdas
  */
-class JetTaskIOException extends RuntimeException {
+class JetTaskWrappedException extends RuntimeException {
 
-    JetTaskIOException(IOException cause) {
+    JetTaskWrappedException(Exception cause) {
         super(cause);
     }
 
