@@ -21,6 +21,8 @@
 */
 package com.excelsiorjet.api.tasks;
 
+import com.excelsiorjet.api.util.Utils;
+
 /**
  * Supported application types enumeration.
  */
@@ -34,6 +36,30 @@ public enum ApplicationType {
     /**
      * Servlet-based Java application, that runs within Tomcat servlet container.
      */
-    TOMCAT
+    TOMCAT,
+
+    /**
+     * Dynamic library callable from a non-Java environment.
+     */
+    INVOCATION_DYNAMIC_LIBRARY,
+
+    /**
+     * Windows service (Windows only).
+     */
+    WINDOWS_SERVICE
+    ;
+
+    public String toString() {
+        return Utils.enumConstantNameToParameter(name());
+    }
+
+    public static ApplicationType fromString(String appType) {
+        try {
+            return ApplicationType.valueOf(Utils.parameterToEnumConstantName(appType));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 
 }
