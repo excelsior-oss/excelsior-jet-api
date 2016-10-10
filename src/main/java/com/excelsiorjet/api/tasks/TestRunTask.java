@@ -23,8 +23,8 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
-import com.excelsiorjet.api.cmd.JetEdition;
-import com.excelsiorjet.api.cmd.JetHomeException;
+import com.excelsiorjet.api.JetEdition;
+import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;

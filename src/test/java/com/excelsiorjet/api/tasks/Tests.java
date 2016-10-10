@@ -13,7 +13,7 @@ import static java.util.Collections.emptyList;
 
 class Tests {
 
-    private static final Path testBaseDir = Paths.get(System.getProperty("java.io.tmpdir"), "excelsior-jet-api-test");
+    static final Path testBaseDir = Paths.get(System.getProperty("java.io.tmpdir"), "excelsior-jet-api-test");
     private static final Path mavenLocalDir = testBaseDir.resolve(".m2");
     static final Path projectDir = testBaseDir.resolve("prj");
     private static final Path buildDir = projectDir.resolve("build");
@@ -55,6 +55,7 @@ class Tests {
         JetProject.configureEnvironment(new StdOutLog(), ResourceBundle.getBundle("Strings"));
         JetProject project = new JetProject("test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
                 splash(new File("splash")).
+                icon(new File("icon")).
                 inlineExpansion("tiny-methods-only").
                 runArgs(new String[0]).
                 projectDependencies(emptyList()).

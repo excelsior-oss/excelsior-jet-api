@@ -26,7 +26,7 @@ import com.excelsiorjet.api.util.Utils;
 import java.io.File;
 
 /**
- * POJO to gather external dependencies and dependency settings from user of API client.
+ * Excelsior JET specific dependency settings.
  *
  * @author Nikita Lipsky
  */

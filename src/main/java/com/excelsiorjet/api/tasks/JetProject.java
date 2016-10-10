@@ -22,8 +22,8 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.cmd.JetEdition;
-import com.excelsiorjet.api.cmd.JetHomeException;
+import com.excelsiorjet.api.JetEdition;
+import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.tasks.config.*;
@@ -36,7 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.tasks.PackagingType.*;
@@ -650,12 +649,10 @@ public class JetProject {
 
     public void processDependencies() throws JetTaskFailureException {
         for (DependencySettings dependency : dependencies) {
-            if (dependency.path == null && dependency.groupId == null && dependency.artifactId == null && dependency.version == null) {
+            if (dependency.path == null && dependency.groupId == null && dependency.artifactId == null) {
                 throw new JetTaskFailureException(s("JetApi.DependencyIdRequired"));
             } else if (dependency.path != null && (dependency.groupId != null || dependency.artifactId != null || dependency.version != null)) {
                 throw new JetTaskFailureException(s("JetApi.InvalidDependencySetting", dependency.idStr()));
-            } else if (dependency.path == null && dependency.groupId == null && dependency.artifactId == null) {
-                throw new JetTaskFailureException(s("JetApi.DependencySettingsWithoutGroupAndArtifact"));
             }
 
             if (dependency.packagePath != null && dependency.disableCopyToPackage != null && dependency.disableCopyToPackage) {
@@ -671,7 +668,7 @@ public class JetProject {
 
         for (DependencySettings externalDependency : externalDependencies) {
             if (appType == ApplicationType.TOMCAT) {
-                throw new JetTaskFailureException(s("JetApi.TomcatApplicationCannotHaveExternalDependencies"));
+                throw new JetTaskFailureException(s("JetApi.TomcatApplicationCannotHaveExternalDependencies", externalDependency.path));
             }
             if (externalDependency.path.isDirectory() && (externalDependency.pack != null && !ClasspathEntry.PackType.NONE.userValue.equals(externalDependency.pack))) {
                 throw new JetTaskFailureException(s("JetApi.NotPackedExternalDirectory", externalDependency.path));

@@ -19,7 +19,7 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.cmd;
+package com.excelsiorjet.api;
 
 /**
  * @author Nikita Lipsky

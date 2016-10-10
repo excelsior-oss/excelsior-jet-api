@@ -32,7 +32,7 @@ import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * {@code xpack} Excelsior JET command line tool arguments generator.
+ * Provides {@code xpack} arguments derived from a given {@link JetProject}.
  *
  * @author Aleksey Zhidkov
  */

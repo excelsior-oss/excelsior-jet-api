@@ -22,7 +22,7 @@
 package com.excelsiorjet.api.tasks;
 
 /**
- * Unchecked IOException wrapper to throw in methods, that are called from lambdas
+ * Unchecked IOException wrapper to throw in methods that are called from lambdas.
  */
 class JetTaskWrappedException extends RuntimeException {
 

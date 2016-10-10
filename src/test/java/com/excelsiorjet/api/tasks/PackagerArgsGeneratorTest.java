@@ -2,6 +2,7 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.tasks.config.DependencySettings;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
+import com.excelsiorjet.api.util.Utils;
 import org.junit.Test;
 
 import java.io.File;
@@ -12,6 +13,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PackagerArgsGeneratorTest {
+
+    private String toPlatform(String path) {
+        return path.replace('/', File.separatorChar);
+    }
 
     @Test
     public void testAddFileForNotPacketArtifactWithoutPackagePath() throws Exception {
@@ -27,12 +32,12 @@ public class PackagerArgsGeneratorTest {
 
         int addExeIdx = xPackArgs.indexOf("-add-file");
         assertTrue(addExeIdx >= 0);
-        assertEquals("test", xPackArgs.get(addExeIdx + 1));
+        assertEquals(Utils.mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
         assertEquals("/", xPackArgs.get(addExeIdx + 2));
 
         int addLibIdx = xPackArgs.lastIndexOf("-add-file");
         assertTrue(addLibIdx > addExeIdx);
-        assertEquals("lib/test.jar", xPackArgs.get(addLibIdx + 1));
+        assertEquals(toPlatform("lib/test.jar"), xPackArgs.get(addLibIdx + 1));
         assertEquals("/lib", xPackArgs.get(addLibIdx + 2));
     }
 
@@ -48,7 +53,7 @@ public class PackagerArgsGeneratorTest {
 
         int addExeIdx = xPackArgs.indexOf("-add-file");
         assertTrue(addExeIdx >= 0);
-        assertEquals("test", xPackArgs.get(addExeIdx + 1));
+        assertEquals(Utils.mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
         assertEquals("/", xPackArgs.get(addExeIdx + 2));
 
         int addLibIdx = xPackArgs.lastIndexOf("-add-file");
@@ -70,18 +75,18 @@ public class PackagerArgsGeneratorTest {
 
         int addExeIdx = xPackArgs.indexOf("-add-file");
         assertTrue(addExeIdx >= 0);
-        assertEquals("test", xPackArgs.get(addExeIdx + 1));
+        assertEquals(Utils.mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
         assertEquals("/", xPackArgs.get(addExeIdx + 2));
 
         int addLibIdx = xPackArgs.lastIndexOf("-add-file");
         assertTrue(addLibIdx > addExeIdx);
-        assertEquals("extDep/test.jar", xPackArgs.get(addLibIdx + 1));
+        assertEquals(toPlatform("extDep/test.jar"), xPackArgs.get(addLibIdx + 1));
         assertEquals("extDep", xPackArgs.get(addLibIdx + 2));
 
         assertEquals("-assign-resource", xPackArgs.get(addLibIdx + 3));
-        assertEquals("test", xPackArgs.get(addLibIdx + 4));
+        assertEquals(Utils.mangleExeName("test"), xPackArgs.get(addLibIdx + 4));
         assertEquals("test.jar", xPackArgs.get(addLibIdx + 5));
-        assertEquals("extDep/test.jar", xPackArgs.get(addLibIdx + 6));
+        assertEquals(toPlatform("extDep/test.jar"), xPackArgs.get(addLibIdx + 6));
     }
 
     @Test
@@ -97,12 +102,12 @@ public class PackagerArgsGeneratorTest {
 
         int addExeIdx = xPackArgs.indexOf("-add-file");
         assertTrue(addExeIdx >= 0);
-        assertEquals("test", xPackArgs.get(addExeIdx + 1));
+        assertEquals(Utils.mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
         assertEquals("/", xPackArgs.get(addExeIdx + 2));
 
         int disableResourceIdx = xPackArgs.lastIndexOf("-disable-resource");
         assertTrue(disableResourceIdx > addExeIdx);
-        assertEquals("test", xPackArgs.get(disableResourceIdx + 1));
+        assertEquals(Utils.mangleExeName("test"), xPackArgs.get(disableResourceIdx + 1));
         assertEquals("external.jar", xPackArgs.get(disableResourceIdx + 2));
     }
 }

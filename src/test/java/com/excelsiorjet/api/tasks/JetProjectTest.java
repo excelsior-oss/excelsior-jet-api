@@ -37,7 +37,7 @@ public class JetProjectTest {
             project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
-            assertEquals(Txt.s("JetApi.NotPackedExternalDirectory", "/tmp/excelsior-jet-api-test/prj/externalDir"), e.getMessage());
+            assertEquals(Txt.s("JetApi.NotPackedExternalDirectory", Tests.testBaseDir.resolve("prj/externalDir")), e.getMessage());
         }
     }
 

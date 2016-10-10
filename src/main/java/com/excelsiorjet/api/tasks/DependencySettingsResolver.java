@@ -30,7 +30,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This class is designed to merge managed dependencies with dependency settings into {link ClasspathEntry}.
+ * The class assigns dependency settings for project dependencies resulting in creation of a respective
+ * {@link ClasspathEntry}.
  *
  * @author Aleksey Zhidkov
  */

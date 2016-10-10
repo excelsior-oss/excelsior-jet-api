@@ -23,12 +23,21 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.tasks.config.DependencySettings;
+import com.excelsiorjet.api.tasks.config.ProjectDependency;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 
 /**
- * Representation of Excelsior JET's project classpath entry.
+ * Representation of Excelsior JET's project classpath entry: !classpathentry for plain Java applications,
+ * !classloaderentry for Tomcat web applications.
+ *
+ * Classpath entry is created when a dependency settings specified by a plugin users
+ * are resolved for a project dependency using {@link DependencySettingsResolver}.
+ *
+ * @see DependencySettings
+ * @see ProjectDependency
+ * @see DependencySettingsResolver
  *
  * @author Aleksey Zhidkov
  */

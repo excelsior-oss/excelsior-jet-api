@@ -27,7 +27,7 @@ import com.excelsiorjet.api.util.Utils;
 import java.io.File;
 
 /**
- * Representation of managed (i.e. Maven or Gradle) project dependency.
+ * Description of managed (i.e. Maven or Gradle) project dependency.
  *
  * @author Aleksey Zhidkov
  */

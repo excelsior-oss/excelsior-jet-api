@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import static com.excelsiorjet.api.tasks.Tests.testProject;
 import static java.util.Arrays.asList;
@@ -15,16 +17,25 @@ import static org.junit.Assert.assertTrue;
 
 public class CompilerArgsGeneratorTest {
 
+    private String linesToString(String... lines) {
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter out = new PrintWriter(stringWriter);
+        for (String line: lines) {
+            out.println(line);
+        }
+        return stringWriter.toString();
+    }
+
     @Test
     public void testMainJarClasspathEntry() throws Exception {
         JetProject prj = Tests.testProject(ApplicationType.PLAIN);
         prj.processDependencies();
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
 
     }
@@ -38,16 +49,16 @@ public class CompilerArgsGeneratorTest {
                 dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).pack(ClasspathEntry.PackType.ALL).asDependencySettings()));
         prj.processDependencies();
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n" +
-                "!classpathentry lib/dep.jar\n" +
-                "  -optimize=autodetect\n" +
-                "  -protect=nomatter\n" +
-                "  -pack=all\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end",
+                "!classpathentry lib/dep.jar",
+                "  -optimize=autodetect",
+                "  -protect=nomatter",
+                "  -pack=all",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
@@ -58,15 +69,15 @@ public class CompilerArgsGeneratorTest {
                 projectDependencies(singletonList(DependencyBuilder.testProjectDependency(depFileSpy).asProjectDependency()));
         prj.processDependencies();
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n" +
-                "!classpathentry lib/dep.jar\n" +
-                "  -optimize=autodetect\n" +
-                "  -protect=nomatter\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end",
+                "!classpathentry lib/dep.jar",
+                "  -optimize=autodetect",
+                "  -protect=nomatter",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
@@ -77,14 +88,14 @@ public class CompilerArgsGeneratorTest {
                 dependencies(singletonList(DependencyBuilder.testExternalDependency(depFileSpy).pack(ClasspathEntry.PackType.ALL).asDependencySettings()));
         prj.processDependencies();
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n" +
-                "!classpathentry lib/dep.jar\n" +
-                "  -pack=all\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end",
+                "!classpathentry lib/dep.jar",
+                "  -pack=all",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
@@ -99,16 +110,16 @@ public class CompilerArgsGeneratorTest {
         prj.processDependencies();
 
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n" +
-                "!classpathentry lib/dep.jar\n" +
-                "  -optimize=autodetect\n" +
-                "  -protect=nomatter\n" +
-                "  -pack=none\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end",
+                "!classpathentry lib/dep.jar",
+                "  -optimize=autodetect",
+                "  -protect=nomatter",
+                "  -pack=none",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
@@ -123,21 +134,21 @@ public class CompilerArgsGeneratorTest {
         prj.processDependencies();
 
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n" +
-                "!classpathentry lib/dep1.jar\n" +
-                "  -optimize=autodetect\n" +
-                "  -protect=nomatter\n" +
-                "  -pack=all\n" +
-                "!end\n" +
-                "!classpathentry lib/dep2.jar\n" +
-                "  -optimize=autodetect\n" +
-                "  -protect=nomatter\n" +
-                "  -pack=all\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end",
+                "!classpathentry lib/dep1.jar",
+                "  -optimize=autodetect",
+                "  -protect=nomatter",
+                "  -pack=all",
+                "!end",
+                "!classpathentry lib/dep2.jar",
+                "  -optimize=autodetect",
+                "  -protect=nomatter",
+                "  -pack=all",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
@@ -148,12 +159,12 @@ public class CompilerArgsGeneratorTest {
         prj.processDependencies();
 
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrj = "-apptype=tomcat\n" +
-                "-appdir=/tmp/excelsior-jet-api-test/prj/build/jet/build/tomcat-home\n" +
-                "-outputname=test\n" +
-                "-decor=ht\n" +
-                "-inline-\n" +
-                "%-jetvmprop=\n";
+        String expectedPrj = linesToString("-apptype=tomcat",
+                "-appdir=" + Tests.testBaseDir.resolve("prj/build/jet/build/tomcat-home").toString().replace(File.separatorChar, '/'),
+                "-outputname=test",
+                "-decor=ht",
+                "-inline-",
+                "%-jetvmprop=");
 
         assertEquals(expectedPrj, compilerArgsGenerator.projectFileContent());
     }
@@ -165,13 +176,13 @@ public class CompilerArgsGeneratorTest {
                 dependencies(singletonList(DependencyBuilder.testExternalDependency(depDirSpy).packagePath("abc").asDependencySettings()));
         prj.processDependencies();
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n" +
-                "!classpathentry abc/extDir\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end",
+                "!classpathentry abc/extDir",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
@@ -182,13 +193,13 @@ public class CompilerArgsGeneratorTest {
                 dependencies(singletonList(DependencyBuilder.testExternalDependency(depDirSpy).asDependencySettings()));
         prj.processDependencies();
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "!classpathentry test.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n" +
-                "!classpathentry extDir\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "!classpathentry test.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end",
+                "!classpathentry extDir",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
@@ -202,12 +213,12 @@ public class CompilerArgsGeneratorTest {
         prj.processDependencies();
 
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj);
-        String expectedPrjTail =
-                "%-jetvmprop=\n" +
-                "!classloaderentry webapp webapps/test:/WEB-INF/lib/dep.jar\n" +
-                "  -optimize=all\n" +
-                "  -protect=all\n" +
-                "!end\n";
+        String expectedPrjTail = linesToString(
+                "%-jetvmprop=",
+                "!classloaderentry webapp webapps/test:/WEB-INF/lib/dep.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 

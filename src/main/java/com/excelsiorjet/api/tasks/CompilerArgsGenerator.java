@@ -24,8 +24,10 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.util.Utils;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +35,8 @@ import java.util.List;
 import static java.util.stream.Collectors.joining;
 
 /**
- * Generator of Excelsior JET's project files.
+ * Generates Excelsior JET's compiler project files and provides other arguments for the compiler derived
+ * from a given {@link JetProject}.
  *
  * @author Aleksey Zhidkov
  */
@@ -43,6 +46,14 @@ class CompilerArgsGenerator {
 
     CompilerArgsGenerator(JetProject project) {
         this.project = project;
+    }
+
+    private String toJetPrjFormat(Path f) {
+        return f.toString().replace(File.separatorChar, '/');
+    }
+
+    private String toJetPrjFormat(File f) {
+        return toJetPrjFormat(f.toPath());
     }
 
     String projectFileContent() {
@@ -58,7 +69,7 @@ class CompilerArgsGenerator {
 
         for (ClasspathEntry dep : project.classpathEntries()) {
             if (project.appType() == ApplicationType.PLAIN) {
-                out.println("!classpathentry " + project.toPathRelativeToJetBuildDir(dep).toString());
+                out.println("!classpathentry " + toJetPrjFormat(project.toPathRelativeToJetBuildDir(dep)));
             } else if (project.appType() == ApplicationType.TOMCAT){
                 String warDeployName = project.tomcatConfiguration().warDeployName;
                 String entryPath = ":/WEB-INF/";
@@ -93,13 +104,13 @@ class CompilerArgsGenerator {
 
         if (Utils.isWindows()) {
             if (project.icon().isFile()) {
-                modules.add(project.icon().getAbsolutePath());
+                modules.add(toJetPrjFormat(project.icon()));
             }
         }
 
         TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
         if (execProfiles.getUsg().exists()) {
-            modules.add(execProfiles.getUsg().getAbsolutePath());
+            modules.add(toJetPrjFormat(execProfiles.getUsg()));
         }
 
         return modules;
@@ -121,7 +132,7 @@ class CompilerArgsGenerator {
                 break;
             case TOMCAT:
                 compilerArgs.add("-apptype=tomcat");
-                compilerArgs.add("-appdir=" + project.tomcatInBuildDir());
+                compilerArgs.add("-appdir=" + toJetPrjFormat(project.tomcatInBuildDir()));
                 if (project.tomcatConfiguration().hideConfig) {
                     compilerArgs.add("-hideconfiguration+");
                 }

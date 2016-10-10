@@ -28,7 +28,7 @@ import com.excelsiorjet.api.util.Utils;
 import java.io.File;
 
 /**
- * This class represents facade for Excelsior JET toolchain.
+ * This class represents a facade for Excelsior JET toolchain.
  *
  * @author Aleksey Zhidkov
  */
