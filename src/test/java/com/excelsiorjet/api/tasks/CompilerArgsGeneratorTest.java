@@ -18,12 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class CompilerArgsGeneratorTest {
 
     private String linesToString(String... lines) {
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter out = new PrintWriter(stringWriter);
-        for (String line: lines) {
-            out.println(line);
-        }
-        return stringWriter.toString();
+        return String.join(System.lineSeparator(), lines) + System.lineSeparator();
     }
 
     @Test
