@@ -69,8 +69,14 @@ class Tests {
             project.mainJar(fileSpy(mainJar.toString()));
         } else if (appType == ApplicationType.TOMCAT) {
             project.tomcatConfiguration(new TomcatConfig()).
-                    mainWar(buildDir.resolve("test.war").toFile());
-            project.tomcatConfiguration().tomcatHome = testBaseDir.resolve("tomcat").toString();
+                    mainWar(fileSpy(buildDir.resolve("test.war")));
+            //create fake tomcat dir
+            Path tomcatHome = testBaseDir.resolve("tomcat");
+            Path webapps = tomcatHome.resolve("webapps");
+            webapps.toFile().mkdirs();
+            webapps.toFile().deleteOnExit();
+            tomcatHome.toFile().deleteOnExit();
+            project.tomcatConfiguration().tomcatHome = tomcatHome.toString();
             project.tomcatConfiguration().warDeployName = "test.war";
         }
         return project;

@@ -87,4 +87,15 @@ public class DependencySettingsResolverTest {
         assertEquals(ClasspathEntry.ProtectionType.ALL, resolvedDep2.protect);
     }
 
+    @Test
+    public void testPathOnlyProjectDependencyMatchesDependencySettings() throws Exception {
+        DependencySettings settings = DependencyBuilder.testExternalDependency(Tests.externalJarAbs.toFile()).isLib(true).asDependencySettings();
+        DependencySettingsResolver dependencySettingsResolver = new DependencySettingsResolver("prjGroupId", Collections.singletonList(settings));
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(Tests.externalJarAbs.toFile()).asProjectDependency();
+        ClasspathEntry resolvedDep = dependencySettingsResolver.resolve(dep);
+
+        assertEquals(ClasspathEntry.ProtectionType.NOT_REQUIRED, resolvedDep.protect);
+        assertEquals(ClasspathEntry.OptimizationType.AUTO_DETECT, resolvedDep.optimize);
+    }
+
 }

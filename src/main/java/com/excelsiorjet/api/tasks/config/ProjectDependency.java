@@ -66,8 +66,11 @@ public class ProjectDependency {
     /**
      * @return String in format "([groupId],[artifactId],[version])" (all fields are optional)
      */
-    public String idStr() {
-        return Utils.idStr(groupId(), artifactId(), version());
+    public String idStr(boolean addPath) {
+        return Utils.idStr(groupId(), artifactId(), version(), addPath? path: null);
     }
 
+    public String toString() {
+        return idStr(true);
+    }
 }

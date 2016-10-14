@@ -154,21 +154,30 @@ public class DependencySettings {
     }
 
     public String idStr() {
-        return Utils.idStr(groupId, artifactId, version);
+        return Utils.idStr(groupId, artifactId, version, path);
     }
 
     public boolean matches(ProjectDependency dep) {
         return (this.groupId == null || this.groupId.equals(dep.groupId)) &&
                 (this.artifactId == null || this.artifactId.equals(dep.artifactId)) &&
-                (this.version == null || this.version.equals(dep.version));
+                (this.version == null || this.version.equals(dep.version)) &&
+                (this.path == null || pathMatches(this.path, dep.path))
+                ;
+    }
+
+    static private boolean pathMatches(File path1, File path2) {
+         return (path2 != null) && Utils.getCanonicalPath(path1).equals(Utils.getCanonicalPath(path2));
     }
 
     public boolean isArtifactOnly() {
         return artifactId != null && groupId == null && version == null;
     }
 
-    public boolean isExternal() {
-        return path != null;
+    public boolean hasPathOnly() {
+        return (path != null) && (groupId == null) && (artifactId == null) && (version == null);
     }
 
+    public String toString() {
+        return idStr();
+    }
 }

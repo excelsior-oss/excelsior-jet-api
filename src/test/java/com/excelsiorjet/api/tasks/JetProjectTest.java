@@ -1,6 +1,8 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.JetEdition;
+import com.excelsiorjet.api.JetHome;
 import com.excelsiorjet.api.tasks.config.DependencySettings;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
 import com.excelsiorjet.api.util.Txt;
@@ -37,7 +39,7 @@ public class JetProjectTest {
             project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
-            assertEquals(Txt.s("JetApi.NotPackedExternalDirectory", Tests.testBaseDir.resolve("prj/externalDir")), e.getMessage());
+            assertEquals(Txt.s("JetApi.NotPackedDirectory", Tests.testBaseDir.resolve("prj/externalDir")), e.getMessage());
         }
     }
 
@@ -67,7 +69,7 @@ public class JetProjectTest {
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             List<String> dependencyIds = Stream.of(dep1, dep2).
-                    map(ProjectDependency::idStr).
+                    map(d -> d.idStr(false)).
                     collect(toList());
             assertEquals(Txt.s("JetApi.AmbiguousArtifactIdOnlyDependencySettings", dependencySettings.idStr(), String.join(", ", dependencyIds)), e.getMessage());
         }
@@ -97,7 +99,7 @@ public class JetProjectTest {
             project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
-            assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(artifactId)"), e.getMessage());
+            assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(artifactId:" + Utils.getCanonicalPath(externalDependency.path) + ")"), e.getMessage());
         }
     }
 
@@ -111,7 +113,7 @@ public class JetProjectTest {
             project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
-            assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(groupId)"), e.getMessage());
+            assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(groupId:" + Utils.getCanonicalPath(externalDependency.path) + ")"), e.getMessage());
         }
     }
 
@@ -125,7 +127,63 @@ public class JetProjectTest {
             project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
-            assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(version)"), e.getMessage());
+            assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(version:" + Utils.getCanonicalPath(externalDependency.path) + ")"), e.getMessage());
         }
     }
+
+    @Test
+    public void testOverlappedDependencies() throws Exception {
+        ProjectDependency dep1 = DependencyBuilder.testProjectDependency(new File("a/test2.jar")).groupId("groupId1").asProjectDependency();
+        ProjectDependency dep2 = DependencyBuilder.testProjectDependency(new File("b/test2.jar")).groupId("groupId2").asProjectDependency();
+        DependencySettings depSet1 = DependencyBuilder.empty().groupId("groupId1").asDependencySettings();
+        DependencySettings depSet2 = DependencyBuilder.empty().groupId("groupId2").asDependencySettings();
+        JetProject project = Tests.testProject(ApplicationType.PLAIN).
+                projectDependencies(asList(dep1, dep2)).
+                dependencies(asList(depSet1, depSet2));
+
+        try {
+            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            fail("JetTaskFailureException expected");
+        } catch (JetTaskFailureException e) {
+            assertEquals(Txt.s("JetApi.OverlappedDependency", dep2, dep1), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testOverlappedTomcatDependencies() throws Exception {
+        ProjectDependency dep1 = DependencyBuilder.testProjectDependency(new File("a/test2.jar")).artifactId("artifactId1").asProjectDependency();
+        ProjectDependency dep2 = DependencyBuilder.testProjectDependency(new File("b/test2.jar")).artifactId("artifactId2").asProjectDependency();
+        DependencySettings depSet1 = DependencyBuilder.empty().artifactId("artifactId1").asDependencySettings();
+        DependencySettings depSet2 = DependencyBuilder.empty().artifactId("artifactId2").asDependencySettings();
+        JetProject project = Tests.testProject(ApplicationType.TOMCAT).
+                projectDependencies(asList(dep1, dep2)).
+                dependencies(asList(depSet1, depSet2));
+
+        try {
+            ExcelsiorJet excelsiorJet = Mockito.spy(new ExcelsiorJet(Mockito.mock(JetHome.class), null));
+            Mockito.when(excelsiorJet.getEdition()).thenReturn(JetEdition.ENTERPRISE);
+            project.validate(excelsiorJet, false);
+            fail("JetTaskFailureException expected");
+        } catch (JetTaskFailureException e) {
+            assertEquals(Txt.s("JetApi.OverlappedTomcatDependency", dep2, dep1), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testOverlappedExternalDependencies() throws Exception {
+        File prjDep = Tests.fileSpy(new File("a", Tests.externalJarAbs.toFile().getName()).toPath());
+        ProjectDependency dep1 = DependencyBuilder.testProjectDependency(prjDep).artifactId("artifactId").asProjectDependency();
+        DependencySettings externalDependency = DependencyBuilder.testExternalDependency(Tests.fileSpy(Tests.externalJarAbs)).asDependencySettings();
+
+        JetProject project = Tests.testProject(ApplicationType.PLAIN).
+                projectDependencies(asList(dep1)).dependencies(asList(externalDependency));
+
+        try {
+            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            fail("JetTaskFailureException expected");
+        } catch (JetTaskFailureException e) {
+            assertEquals(Txt.s("JetApi.OverlappedExternalDependency", externalDependency.path, dep1), e.getMessage());
+        }
+    }
+
 }

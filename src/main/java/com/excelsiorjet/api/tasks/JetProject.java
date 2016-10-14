@@ -647,35 +647,20 @@ public class JetProject {
         processDependencies();
     }
 
-    public void processDependencies() throws JetTaskFailureException {
+    void processDependencies() throws JetTaskFailureException {
         for (DependencySettings dependency : dependencies) {
             if (dependency.path == null && dependency.groupId == null && dependency.artifactId == null) {
                 throw new JetTaskFailureException(s("JetApi.DependencyIdRequired"));
             } else if (dependency.path != null && (dependency.groupId != null || dependency.artifactId != null || dependency.version != null)) {
                 throw new JetTaskFailureException(s("JetApi.InvalidDependencySetting", dependency.idStr()));
+            } else if (dependency.path != null && dependency.path.isDirectory()) {
+                if (dependency.pack != null && !ClasspathEntry.PackType.NONE.userValue.equals(dependency.pack)) {
+                    throw new JetTaskFailureException(s("JetApi.NotPackedDirectory", dependency.path));
+                }
             }
 
             if (dependency.packagePath != null && dependency.disableCopyToPackage != null && dependency.disableCopyToPackage) {
                 throw new JetTaskFailureException(s("JetApi.DependencySettingsCannotHavePackagePathAndDisabledCopyToPackage", dependency.idStr()));
-            }
-        }
-        List<DependencySettings> dependenciesSettings = dependencies.stream()
-                .filter(d -> !d.isExternal())
-                .collect(toList());
-        List<DependencySettings> externalDependencies = dependencies.stream()
-                .filter(DependencySettings::isExternal)
-                .collect(toList());
-
-        for (DependencySettings externalDependency : externalDependencies) {
-            if (appType == ApplicationType.TOMCAT) {
-                throw new JetTaskFailureException(s("JetApi.TomcatApplicationCannotHaveExternalDependencies", externalDependency.path));
-            }
-            if (externalDependency.path.isDirectory() && (externalDependency.pack != null && !ClasspathEntry.PackType.NONE.userValue.equals(externalDependency.pack))) {
-                throw new JetTaskFailureException(s("JetApi.NotPackedExternalDirectory", externalDependency.path));
-            }
-
-            if (!externalDependency.path.exists()) {
-                throw new JetTaskFailureException(s("JetApi.ExternalDependencyDoesNotExists", externalDependency.path));
             }
         }
 
@@ -685,16 +670,25 @@ public class JetProject {
         // in original implementation main artifact is preceded other dependencies
         allProjectDependencies.add(0, mainArtifactDep);
 
+        List<DependencySettings> dependenciesSettings = new ArrayList<>();
+        List<DependencySettings> externalDependencies = new ArrayList<>();
+
         Set<String> ids = new HashSet<>();
-        for (DependencySettings dependencySettings : dependenciesSettings) {
+        for (DependencySettings dependencySettings : dependencies) {
             List<ProjectDependency> matchedDependencies = dependenciesMatchedBy(allProjectDependencies, dependencySettings);
-            if (matchedDependencies.size() == 0) {
-                throw new JetTaskFailureException(s("JetApi.NoDependenciesForDependencySettings", dependencySettings.idStr()));
+            if (matchedDependencies.size() == 0){
+                if (dependencySettings.hasPathOnly()) {
+                    externalDependencies.add(dependencySettings);
+                } else {
+                    throw new JetTaskFailureException(s("JetApi.NoDependenciesForDependencySettings", dependencySettings.idStr()));
+                }
+            } else {
+                dependenciesSettings.add(dependencySettings);
             }
 
             if (dependencySettings.isArtifactOnly() && matchedDependencies.size() > 1) {
                 List<String> dependencyIds = matchedDependencies.stream().
-                        map(ProjectDependency::idStr).
+                        map(d -> d.idStr(false)).
                         collect(toList());
                 throw new JetTaskFailureException(s("JetApi.AmbiguousArtifactIdOnlyDependencySettings", dependencySettings.idStr(), String.join(", ", dependencyIds)));
             }
@@ -705,22 +699,83 @@ public class JetProject {
             ids.add(dependencySettings.idStr());
         }
 
+        for (DependencySettings externalDependency : externalDependencies) {
+            if (appType == ApplicationType.TOMCAT) {
+                throw new JetTaskFailureException(s("JetApi.TomcatApplicationCannotHaveExternalDependencies", externalDependency.path));
+            }
+
+            if (!externalDependency.path.exists()) {
+                throw new JetTaskFailureException(s("JetApi.ExternalDependencyDoesNotExists", externalDependency.path));
+            }
+        }
+
         DependencySettingsResolver dependencySettingsResolver = new DependencySettingsResolver(groupId, dependenciesSettings);
         classpathEntries = new ArrayList<>();
+        HashMap<String, ClasspathEntry> cpEntries = new HashMap<>();
         if (appType() == ApplicationType.PLAIN) {
+            HashMap<String, Object> seenDeps = new HashMap<>();
             for (ProjectDependency prjDep : allProjectDependencies) {
-                classpathEntries.add(dependencySettingsResolver.resolve(prjDep));
+                ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
+                String packagePath = toPathRelativeToJetBuildDir(cpEntry).toString();
+                ClasspathEntry oldEntry = cpEntries.put(packagePath, cpEntry);
+                ProjectDependency oldDep = (ProjectDependency) seenDeps.put(packagePath, prjDep);
+                if (oldDep != null) {
+                    resolveOverlapping(dependencySettingsResolver, prjDep, oldDep, cpEntry, oldEntry, "JetApi.OverlappedDependency", "JetApi.OverlappedDependencyWarning");
+                } else {
+                    classpathEntries.add(cpEntry);
+                }
             }
             for (DependencySettings extDep : externalDependencies) {
-                classpathEntries.add(new ClasspathEntry(extDep, false));
+                ClasspathEntry cpEntry = new ClasspathEntry(extDep, false);
+                Object oldDep = seenDeps.put(toPathRelativeToJetBuildDir(cpEntry).toString(), extDep);
+                if (oldDep != null) {
+                    throw new JetTaskFailureException(s("JetApi.OverlappedExternalDependency", extDep.path, oldDep));
+                }
+                classpathEntries.add(cpEntry);
             }
+
         } else if (appType() == ApplicationType.TOMCAT) {
-            classpathEntries.addAll(allProjectDependencies.stream().
-                    filter(dependencySettingsResolver::hasSettingsFor).
-                    map(dependencySettingsResolver::resolve).
-                    collect(toList()));
+            HashMap<String, ProjectDependency> seenDeps = new HashMap<>();
+            for (ProjectDependency prjDep : allProjectDependencies) {
+                if (!prjDep.isMainArtifact || dependencySettingsResolver.hasSettingsFor(prjDep)) {
+                    ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
+
+                    ProjectDependency oldDep = null;
+                    ClasspathEntry oldEntry = null;
+                    if (!prjDep.isMainArtifact) {
+                        String depName = cpEntry.path.getName();
+                        oldEntry = cpEntries.put(depName, cpEntry);
+                        oldDep = seenDeps.put(depName, prjDep);
+                    }
+                    if (oldDep != null) {
+                        resolveOverlapping(dependencySettingsResolver, prjDep, oldDep, cpEntry, oldEntry,
+                                "JetApi.OverlappedTomcatDependency", "JetApi.OverlappedTomcatDependencyWarning");
+                    } else {
+                        classpathEntries.add(cpEntry);
+                    }
+                }
+            }
         } else {
             throw new AssertionError("Unknown application type: " + appType());
+        }
+    }
+
+    private void resolveOverlapping(DependencySettingsResolver dependencySettingsResolver, ProjectDependency prjDep,
+                                    ProjectDependency oldDep, ClasspathEntry cpEntry, ClasspathEntry oldEntry,
+                                    String errorKey, String warningKey) throws JetTaskFailureException
+    {
+        if (dependencySettingsResolver.hasSettingsFor(oldDep)) {
+            if (dependencySettingsResolver.hasSettingsFor(prjDep)) {
+                throw new JetTaskFailureException(s(errorKey, prjDep, oldDep));
+            } else {
+                //keep old entry. do not add new one
+                logger.warn(s(warningKey, prjDep, oldDep));
+            }
+        } else {
+            logger.warn(s(warningKey, oldDep, prjDep));
+            //remove old entry, add new one
+            classpathEntries.remove(oldEntry);
+            classpathEntries.add(cpEntry);
         }
     }
 

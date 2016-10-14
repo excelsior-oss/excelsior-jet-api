@@ -258,11 +258,19 @@ public class Utils {
         return res.toArray(new String[res.size()]);
     }
 
+    public static String getCanonicalPath(File path) {
+        try {
+            return path.getCanonicalPath();
+        } catch (IOException e) {
+            return path.getAbsolutePath();
+        }
+    }
+
     /**
-     * @return String in format "([groupId],[artifactId],[version])" (all fields are optional)
+     * @return String in format "([groupId],[artifactId],[version], [path])" (all fields are optional)
      */
-    public static String idStr(String groupId, String artifactId, String version) {
-        return Stream.of(groupId, artifactId, version).
+    public static String idStr(String groupId, String artifactId, String version, File path) {
+        return Stream.of(groupId, artifactId, version, path == null? null: getCanonicalPath(path)).
                 filter(item -> item != null).
                 collect(Collectors.joining(":", "(", ")"));
     }
