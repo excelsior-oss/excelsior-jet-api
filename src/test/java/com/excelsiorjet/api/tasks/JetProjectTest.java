@@ -14,6 +14,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -135,17 +136,30 @@ public class JetProjectTest {
     public void testOverlappedDependencies() throws Exception {
         ProjectDependency dep1 = DependencyBuilder.testProjectDependency(new File("a/test2.jar")).groupId("groupId1").asProjectDependency();
         ProjectDependency dep2 = DependencyBuilder.testProjectDependency(new File("b/test2.jar")).groupId("groupId2").asProjectDependency();
-        DependencySettings depSet1 = DependencyBuilder.empty().groupId("groupId1").asDependencySettings();
-        DependencySettings depSet2 = DependencyBuilder.empty().groupId("groupId2").asDependencySettings();
         JetProject project = Tests.testProject(ApplicationType.PLAIN).
-                projectDependencies(asList(dep1, dep2)).
-                dependencies(asList(depSet1, depSet2));
+                projectDependencies(asList(dep1, dep2));
 
         try {
             project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.OverlappedDependency", dep2, dep1), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testOverlappedDependenciesWithPackagePathSet() throws Exception {
+        ProjectDependency dep1 = DependencyBuilder.testProjectDependency(new File("a/test2.jar")).artifactId("artifactId1").asProjectDependency();
+        ProjectDependency dep2 = DependencyBuilder.testProjectDependency(new File("b/test2.jar")).asProjectDependency();
+        DependencySettings depSet1 = DependencyBuilder.empty().artifactId("artifactId1").packagePath("lib2").asDependencySettings();
+        JetProject project = Tests.testProject(ApplicationType.PLAIN).
+                projectDependencies(asList(dep1, dep2)).
+                dependencies(Collections.singletonList(depSet1));
+
+        try {
+            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+        } catch (JetTaskFailureException e) {
+            fail("No errors expected");
         }
     }
 

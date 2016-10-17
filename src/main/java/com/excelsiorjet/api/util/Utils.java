@@ -262,6 +262,9 @@ public class Utils {
         try {
             return path.getCanonicalPath();
         } catch (IOException e) {
+            // getCanonicalPath throws IOException,
+            // so just return absolute path in a very rare case of IOException as there is no other
+            // appropriate way to handle this situation.
             return path.getAbsolutePath();
         }
     }

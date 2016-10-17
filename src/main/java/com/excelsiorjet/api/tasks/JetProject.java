@@ -711,16 +711,16 @@ public class JetProject {
 
         DependencySettingsResolver dependencySettingsResolver = new DependencySettingsResolver(groupId, dependenciesSettings);
         classpathEntries = new ArrayList<>();
-        HashMap<String, ClasspathEntry> cpEntries = new HashMap<>();
         if (appType() == ApplicationType.PLAIN) {
+            // Values of the seenDeps HashMap can either be of type ProjectDependevcy or DependencySettings.
+            // DependencySettings are put there while processing external dependencies.
             HashMap<String, Object> seenDeps = new HashMap<>();
             for (ProjectDependency prjDep : allProjectDependencies) {
                 ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
                 String packagePath = toPathRelativeToJetBuildDir(cpEntry).toString();
-                ClasspathEntry oldEntry = cpEntries.put(packagePath, cpEntry);
                 ProjectDependency oldDep = (ProjectDependency) seenDeps.put(packagePath, prjDep);
                 if (oldDep != null) {
-                    resolveOverlapping(dependencySettingsResolver, prjDep, oldDep, cpEntry, oldEntry, "JetApi.OverlappedDependency", "JetApi.OverlappedDependencyWarning");
+                    throw new JetTaskFailureException(s("JetApi.OverlappedDependency", prjDep, oldDep));
                 } else {
                     classpathEntries.add(cpEntry);
                 }
@@ -741,15 +741,12 @@ public class JetProject {
                     ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
 
                     ProjectDependency oldDep = null;
-                    ClasspathEntry oldEntry = null;
                     if (!prjDep.isMainArtifact) {
                         String depName = cpEntry.path.getName();
-                        oldEntry = cpEntries.put(depName, cpEntry);
                         oldDep = seenDeps.put(depName, prjDep);
                     }
                     if (oldDep != null) {
-                        resolveOverlapping(dependencySettingsResolver, prjDep, oldDep, cpEntry, oldEntry,
-                                "JetApi.OverlappedTomcatDependency", "JetApi.OverlappedTomcatDependencyWarning");
+                        throw new JetTaskFailureException(s("JetApi.OverlappedTomcatDependency", prjDep, oldDep));
                     } else {
                         classpathEntries.add(cpEntry);
                     }
@@ -757,25 +754,6 @@ public class JetProject {
             }
         } else {
             throw new AssertionError("Unknown application type: " + appType());
-        }
-    }
-
-    private void resolveOverlapping(DependencySettingsResolver dependencySettingsResolver, ProjectDependency prjDep,
-                                    ProjectDependency oldDep, ClasspathEntry cpEntry, ClasspathEntry oldEntry,
-                                    String errorKey, String warningKey) throws JetTaskFailureException
-    {
-        if (dependencySettingsResolver.hasSettingsFor(oldDep)) {
-            if (dependencySettingsResolver.hasSettingsFor(prjDep)) {
-                throw new JetTaskFailureException(s(errorKey, prjDep, oldDep));
-            } else {
-                //keep old entry. do not add new one
-                logger.warn(s(warningKey, prjDep, oldDep));
-            }
-        } else {
-            logger.warn(s(warningKey, oldDep, prjDep));
-            //remove old entry, add new one
-            classpathEntries.remove(oldEntry);
-            classpathEntries.add(cpEntry);
         }
     }
 
