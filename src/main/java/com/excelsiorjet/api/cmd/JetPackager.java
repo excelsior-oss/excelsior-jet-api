@@ -21,6 +21,9 @@
 */
 package com.excelsiorjet.api.cmd;
 
+import com.excelsiorjet.api.JetHome;
+import com.excelsiorjet.api.JetHomeException;
+
 /**
  * Excelsior JET "xpack" tool executor utility class.
  *

@@ -19,8 +19,12 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package com.excelsiorjet.api.cmd;
+package com.excelsiorjet.api;
 
+import com.excelsiorjet.api.cmd.CmdLineTool;
+import com.excelsiorjet.api.cmd.CmdLineToolException;
+import com.excelsiorjet.api.cmd.JetCompiler;
+import com.excelsiorjet.api.cmd.JetPackager;
 import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;

@@ -70,11 +70,6 @@ public class CmdLineTool {
         return this;
     }
 
-    public CmdLineTool addArgs(Collection<String> args) {
-        this.args.addAll(args);
-        return this;
-    }
-
     private class OutputReader extends Thread {
 
         BufferedReader reader;
@@ -135,7 +130,4 @@ public class CmdLineTool {
         }
     }
 
-    public ArrayList<String> getArgs() {
-        return args;
-    }
 }

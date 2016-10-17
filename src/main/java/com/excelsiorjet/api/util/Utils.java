@@ -30,6 +30,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -254,5 +256,25 @@ public class Utils {
         }
         res.add(buff.toString());
         return res.toArray(new String[res.size()]);
+    }
+
+    public static String getCanonicalPath(File path) {
+        try {
+            return path.getCanonicalPath();
+        } catch (IOException e) {
+            // getCanonicalPath throws IOException,
+            // so just return absolute path in a very rare case of IOException as there is no other
+            // appropriate way to handle this situation.
+            return path.getAbsolutePath();
+        }
+    }
+
+    /**
+     * @return String in format "([groupId],[artifactId],[version], [path])" (all fields are optional)
+     */
+    public static String idStr(String groupId, String artifactId, String version, File path) {
+        return Stream.of(groupId, artifactId, version, path == null? null: getCanonicalPath(path)).
+                filter(item -> item != null).
+                collect(Collectors.joining(":", "(", ")"));
     }
 }
