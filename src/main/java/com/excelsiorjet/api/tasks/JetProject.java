@@ -169,12 +169,12 @@ public class JetProject {
     private TomcatConfig tomcatConfiguration;
 
     /**
-     * List of managed (i.e. Maven or Gradle) dependencies specified by user of API client.
+     * List of managed (i.e. Maven or Gradle) dependencies specified by the user of an API client.
      */
     private List<ProjectDependency> projectDependencies;
 
     /**
-     * List of {@code projectDependencies} settings and not managed dependencies specified by user of API client.
+     * List of {@code projectDependencies} settings and not managed dependencies specified by the user of an API client.
      */
     private List<DependencySettings> dependencies;
 
@@ -184,9 +184,9 @@ public class JetProject {
     private List<ClasspathEntry> classpathEntries;
 
     /**
-     * If you build your main artifact as so called fat jar so all your project dependencies are packed
-     * into your main artifact then the most-likely you do not need separate dependencies to be compiled
-     * with Excelsior JET because all needed classes and resources are already inside of your main artifact.
+     * If the main artifact of your project is so a called fat jar, i.e. all project dependencies are packed
+     * into the main artifact, you most likely don't need the separate dependencies to be compiled
+     * with Excelsior JET, because all required classes and resources are already inside your main artifact.
      * For such a case you may set this parameter to {@code true}.
      */
     boolean ignoreProjectDependencies;
@@ -705,7 +705,7 @@ public class JetProject {
             }
 
             if (!externalDependency.path.exists()) {
-                throw new JetTaskFailureException(s("JetApi.ExternalDependencyDoesNotExists", externalDependency.path));
+                throw new JetTaskFailureException(s("JetApi.ExternalDependencyDoesNotExist", externalDependency.path));
             }
         }
 

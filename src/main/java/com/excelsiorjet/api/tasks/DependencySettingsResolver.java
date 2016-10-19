@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The class assigns dependency settings for project dependencies resulting in creation of a respective
+ * The class assigns dependency settings to project dependencies, resulting in the creation of a respective
  * {@link ClasspathEntry}.
  *
  * @author Aleksey Zhidkov
@@ -38,17 +38,17 @@ import java.util.stream.Stream;
 class DependencySettingsResolver {
 
     private final String projectGroupId;
-    private final List<DependencySettings> dependenciesSettings;
+    private final List<DependencySettings> dependencySettingsList;
 
-    DependencySettingsResolver(String projectGroupId, List<DependencySettings> dependenciesSettings) {
+    DependencySettingsResolver(String projectGroupId, List<DependencySettings> dependencySettingsList) {
         this.projectGroupId = projectGroupId;
-        this.dependenciesSettings = dependenciesSettings;
+        this.dependencySettingsList = dependencySettingsList;
     }
 
     /**
-     * Produces classpath entry for given dependency using matching settings specified in {@code dependenciesSettings} and
-     * set default for {@link ClasspathEntry#protect} and {@link ClasspathEntry#optimize} if neither {@link DependencySettings#isLibrary},
-     * {@link DependencySettings#protect} or {@link DependencySettings#optimize} is set for all matched dependency settings.
+     * Produces a classpath entry for the given dependency using matching settings specified in {@code dependencySettingsList} and
+     * set defaults for {@link ClasspathEntry#protect} and {@link ClasspathEntry#optimize} if {@link DependencySettings#isLibrary},
+     * {@link DependencySettings#protect} and {@link DependencySettings#optimize} are not set for all matched dependency settings.
      */
     ClasspathEntry resolve(ProjectDependency dep) {
         return toClasspathEntry(dep);
@@ -111,7 +111,7 @@ class DependencySettingsResolver {
     }
 
     private Stream<DependencySettings> matchedSettings(ProjectDependency dep) {
-        return dependenciesSettings.stream().
+        return dependencySettingsList.stream().
                 filter(setting -> setting.matches(dep));
     }
 

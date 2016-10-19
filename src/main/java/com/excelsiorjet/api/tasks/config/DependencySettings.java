@@ -35,7 +35,7 @@ public class DependencySettings {
     /**
      * Dependency group id.
      * <p>
-     * If {@link #artifactId}, {@link #version} are not set, all properties will be assigned to all dependencies
+     * If {@link #artifactId} and {@link #version} are not set, all settings will be assigned to all dependencies
      * sharing this group id.
      * </p>
      */
@@ -44,8 +44,8 @@ public class DependencySettings {
     /**
      * Dependency artifact id.
      * <p>
-     * If you are sure that there is the only dependency with a certain artifactId in the project,
-     * you may omit {@link #groupId} and {@link #version} from the configuration,
+     * If you are sure that there is only one dependency with the given {@code artifactId} in the project,
+     * you may omit {@link #groupId} and {@link #version} from the configuration.
      * </p>
      */
     public String artifactId;
@@ -60,80 +60,81 @@ public class DependencySettings {
      * <p>
      * If you need some additional dependency to appear in the application classpath that is not listed
      * in the project explicitly (for example, you need to access some resources in a directory via
-     * {@code ResourceBundle.getResource()} you may
-     * set this parameter instead of "groupId/artifactId/version" pointing to a directory or jar/zip.
+     * {@code ResourceBundle.getResource()}), you may
+     * set this parameter to point to a directory or jar/zip file, <em>instead of</em>
+     * setting {@link #groupId}, {@link #artifactId}, and/or {@link #version}.
      * </p>
-     * You should not set this parameter if you set either of "groupId/artifactId/version".
+     * You should not set this parameter if you set any of {@link #groupId}, {@link #artifactId}, or {@link #version}.
      */
     public File path;
 
     /**
-     * Code protection mode. Valid values are "all", and "not-required".
+     * Code protection mode. Valid values are {@code "all"} and {@code "not-required"}.
      * <p>
-     * If set to "all", all class files of the dependency will be compiled to native code,
+     * If set to {@code "all"}, all class files of the dependency will be compiled to native code,
      * thus protecting them from reverse engineering.
      * </p>
-     * If set to "not-required", the JET Optimizer may avoid compilation of some classes
+     * If set to {@code "not-required"}, the JET Optimizer may avoid compilation of some classes
      * in favor of reducing the download size and compilation time of the application.
      */
     public String protect;
 
     /**
-     * Optimization mode. Valid values are "all" and "auto-detect".
+     * Optimization mode. Valid values are {@code "all"} and {@code "auto-detect"}.
      * <p>
-     * If set to "all", all class files of the dependency are compiled to native code with all optimizations enabled.
+     * If set to {@code "all"}, all class files of the dependency are compiled to native code with all optimizations enabled.
      * Typically, this mode provides the best performance, however, it may negatively affect the size
-     * of resulting executable and compilations time.
+     * of the resulting executable and compilation time.
      * </p>
-     * If set to "auto-detect", the compiler detects which classes will be used at run time,
-     * and optimizes those classes only, leaving the not used code in bytecode or not optimized form.
-     * This mode provides smaller binaries, but it may negatively affect application performance,
-     * if the compiler assumptions fail.
+     * If set to {@code "auto-detect"}, the compiler detects which classes will be used at run time,
+     * and optimizes those classes only, leaving the unused ones in bytecode or non-optimized form.
+     * This mode provides smaller binaries, but may negatively affect application performance,
+     * should any of the compiler assumptions fail.
      */
     public String optimize;
 
     /**
-     * Hint telling the plugin if this dependency is third party library or your own.
+     * A hint telling the plugin if this dependency is a third-party library or your own code.
      * <p>
-     * If set to {@code true}, sets protection mode to "not-required" and optimization mode to "auto-detect".
+     * If set to {@code true}, sets {@link #protect} to {@code "not-required"} and {@link #optimize} to {@code "auto-detect"}.
      * </p>
      * <p>
-     * If set to {@code false}, sets protection and optimization modes to "all".
+     * If set to {@code false}, sets both {@link #protect} and {@link #optimize} to {@code "all"}.
      * </p>
-     * If you set this property, you must not set "optimize" and "protect" at the same time.
+     * If you set this property, you must not set {@link #optimize} and {@link #protect} at the same time.
      */
     public Boolean isLibrary;
 
     /**
-     * Packing mode. Valid values are "none", "auto-detect", "all".
+     * Packing mode. Valid values are {@code "none"}, {@code "auto-detect"}, and {@code "all"}.
      * <p>
-     * If set to "auto-detect", everything but compiled .class files is packed to the executable.
+     * If set to {@code "auto-detect"}, everything but the compiled {@code .class} files gets packed into the executable.
      * This is the default mode. Simply speaking, in this mode non-compiled class files and all resource files
-     * are packed to the executable, and can be accessed by the application at run time.
+     * are packed into the executable, and can be accessed by the application at run time.
      * </p>
      * <p>
-     * If set to "all", all class and resource files are packed to the executable.
-     * This makes sense when compiling JARs of security providers and other APIs
-     * that require class files to be available at run time.
+     * If set to {@code "all"}, all class and resource files are packed to the executable.
+     * This only makes sense when the depepandency is a jar file of a security provider
+     * or some other API that requires its class files to be available at run time.
      * </p>
-     * If set to "none", neither original class files, nor resource files are packed into the executable.
-     * The dependency will be copied to the final package as is for this mode unless {@link #disableCopyToPackage}
-     * is set to {@code true}. "none" is the only available mode for directories.
+     * If set to "none", neither class nor resource files get packed into the executable.
+     * In this mode, the dependency will be copied to the final package as is, unless {@link #disableCopyToPackage}
+     * is set to {@code true}. {@code "none"} is the only available mode for directories.
      *
      * @see #packagePath
      */
     public String pack;
 
     /**
-     * Controls dependency appearance in the final package for dependencies that have "pack" parameter set to "none".
+     * For the dependencies that have the {@link #pack} parameter set to {@code "none"}, controls their location in the final package.
      * <p>
-     * Default value is "lib" for jar dependencies and "/" (root of the package) for directories.
+     * The default value is "{@code lib}" for jar dependencies and "{@code /}" (root of the package) for directories.
      * </p>
      */
     public String packagePath;
 
     /**
-     * If set to {@code true} disables coping the dependency to the final package that has "pack" parameter set to "none".
+     * If set to {@code true}, disables copying of dependencies that have the {@link #pack} parameter set to {@code "none"} to the final package 
      */
     public Boolean disableCopyToPackage;
 
