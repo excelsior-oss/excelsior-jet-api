@@ -28,7 +28,7 @@ import com.excelsiorjet.api.util.Utils;
 import java.io.File;
 
 /**
- * This class represents a facade for Excelsior JET toolchain.
+ * This class represents a facade for the Excelsior JET toolchain.
  *
  * @author Aleksey Zhidkov
  */
@@ -47,11 +47,11 @@ public class ExcelsiorJet {
     }
 
     /**
-     * Invokes jc command line tool in given working directory with {@code logger} specified in constructor and pass
+     * Invokes the {@code jc} command line tool in the given {@code workingDirectory} with a logger specified at construction time, passing
      * {@code args} to it.
      *
-     * @param workingDirectory working directory for jc. May be null, in this case current process's working directory is used.
-     * @param args command line arguments that will be passed to jc.
+     * @param workingDirectory working directory for {@code jc}. May be null, in which case the working directory of the current process is used.
+     * @param args command line arguments that will be passed to {@code jc}.
      */
     public int compile(File workingDirectory, String... args) throws CmdLineToolException {
         return new JetCompiler(jetHome, args)
@@ -61,11 +61,11 @@ public class ExcelsiorJet {
     }
 
     /**
-     * Invokes xpack command line tool in given working directory with {@code logger} specified in constructor and pass
+     * Invokes the {@code xpack} command line tool in the given {@code workingDirectory} with a logger specified at construction time, passing
      * {@code args} to it.
      *
-     * @param workingDirectory working directory for xpack. May be null, in this case current process's working directory is used.
-     * @param args command line arguments that will be passed to xpack.
+     * @param workingDirectory working directory for {@code xpack}. May be null, in which case the working directory of the current process is used.
+     * @param args command line arguments that will be passed to {@code xpack}.
      */
     public int pack(File workingDirectory, String... args) throws CmdLineToolException {
         return new JetPackager(jetHome, args)
@@ -75,24 +75,24 @@ public class ExcelsiorJet {
     }
 
     /**
-     * Invokes xjava command line tool in given working directory with {@code logger} specified in constructor and pass
+     * Invokes the {@code xjava} command line tool in the given {@code workingDirectory} with a logger specified at construction time, passing
      * {@code args} to it.
      *
-     * @param workingDirectory working directory for xjava. May be null, in this case current process's working directory is used.
-     * @param args command line arguments that will be passed to xjava.
+     * @param workingDirectory working directory for {@code xjava}. May be null, in which case the working directory of the current process is used.
+     * @param args command line arguments that will be passed to {@code xjava}.
      */
     public int testRun(File workingDirectory, String... args) throws CmdLineToolException {
         return testRun(workingDirectory, logger, false, args);
     }
 
     /**
-     * Invokes xjava command line tool in given working directory, with specified {@code logger} and pass
+     * Invokes the {@code xjava} command line tool in the given {@code workingDirectory} with the specified {@code logger}, passing
      * {@code args} to it.
      *
-     * @param workingDirectory working directory for xjava. May be null, in this case current process's working directory is used.
-     * @param logger logger, where xjava's output should be redirected.
-     * @param errToOut specifies is xjava's stderr should be redirected with info level.
-     * @param args command line arguments that will be passed to xjava.
+     * @param workingDirectory working directory for {@code xjava}. May be null, in this case current process's working directory is used.
+     * @param logger logger to which the output of {@code xjava} should be redirected.
+     * @param errToOut specifies whether the stderr of xjava should be redirected with info level.
+     * @param args command line arguments that will be passed to {@code xjava}.
      */
     public int testRun(File workingDirectory, Log logger, boolean errToOut, String... args) throws CmdLineToolException {
         return new XJava(jetHome, args)
@@ -102,21 +102,21 @@ public class ExcelsiorJet {
     }
 
     /**
-     * @return bitness of given Excelsior JET instance
+     * @return bitness of this Excelsior JET instance
      */
     public boolean is64bit() throws JetHomeException {
         return jetHome.is64bit();
     }
 
     /**
-     * @return edition of given Excelsior JET instance
+     * @return edition of this Excelsior JET instance
      */
     public JetEdition getEdition() throws JetHomeException {
         return jetHome.getEdition();
     }
 
     /**
-     * @return home of given Excelsior JET instance
+     * @return home directory of this Excelsior JET instance
      */
     public JetHome getJetHome() {
         return jetHome;

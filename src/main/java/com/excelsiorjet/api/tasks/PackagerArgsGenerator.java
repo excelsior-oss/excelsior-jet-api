@@ -32,7 +32,7 @@ import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * Provides {@code xpack} arguments derived from a given {@link JetProject}.
+ * Provides {@code xpack} arguments derived from the given {@link JetProject}.
  *
  * @author Aleksey Zhidkov
  */

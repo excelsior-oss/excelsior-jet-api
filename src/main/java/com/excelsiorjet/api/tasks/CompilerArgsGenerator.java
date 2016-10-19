@@ -35,8 +35,8 @@ import java.util.List;
 import static java.util.stream.Collectors.joining;
 
 /**
- * Generates Excelsior JET's compiler project files and provides other arguments for the compiler derived
- * from a given {@link JetProject}.
+ * Generates Excelsior JET compiler project files and provides other arguments for the compiler derived
+ * from the given {@link JetProject}.
  *
  * @author Aleksey Zhidkov
  */

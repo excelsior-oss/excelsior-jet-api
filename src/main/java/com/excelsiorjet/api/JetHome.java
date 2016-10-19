@@ -112,14 +112,17 @@ public class JetHome {
     }
 
     /**
-     * Attempts to locate an Excelsior JET home directory using the following algorithm:
+     * <p>Attempts to locate an Excelsior JET home directory automatically.</p>
      * <ul>
-     *   <li> If the jet.home system property is set, use its value</li>
-     *   <li> Otherwise, if the JET_HOME environment variable is set, use its value</li>
-     *   <li> Otherwise scan the PATH environment variable for a suitable Excelsior JET installation</li>
+     *   <li> If the {@code jet.home} system property is set,
+     *        check that it points to a suitable Excelsior JET installation</li>
+     *   <li> Otherwise, if the {@code JET_HOME} environment variable is set,
+     *        check that it points to a suitable Excelsior JET installation</li>
+     *   <li> Otherwise scan the {@code PATH} environment variable
+     *        for a suitable Excelsior JET installation</li>
      * </ul>
-     * @throws JetHomeException if either jet.home or JET_HOME is set, but does not point to a suitable
-     *                          Excelsior JET installation, or if no such installation could be found in PATH
+     * @throws JetHomeException if either {@code jet.home} or {@code JET_HOME} is set, but does not point to a suitable
+     *                          Excelsior JET installation, or no such installation could be found along the {@code PATH}
      */
     public JetHome() throws JetHomeException {
         // try to detect jet home

@@ -26,9 +26,9 @@ import com.excelsiorjet.api.tasks.config.DependencySettings;
 import java.util.Comparator;
 
 /**
- * Comparator of {@code DependencySettings} instances, that compares them in priority order from lower, to higher.
+ * Comparator of {@code DependencySettings} instances that compares them in priority order, from lower to higher.
  * <p>
- * List of all possible dependency id components combination:
+ * List of all possible combinations of dependency id components:
  * <p>
  * <ul>
  * <li>--- (no components)</li>
@@ -43,12 +43,12 @@ import java.util.Comparator;
  * <p>
  * General rules:
  * <ol>
- * <li>Settings that have no group neither artifact are invalid (---, --v);</li>
- * <li>If settings has artifact, it has higher priority;</li>
- * <li>If settings has version, it has higher priority.</li>
+ * <li>Settings instances that have neither group nor artifact are invalid (---, --v);</li>
+ * <li>If a settings instance has artifact, it has higher priority;</li>
+ * <li>If a settings instance has version, it has higher priority.</li>
  * </ol>
  * <p>
- * Comparsion matrix for valid settings ("^" means, that upper settings has higher priority, "<" means that left settings has higher priority)
+ * Comparison matrix for valid settings ("^" means that upper settings has higher priority, "<" means that left settings has higher priority)
  * <pre>
  *     g-- -a- ga- -av g-v gav
  * g-- =x   ^   ^   ^   ^   ^
