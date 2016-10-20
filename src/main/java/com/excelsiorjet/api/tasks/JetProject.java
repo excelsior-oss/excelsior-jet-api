@@ -21,9 +21,9 @@
 */
 package com.excelsiorjet.api.tasks;
 
-import com.excelsiorjet.api.cmd.JetEdition;
-import com.excelsiorjet.api.cmd.JetHome;
-import com.excelsiorjet.api.cmd.JetHomeException;
+import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.JetEdition;
+import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.tasks.config.*;
@@ -32,6 +32,7 @@ import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -40,6 +41,7 @@ import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.tasks.PackagingType.*;
 import static com.excelsiorjet.api.util.Txt.s;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * <p>Collection of Excelsior JET compiler and packager parameters that can be configured by an external build tool,
@@ -50,7 +52,7 @@ import static java.util.Objects.requireNonNull;
  * <p>An instance of this class can be constructed with the build pattern methods and used by Excelsior JET tasks
  * such as {@link JetBuildTask}, {@link TestRunTask}.</p>
  *
- * <p>The class performs validation of the parameters via the {@link #validate(boolean)} method.
+ * <p>The class performs validation of the parameters via the {@link #validate(ExcelsiorJet, boolean)} method.
  * During validation, it sets default parameter values derived from other parameters,
  * so it is not necessary to set all the parameters.
  * That said, some parameters are required. For instance, {@link #mainClass} is required for plain Java SE applications.</p>
@@ -62,19 +64,7 @@ public class JetProject {
 
     private static final String JET_OUTPUT_DIR = "jet";
     private static final String BUILD_DIR = "build";
-    private static final String LIB_DIR = "lib";
     private static final String PACKAGE_FILES_DIR = "packagefiles";
-
-    /**
-     * Excelsior JET installation directory.
-     * If unspecified, the plugin uses the following algorithm to set the value of this property:
-     * <ul>
-     *   <li> If the jet.home system property is set, use its value</li>
-     *   <li> Otherwise, if the JET_HOME environment variable is set, use its value</li>
-     *   <li> Otherwise scan the PATH environment variable for a suitable Excelsior JET installation</li>
-     * </ul>
-     */
-    private String jetHome;
 
     /**
      * Name of the project. For Maven, project artifactId is used as project name by default.
@@ -179,9 +169,27 @@ public class JetProject {
     private TomcatConfig tomcatConfiguration;
 
     /**
-     * Project dependencies.
+     * List of managed (i.e. Maven or Gradle) dependencies specified by the user of an API client.
      */
-    private List<ClasspathEntry> dependencies;
+    private List<ProjectDependency> projectDependencies;
+
+    /**
+     * List of {@code projectDependencies} settings and not managed dependencies specified by the user of an API client.
+     */
+    private List<DependencySettings> dependencies;
+
+    /**
+     * Internal representation of project dependencies calculated from {@code projectDependencies} and {@code dependencies}
+     */
+    private List<ClasspathEntry> classpathEntries;
+
+    /**
+     * If the main artifact of your project is so a called fat jar, i.e. all project dependencies are packed
+     * into the main artifact, you most likely don't need the separate dependencies to be compiled
+     * with Excelsior JET, because all required classes and resources are already inside your main artifact.
+     * For such a case you may set this parameter to {@code true}.
+     */
+    boolean ignoreProjectDependencies;
 
     /**
      * The target location for application execution profiles gathered during Test Run.
@@ -452,12 +460,11 @@ public class JetProject {
      *    {@code Extended_IBM}, {@code Extended_Macintosh}, {@code Latin_3}
      */
     private String[] locales;
-
     /**
      * Additional compiler options and equations.
      * The commonly used compiler options and equations are mapped to the respective project parameters,
      * so usually there is no need to specify them with this parameter.
-     * However, the compiler also has some advanced options and equations 
+     * However, the compiler also has some advanced options and equations
      * that you may find in the Excelsior JET User's Guide, plus some troubleshooting settings
      * that the Excelsior JET Support team may suggest to you.
      * You may enumerate such options and equations with this parameter and they will be appended to the
@@ -467,7 +474,6 @@ public class JetProject {
      * </p>
      */
     private String[] compilerOptions;
-
     /**
      * Command line arguments that will be passed to the application during startup accelerator profiling and the test run.
      * You may also set the parameter via the {@code jet.runArgs} system property, where arguments
@@ -512,19 +518,11 @@ public class JetProject {
      * Validates project parameters and sets the default values derived from other parameters.
      * @param validateForBuild if set to {@code false} the method does not validate parameters that are used only for project build
      */
-    public JetHome validate(boolean validateForBuild) throws JetTaskFailureException {
+    public void validate(ExcelsiorJet excelsiorJet, boolean validateForBuild) throws JetTaskFailureException {
         if ((Log.logger == null) || (Txt.log == null)) {
             throw new IllegalStateException("Please call JetProject.configureEnvironment() before using JetProject");
         }
 
-        // check jet home
-        JetHome jetHomeObj;
-        try {
-            jetHomeObj = Utils.isEmpty(jetHome) ? new JetHome() : new JetHome(jetHome);
-
-        } catch (JetHomeException e) {
-            throw new JetTaskFailureException(e.getMessage());
-        }
 
         if (artifactName == null) {
             artifactName = projectName;
@@ -548,7 +546,7 @@ public class JetProject {
             case TOMCAT:
                 JetEdition edition;
                 try {
-                    edition = jetHomeObj.getEdition();
+                    edition = excelsiorJet.getEdition();
                 } catch (JetHomeException e) {
                     throw new JetTaskFailureException(e.getMessage());
                 }
@@ -643,13 +641,129 @@ public class JetProject {
             execProfilesName = projectName;
         }
         if (validateForBuild) {
-            validateForBuild(jetHomeObj);
+            validateForBuild(excelsiorJet);
         }
 
-        return jetHomeObj;
+        processDependencies();
     }
 
-    private void validateForBuild(JetHome jetHomeObj) throws JetTaskFailureException {
+    void processDependencies() throws JetTaskFailureException {
+        for (DependencySettings dependency : dependencies) {
+            if (dependency.path == null && dependency.groupId == null && dependency.artifactId == null) {
+                throw new JetTaskFailureException(s("JetApi.DependencyIdRequired"));
+            } else if (dependency.path != null && (dependency.groupId != null || dependency.artifactId != null || dependency.version != null)) {
+                throw new JetTaskFailureException(s("JetApi.InvalidDependencySetting", dependency.idStr()));
+            } else if (dependency.path != null && dependency.path.isDirectory()) {
+                if (dependency.pack != null && !ClasspathEntry.PackType.NONE.userValue.equals(dependency.pack)) {
+                    throw new JetTaskFailureException(s("JetApi.NotPackedDirectory", dependency.path));
+                }
+            }
+
+            if (dependency.packagePath != null && dependency.disableCopyToPackage != null && dependency.disableCopyToPackage) {
+                throw new JetTaskFailureException(s("JetApi.DependencySettingsCannotHavePackagePathAndDisabledCopyToPackage", dependency.idStr()));
+            }
+        }
+
+        // allProjectDependencies = project dependencies + main artifact
+        List<ProjectDependency> allProjectDependencies = new ArrayList<>(projectDependencies);
+        ProjectDependency mainArtifactDep = new ProjectDependency(groupId, projectName, version, appType == ApplicationType.PLAIN ? mainJar : mainWar, true);
+        // in original implementation main artifact is preceded other dependencies
+        allProjectDependencies.add(0, mainArtifactDep);
+
+        List<DependencySettings> dependenciesSettings = new ArrayList<>();
+        List<DependencySettings> externalDependencies = new ArrayList<>();
+
+        Set<String> ids = new HashSet<>();
+        for (DependencySettings dependencySettings : dependencies) {
+            List<ProjectDependency> matchedDependencies = dependenciesMatchedBy(allProjectDependencies, dependencySettings);
+            if (matchedDependencies.size() == 0){
+                if (dependencySettings.hasPathOnly()) {
+                    externalDependencies.add(dependencySettings);
+                } else {
+                    throw new JetTaskFailureException(s("JetApi.NoDependenciesForDependencySettings", dependencySettings.idStr()));
+                }
+            } else {
+                dependenciesSettings.add(dependencySettings);
+            }
+
+            if (dependencySettings.isArtifactOnly() && matchedDependencies.size() > 1) {
+                List<String> dependencyIds = matchedDependencies.stream().
+                        map(d -> d.idStr(false)).
+                        collect(toList());
+                throw new JetTaskFailureException(s("JetApi.AmbiguousArtifactIdOnlyDependencySettings", dependencySettings.idStr(), String.join(", ", dependencyIds)));
+            }
+
+            if (ids.contains(dependencySettings.idStr())) {
+                throw new JetTaskFailureException(s("JetApi.DuplicateDependencySettingsId", dependencySettings.idStr()));
+            }
+            ids.add(dependencySettings.idStr());
+        }
+
+        for (DependencySettings externalDependency : externalDependencies) {
+            if (appType == ApplicationType.TOMCAT) {
+                throw new JetTaskFailureException(s("JetApi.TomcatApplicationCannotHaveExternalDependencies", externalDependency.path));
+            }
+
+            if (!externalDependency.path.exists()) {
+                throw new JetTaskFailureException(s("JetApi.ExternalDependencyDoesNotExist", externalDependency.path));
+            }
+        }
+
+        DependencySettingsResolver dependencySettingsResolver = new DependencySettingsResolver(groupId, dependenciesSettings);
+        classpathEntries = new ArrayList<>();
+        if (appType() == ApplicationType.PLAIN) {
+            // Values of the seenDeps HashMap can either be of type ProjectDependevcy or DependencySettings.
+            // DependencySettings are put there while processing external dependencies.
+            HashMap<String, Object> seenDeps = new HashMap<>();
+            for (ProjectDependency prjDep : allProjectDependencies) {
+                ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
+                String packagePath = toPathRelativeToJetBuildDir(cpEntry).toString();
+                ProjectDependency oldDep = (ProjectDependency) seenDeps.put(packagePath, prjDep);
+                if (oldDep != null) {
+                    throw new JetTaskFailureException(s("JetApi.OverlappedDependency", prjDep, oldDep));
+                } else {
+                    classpathEntries.add(cpEntry);
+                }
+            }
+            for (DependencySettings extDep : externalDependencies) {
+                ClasspathEntry cpEntry = new ClasspathEntry(extDep, false);
+                Object oldDep = seenDeps.put(toPathRelativeToJetBuildDir(cpEntry).toString(), extDep);
+                if (oldDep != null) {
+                    throw new JetTaskFailureException(s("JetApi.OverlappedExternalDependency", extDep.path, oldDep));
+                }
+                classpathEntries.add(cpEntry);
+            }
+
+        } else if (appType() == ApplicationType.TOMCAT) {
+            HashMap<String, ProjectDependency> seenDeps = new HashMap<>();
+            for (ProjectDependency prjDep : allProjectDependencies) {
+                if (!prjDep.isMainArtifact || dependencySettingsResolver.hasSettingsFor(prjDep)) {
+                    ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
+
+                    ProjectDependency oldDep = null;
+                    if (!prjDep.isMainArtifact) {
+                        String depName = cpEntry.path.getName();
+                        oldDep = seenDeps.put(depName, prjDep);
+                    }
+                    if (oldDep != null) {
+                        throw new JetTaskFailureException(s("JetApi.OverlappedTomcatDependency", prjDep, oldDep));
+                    } else {
+                        classpathEntries.add(cpEntry);
+                    }
+                }
+            }
+        } else {
+            throw new AssertionError("Unknown application type: " + appType());
+        }
+    }
+
+    private List<ProjectDependency> dependenciesMatchedBy(List<ProjectDependency> projectDependencies, DependencySettings dependencySetting) {
+        return projectDependencies.stream().
+                filter(dependencySetting::matches).
+                collect(toList());
+    }
+
+    private void validateForBuild(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
 
         if (icon == null) {
             icon = new File(jetResourcesDir, "icon.ico");
@@ -689,15 +803,15 @@ public class JetProject {
 
         // check version info
         try {
-            checkVersionInfo(jetHomeObj);
+            checkVersionInfo(excelsiorJet);
 
-            if (multiApp && (jetHomeObj.getEdition() == JetEdition.STANDARD)) {
+            if (multiApp && (excelsiorJet.getEdition() == JetEdition.STANDARD)) {
                 logger.warn(s("JetApi.NoMultiappInStandard.Warning"));
                 multiApp = false;
             }
 
             if (profileStartup) {
-                if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
+                if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
                     logger.warn(s("JetApi.NoStartupAcceleratorInStandard.Warning"));
                     profileStartup = false;
                 } else if (Utils.isOSX()) {
@@ -707,7 +821,7 @@ public class JetProject {
             }
 
             if (protectData) {
-                if (jetHomeObj.getEdition() == JetEdition.STANDARD) {
+                if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
                     throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
                 } else {
                     if (cryptSeed == null) {
@@ -716,9 +830,9 @@ public class JetProject {
                 }
             }
 
-            checkTrialVersionConfig(jetHomeObj);
+            checkTrialVersionConfig(excelsiorJet);
 
-            checkGlobalAndSlimDownParameters(jetHomeObj);
+            checkGlobalAndSlimDownParameters(excelsiorJet);
 
             checkExcelsiorInstallerConfig();
 
@@ -729,11 +843,11 @@ public class JetProject {
         }
     }
 
-    private void checkVersionInfo(JetHome jetHome) throws JetHomeException {
+    private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException {
         if (!Utils.isWindows()) {
             addWindowsVersionInfo = false;
         }
-        if (addWindowsVersionInfo && (jetHome.getEdition() == JetEdition.STANDARD)) {
+        if (addWindowsVersionInfo && (excelsiorJet.getEdition() == JetEdition.STANDARD)) {
             logger.warn(s("JetApi.NoVersionInfoInStandard.Warning"));
             addWindowsVersionInfo = false;
         }
@@ -797,12 +911,12 @@ public class JetProject {
         return String.join(".", (CharSequence[]) finalVersions);
     }
 
-    private void checkGlobalAndSlimDownParameters(JetHome jetHome) throws JetHomeException, JetTaskFailureException {
+    private void checkGlobalAndSlimDownParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer) {
-            if (jetHome.is64bit()) {
+            if (excelsiorJet.is64bit()) {
                 logger.warn(s("JetApi.NoGlobalIn64Bit.Warning"));
                 globalOptimizer = false;
-            } else if (jetHome.getEdition() == JetEdition.STANDARD) {
+            } else if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
                 logger.warn(s("JetApi.NoGlobalInStandard.Warning"));
                 globalOptimizer = false;
             }
@@ -813,10 +927,10 @@ public class JetProject {
         }
 
         if (javaRuntimeSlimDown != null) {
-            if (jetHome.is64bit()) {
+            if (excelsiorJet.is64bit()) {
                 logger.warn(s("JetApi.NoSlimDownIn64Bit.Warning"));
                 javaRuntimeSlimDown = null;
-            } else if (jetHome.getEdition() == JetEdition.STANDARD) {
+            } else if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
                 logger.warn(s("JetApi.NoSlimDownInStandard.Warning"));
                 javaRuntimeSlimDown = null;
             } else {
@@ -841,7 +955,7 @@ public class JetProject {
         }
     }
 
-    private void checkTrialVersionConfig(JetHome jetHome) throws JetTaskFailureException, JetHomeException {
+    private void checkTrialVersionConfig(ExcelsiorJet excelsiorJet) throws JetTaskFailureException, JetHomeException {
         if ((trialVersion != null) && trialVersion.isEnabled()) {
             if ((trialVersion.expireInDays >= 0) && (trialVersion.expireDate != null)) {
                 throw new JetTaskFailureException(s("JetApi.AmbiguousExpireSetting.Failure"));
@@ -850,7 +964,7 @@ public class JetProject {
                 throw new JetTaskFailureException(s("JetApi.NoExpireMessage.Failure"));
             }
 
-            if (jetHome.getEdition() == JetEdition.STANDARD) {
+            if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
                 logger.warn(s("JetApi.NoTrialsInStandard.Warning"));
                 trialVersion = null;
             }
@@ -878,13 +992,17 @@ public class JetProject {
 
     }
 
-    private void copyDependency(File from, File to, List<ClasspathEntry> dependencies, boolean isLib) throws JetTaskIOException {
+    private void copyClasspathEntry(ClasspathEntry classpathEntry, File to) throws JetTaskWrappedException {
         try {
-            Utils.copyFile(from.toPath(), to.toPath());
-            dependencies.add(new ClasspathEntry(jetBuildDir.toPath().relativize(to.toPath()).toFile(), isLib));
-        } catch (IOException e) {
+            Utils.mkdir(to.getParentFile());
+            if (classpathEntry.path.isFile()) {
+                Utils.copyFile(classpathEntry.path.toPath(), to.toPath());
+            } else {
+                Utils.copyDirectory(classpathEntry.path.toPath(), to.toPath());
+            }
+        } catch (IOException | JetTaskFailureException e) {
             // this method is called from lambda so wrap IOException into RuntimeException for conveniences
-            throw new JetTaskIOException(e);
+            throw new JetTaskWrappedException(e);
         }
     }
 
@@ -893,21 +1011,17 @@ public class JetProject {
      *
      * @return list of dependencies relative to buildDir
      */
-    List<ClasspathEntry> copyDependencies() throws JetTaskFailureException, IOException {
-        File libDir = new File(jetBuildDir, LIB_DIR);
-        Utils.mkdir(libDir);
-        ArrayList<ClasspathEntry> classpathEntries = new ArrayList<>();
+    List<ClasspathEntry> copyClasspathEntries() throws JetTaskFailureException, IOException {
         try {
-            copyDependency(mainJar, new File(jetBuildDir, mainJar.getName()), classpathEntries, false);
-            dependencies.stream()
-                    .filter(a -> a.getFile().isFile())
-                    .forEach(a ->
-                            copyDependency(a.getFile(), new File(libDir, a.getFile().getName()), classpathEntries, a.isLib())
-                    )
-            ;
+            classpathEntries.forEach(a -> {
+                Path pathInJetBuildDir = toPathRelativeToJetBuildDir(a);
+                File dst = jetBuildDir.toPath().resolve(pathInJetBuildDir).toFile();
+                copyClasspathEntry(a, dst);
+            });
+
             return classpathEntries;
-        } catch (JetTaskIOException e) {
-            // catch and unwrap io exception thrown by copyDependency in forEach lambda
+        } catch (JetTaskWrappedException e) {
+            // catch and unwrap io exception thrown by copyClasspathEntry in forEach lambda
             throw new IOException(s("JetApi.ErrorCopyingDependency.Exception"), e.getCause());
         }
     }
@@ -968,8 +1082,8 @@ public class JetProject {
         return tomcatConfiguration;
     }
 
-    List<ClasspathEntry> getDependencies() {
-        return dependencies;
+    public List<ClasspathEntry> classpathEntries() {
+        return classpathEntries;
     }
 
     File packageFilesDir() {
@@ -1019,7 +1133,6 @@ public class JetProject {
     TrialVersionConfig trialVersion() {
         return trialVersion;
     }
-
 
     ExcelsiorInstallerConfig excelsiorInstallerConfiguration() {
         return excelsiorInstallerConfiguration;
@@ -1108,11 +1221,6 @@ public class JetProject {
         return this;
     }
 
-    public JetProject jetHome(String jetHome) {
-        this.jetHome = jetHome;
-        return this;
-    }
-
     public JetProject mainJar(File mainJar) {
         this.mainJar = mainJar;
         return this;
@@ -1128,7 +1236,12 @@ public class JetProject {
         return this;
     }
 
-    public JetProject dependencies(List<ClasspathEntry> dependencies) {
+    public JetProject projectDependencies(List<ProjectDependency> projectDependencies) {
+        this.projectDependencies = projectDependencies;
+        return this;
+    }
+
+    public JetProject dependencies(List<DependencySettings> dependencies) {
         this.dependencies = dependencies;
         return this;
     }
@@ -1293,6 +1406,11 @@ public class JetProject {
         return this;
     }
 
+    public JetProject jetBuildDir(File jetBuildDir) {
+        this.jetBuildDir = jetBuildDir;
+        return this;
+    }
+
     public JetProject compilerOptions(String[] compilerOptions) {
         this.compilerOptions = compilerOptions;
         return this;
@@ -1306,5 +1424,29 @@ public class JetProject {
     public JetProject runArgs(String[] runArgs) {
         this.runArgs = runArgs;
         return this;
+    }
+
+    public File jetBuildDir() {
+        return jetBuildDir;
+    }
+
+    public File mainJar() {
+        return mainJar;
+    }
+
+    Path toPathRelativeToJetBuildDir(ClasspathEntry classpathEntry) {
+        Path libPath;
+        Path jetBuildDir = jetBuildDir().toPath();
+        Path jetLibDir = jetBuildDir.resolve("lib");
+        if (classpathEntry.packagePath == null) {
+            if (classpathEntry.path.isFile()) {
+                libPath = jetLibDir.resolve(classpathEntry.path.getName());
+            } else {
+                libPath = jetBuildDir.resolve(classpathEntry.path.getName());
+            }
+        } else {
+            libPath = jetBuildDir.resolve(classpathEntry.packagePath).resolve(classpathEntry.path.getName());
+        }
+        return jetBuildDir.relativize(libPath);
     }
 }

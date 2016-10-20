@@ -21,6 +21,8 @@
 */
 package com.excelsiorjet.api.cmd;
 
+import com.excelsiorjet.api.JetHome;
+import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -53,4 +55,5 @@ class JetTool extends CmdLineTool {
     public JetTool(String exeName, String... args) throws JetHomeException {
         this(new JetHome(), exeName, args);
     }
+
 }

@@ -21,19 +21,18 @@
 */
 package com.excelsiorjet.api.tasks;
 
-import com.excelsiorjet.api.cmd.*;
+import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.cmd.CmdLineTool;
+import com.excelsiorjet.api.cmd.CmdLineToolException;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
-import static java.util.stream.Collectors.*;
 
 /**
  * Task for building Java (JVM) applications with Excelsior JET.
@@ -44,9 +43,17 @@ import static java.util.stream.Collectors.*;
 public class JetBuildTask {
 
     private final JetProject project;
+    private final CompilerArgsGenerator compilerArgsGenerator;
+    private final PackagerArgsGenerator packagerArgsGenerator;
+    private final ExcelsiorJet excelsiorJet;
 
-    public JetBuildTask(JetProject project) {
+    private File buildDir;
+
+    public JetBuildTask(ExcelsiorJet excelsiorJet, JetProject project) throws JetTaskFailureException {
+        this.excelsiorJet = excelsiorJet;
         this.project = project;
+        compilerArgsGenerator = new CompilerArgsGenerator(project);
+        packagerArgsGenerator = new PackagerArgsGenerator(project);
     }
 
     private static final String APP_DIR = "app";
@@ -54,32 +61,14 @@ public class JetBuildTask {
     /**
      * Generates Excelsior JET project file in {@code buildDir}
      *
-     * @param buildDir     directory where project file should be placed
-     * @param compilerArgs project compiler args
-     * @param dependencies project dependencies
-     * @param modules      project modules
      * @throws JetTaskFailureException if {@code buildDir} is not exists.
      */
-    private String createJetCompilerProject(File buildDir, ArrayList<String> compilerArgs, List<ClasspathEntry> dependencies, ArrayList<String> modules) throws JetTaskFailureException {
+    private String createJetCompilerProject() throws JetTaskFailureException {
         String prj = project.outputName() + ".prj";
-        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(buildDir, prj))))) {
-            compilerArgs.forEach(out::println);
-            if (project.compilerOptions() != null) {
-                for (String option : project.compilerOptions()) {
-                    out.println(option);
-                }
-            }
-            for (ClasspathEntry dep : dependencies) {
-                out.println("!classpathentry " + dep.getFile().toString());
-                out.println("  -optimize=" + (dep.isLib() ? "autodetect" : "all"));
-                out.println("  -protect=" + (dep.isLib() ? "nomatter" : "all"));
-                out.println("!end");
-            }
-            for (String mod : modules) {
-                out.println("!module " + mod);
-            }
-        } catch (FileNotFoundException e) {
-            throw new JetTaskFailureException(e.getMessage());
+        try (Writer writer = new BufferedWriter(new FileWriter(new File(buildDir, prj)))) {
+            writer.write(compilerArgsGenerator.projectFileContent());
+        } catch (IOException e) {
+            throw new JetTaskFailureException(e.getMessage(), e);
         }
         return prj;
     }
@@ -87,235 +76,21 @@ public class JetBuildTask {
     /**
      * Invokes the Excelsior JET AOT compiler.
      */
-    private void compile(JetHome jetHome, File buildDir, List<ClasspathEntry> dependencies) throws JetTaskFailureException, CmdLineToolException, FileNotFoundException {
-        ArrayList<String> compilerArgs = new ArrayList<>();
-        ArrayList<String> modules = new ArrayList<>();
-
-        switch (project.appType()) {
-            case PLAIN:
-                compilerArgs.add("-main=" + project.mainClass());
-
-                if (project.splash().isFile()) {
-                    compilerArgs.add("-splash=" + project.splash().getAbsolutePath());
-                } else {
-                    compilerArgs.add("-splashgetfrommanifest+");
-                }
-
-                break;
-            case TOMCAT:
-                compilerArgs.add("-apptype=tomcat");
-                compilerArgs.add("-appdir=" + project.tomcatInBuildDir());
-                if (project.tomcatConfiguration().hideConfig) {
-                    compilerArgs.add("-hideconfiguration+");
-                }
-                if (!project.tomcatConfiguration().genScripts) {
-                    compilerArgs.add("-gentomcatscripts-");
-                }
-                break;
-            default:
-                throw new AssertionError("Unknown app type");
-        }
-
-
-        if (Utils.isWindows()) {
-            if (project.icon().isFile()) {
-                modules.add(project.icon().getAbsolutePath());
-            }
-            if (project.hideConsole()) {
-                compilerArgs.add("-gui+");
-            }
-        }
-
-        compilerArgs.add("-outputname=" + project.outputName());
-        compilerArgs.add("-decor=ht");
-
-        if (project.profileStartup()) {
-            compilerArgs.add("-saprofmode=ALWAYS");
-            compilerArgs.add("-saproftimeout=" + project.profileStartupTimeout());
-        }
-
-        if (project.isAddWindowsVersionInfo()) {
-            compilerArgs.add("-versioninfocompanyname=" + project.vendor());
-            compilerArgs.add("-versioninfoproductname=" + project.product());
-            compilerArgs.add("-versioninfoproductversion=" + project.winVIVersion());
-            compilerArgs.add("-versioninfolegalcopyright=" + project.winVICopyright());
-            compilerArgs.add("-versioninfofiledescription=" + project.winVIDescription());
-        }
-
-        if (project.multiApp()) {
-            compilerArgs.add("-multiapp+");
-        }
-
-        if (project.globalOptimizer()) {
-            compilerArgs.add("-global+");
-        }
-
-        if (project.trialVersion() != null) {
-            compilerArgs.add("-expire=" + project.trialVersion().getExpire());
-            compilerArgs.add("-expiremsg=" + project.trialVersion().expireMessage);
-        }
-
-        if (project.protectData()) {
-            compilerArgs.add("-cryptseed=" + project.cryptSeed());
-        }
-
-        TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
-        if (execProfiles.getStartup().exists()) {
-            compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
-        }
-        if (execProfiles.getUsg().exists()) {
-            modules.add(execProfiles.getUsg().getAbsolutePath());
-        }
-
-        switch (project.inlineExpansion()) {
-            case TINY_METHODS_ONLY:
-                compilerArgs.add("-inline-");
-                break;
-            case LOW:
-                compilerArgs.add("-inlinelimit=50");
-                compilerArgs.add("-inlinetolimit=250");
-                break;
-            case MEDIUM:
-                compilerArgs.add("-inlinelimit=100");
-                compilerArgs.add("-inlinetolimit=500");
-                break;
-            case VERY_AGGRESSIVE:
-                compilerArgs.add("-inlinelimit=250");
-                compilerArgs.add("-inlinetolimit=2000");
-            case AGGRESSIVE:
-                //use default
-                break;
-            default: throw new AssertionError("Unknown inline expansion type: " + project.inlineExpansion());
-        }
-
-        if (project.runArgs().length > 0) {
-            String quotedArgs = Arrays.stream(project.runArgs())
-                    .map(Utils::quoteCmdLineArgument)
-                    .collect(joining(" "));
-            compilerArgs.add("-runarguments=" + quotedArgs);
-        }
-
-        List<String> jvmArgs = project.jvmArgs() != null ? new ArrayList<>(Arrays.asList(project.jvmArgs())) : new ArrayList<>();
-
-        switch (project.stackTraceSupport()) {
-            case NONE:
-                jvmArgs.add("-Djet.stack.trace=false");
-                break;
-            case FULL:
-                compilerArgs.add("-genstacktrace+");
-                break;
-            case MINIMAL:
-                break;
-            default: throw new AssertionError("Unknown stack trace support type: " + project.stackTraceSupport());
-        }
-
-        String jetVMPropOpt = "-jetvmprop=";
-        if (!jvmArgs.isEmpty()) {
-            jetVMPropOpt = jetVMPropOpt + String.join(" ", jvmArgs);
-
-            // JVM args may contain $(Root) prefix for system property value
-            // (that should expand to installation directory location).
-            // However JET compiler replaces such occurrences with s value of "Root" equation if the "$(Root)" is
-            // used in the project file.
-            // So we need to pass jetvmprop as separate compiler argument as workaround.
-            // We also write the equation in commented form to the project in order to see it in the technical support.
-            compilerArgs.add("%" + jetVMPropOpt);
-        }
-
-        String prj = createJetCompilerProject(buildDir, compilerArgs, dependencies, modules);
-
-        if (new JetCompiler(jetHome, "=p", prj, jetVMPropOpt)
-                .workingDirectory(buildDir).withLog(logger).execute() != 0) {
+    private void compile(File buildDir) throws JetTaskFailureException, CmdLineToolException, IOException {
+        String prj = createJetCompilerProject();
+        if (excelsiorJet.compile(buildDir, "=p", prj, compilerArgsGenerator.jetVMPropOpt()) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Build.Failure"));
         }
     }
 
-    // checks that array contains only "none" value.
-    // Unfortunately, it is not possible to know if a user sets a parameter to an empty array from Maven.
-    private boolean checkNone(String[] values) {
-        return values.length == 1 && (values[0].equalsIgnoreCase("none"));
-    }
-
-    private ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
-        ArrayList<String> xpackArgs = new ArrayList<>();
-
-        switch (project.appType()) {
-            case PLAIN:
-                if (project.packageFilesDir().exists()) {
-                    xpackArgs.add("-source");
-                    xpackArgs.add(project.packageFilesDir().getAbsolutePath());
-                }
-
-                xpackArgs.addAll(Arrays.asList(
-                        "-add-file", Utils.mangleExeName(project.outputName()), "/"
-                ));
-                break;
-            case TOMCAT:
-                xpackArgs.add("-source");
-                xpackArgs.add(project.tomcatInBuildDir().getAbsolutePath());
-                if (project.packageFilesDir().exists()) {
-                    logger.warn(s("TestRunTask.PackageFilesIgnoredForTomcat.Warning"));
-                }
-                break;
-            default:
-                throw new AssertionError("Unknown app type");
-        }
-
-        if ((project.optRtFiles() != null) && (project.optRtFiles().length > 0)) {
-            if (checkNone(project.optRtFiles())) {
-                xpackArgs.add("-remove-opt-rt-files");
-                xpackArgs.add("all");
-            } else {
-                xpackArgs.add("-add-opt-rt-files");
-                xpackArgs.add(String.join(",", project.optRtFiles()));
-                if (Arrays.stream(project.optRtFiles()).noneMatch(s -> (s.equalsIgnoreCase("jce") || s.equalsIgnoreCase("all")))) {
-                    xpackArgs.add("-remove-opt-rt-files");
-                    //jce is included by default, so if it is not in the list remove it
-                    xpackArgs.add("jce");
-                }
-            }
-        }
-
-        if ((project.locales() != null) && (project.locales().length > 0)) {
-            if (checkNone(project.locales())) {
-                xpackArgs.add("-remove-locales");
-                xpackArgs.add("all");
-            } else {
-                xpackArgs.add("-add-locales");
-                xpackArgs.add(String.join(",", project.locales()));
-                if (Arrays.stream(project.locales()).noneMatch(s -> (s.equalsIgnoreCase("european") || s.equalsIgnoreCase("all")))) {
-                    xpackArgs.add("-remove-locales");
-                    //european is included by default, so if it is not in the list remove it
-                    xpackArgs.add("european");
-                }
-            }
-        }
-
-        if (project.javaRuntimeSlimDown() != null) {
-
-            xpackArgs.addAll(Arrays.asList(
-                    "-detached-base-url", project.javaRuntimeSlimDown().detachedBaseURL,
-                    "-detach-components",
-                    (project.javaRuntimeSlimDown().detachComponents != null && project.javaRuntimeSlimDown().detachComponents.length > 0) ?
-                            String.join(",", project.javaRuntimeSlimDown().detachComponents) : "auto",
-                    "-detached-package", new File(project.jetOutputDir(), project.javaRuntimeSlimDown().detachedPackage).getAbsolutePath()
-            ));
-        }
-
-        return xpackArgs;
-    }
 
     /**
      * Packages the generated executable and required Excelsior JET runtime files
      * as a self-contained directory
      */
-    private void createAppDir(JetHome jetHome, File buildDir, File appDir) throws CmdLineToolException, JetTaskFailureException {
-        ArrayList<String> xpackArgs = getCommonXPackArgs();
-        xpackArgs.addAll(Arrays.asList(
-                "-target", appDir.getAbsolutePath()
-        ));
-        if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
-                .workingDirectory(buildDir).withLog(logger).execute() != 0) {
+    private void createAppDir(File buildDir, File appDir) throws CmdLineToolException, JetTaskFailureException {
+        ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs(appDir.getAbsolutePath());
+        if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
     }
@@ -324,9 +99,9 @@ public class JetBuildTask {
      * Packages the generated executable and required Excelsior JET runtime files
      * as a excelsior installer file.
      */
-    private void packWithEI(JetHome jetHome, File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
+    private void packWithEI(File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
         File target = new File(project.jetOutputDir(), Utils.mangleExeName(project.artifactName()));
-        ArrayList<String> xpackArgs = getCommonXPackArgs();
+        ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs();
         if (project.excelsiorInstallerConfiguration().eula.exists()) {
             xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
             xpackArgs.add(project.excelsiorInstallerConfiguration().eula.getAbsolutePath());
@@ -342,15 +117,14 @@ public class JetBuildTask {
                 "-version", project.version(),
                 "-target", target.getAbsolutePath())
         );
-        if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
-                .workingDirectory(buildDir).withLog(logger).execute() != 0) {
+        if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
         logger.info(s("JetBuildTask.Build.Success"));
         logger.info(s("JetBuildTask.GetEI.Info", target.getAbsolutePath()));
     }
 
-    private void createOSXAppBundle(JetHome jetHome, File buildDir) throws JetTaskFailureException, CmdLineToolException, IOException {
+    private void createOSXAppBundle(File buildDir) throws JetTaskFailureException, CmdLineToolException, IOException {
         File appBundle = new File(project.jetOutputDir(), project.osxBundleConfiguration().fileName + ".app");
         Utils.mkdir(appBundle);
         try {
@@ -394,12 +168,8 @@ public class JetBuildTask {
                             "</plist>\n");
         }
 
-        ArrayList<String> xpackArgs = getCommonXPackArgs();
-        xpackArgs.addAll(Arrays.asList(
-                "-target", contentsMacOs.getAbsolutePath()
-        ));
-        if (new JetPackager(jetHome, xpackArgs.toArray(new String[xpackArgs.size()]))
-                .workingDirectory(buildDir).withLog(logger).execute() != 0) {
+        ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs(contentsMacOs.getAbsolutePath());
+        if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
 
@@ -440,7 +210,7 @@ public class JetBuildTask {
     }
 
 
-    private void packageBuild(JetHome jetHome, File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
+    private void packageBuild(File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
         switch (project.excelsiorJetPackaging()) {
             case ZIP:
                 logger.info(s("JetBuildTask.ZipApp.Info"));
@@ -450,10 +220,10 @@ public class JetBuildTask {
                 logger.info(s("JetBuildTask.GetZip.Info", targetZip.getAbsolutePath()));
                 break;
             case EXCELSIOR_INSTALLER:
-                packWithEI(jetHome, buildDir);
+                packWithEI(buildDir);
                 break;
             case OSX_APP_BUNDLE:
-                createOSXAppBundle(jetHome, buildDir);
+                createOSXAppBundle(buildDir);
                 break;
             default:
                 logger.info(s("JetBuildTask.Build.Success"));
@@ -474,10 +244,8 @@ public class JetBuildTask {
      * @throws CmdLineToolException if any error occurs while cmd line tool calls
      */
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
-        JetHome jetHome = project.validate(true);
-
-        // creating output dirs
-        File buildDir = project.createBuildDir();
+        project.validate(excelsiorJet, true);
+        buildDir = project.createBuildDir();
 
         File appDir = new File(project.jetOutputDir(), APP_DIR);
         //cleanup packageDir
@@ -489,18 +257,19 @@ public class JetBuildTask {
 
         switch (project.appType()) {
             case PLAIN:
-                compile(jetHome, buildDir, project.copyDependencies());
+                project.copyClasspathEntries();
+                compile(buildDir);
                 break;
             case TOMCAT:
                 project.copyTomcatAndWar();
-                compile(jetHome, buildDir, Collections.emptyList());
+                compile(buildDir);
                 break;
             default:
                 throw new AssertionError("Unknown application type");
         }
-        createAppDir(jetHome, buildDir, appDir);
+        createAppDir(buildDir, appDir);
 
-        packageBuild(jetHome, buildDir, appDir);
+        packageBuild(buildDir, appDir);
     }
 
 }

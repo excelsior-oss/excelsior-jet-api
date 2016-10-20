@@ -1,5 +1,7 @@
 package com.excelsiorjet;
 
+import com.excelsiorjet.api.JetHome;
+import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.*;
 import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.util.Utils;
