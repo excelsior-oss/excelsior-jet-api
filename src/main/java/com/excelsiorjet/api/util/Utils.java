@@ -21,6 +21,7 @@
  */
 package com.excelsiorjet.api.util;
 
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -37,30 +38,6 @@ import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 public class Utils {
-
-    public static boolean isWindows() {
-        return System.getProperty("os.name").contains("Windows");
-    }
-
-    public static boolean isLinux() {
-        return System.getProperty("os.name").contains("Linux");
-    }
-
-    public static boolean isOSX() {
-        return System.getProperty("os.name").contains("OS X");
-    }
-
-    public static boolean isUnix() {
-        return isLinux() || isOSX();
-    }
-
-    public static String getExeFileExtension() {
-        return isWindows() ? ".exe" : "";
-    }
-
-    public static String mangleExeName(String exe) {
-        return exe + getExeFileExtension();
-    }
 
     public static void cleanDirectory(File f) throws IOException {
         Files.walkFileTree(f.toPath(), new FileVisitor<Path>() {
@@ -160,14 +137,6 @@ public class Utils {
         }
     }
 
-    public static void closeQuietly(AutoCloseable in) {
-        try {
-            if (in != null) {
-                in.close();
-            }
-        } catch (Exception ignore) {}
-    }
-
     public static void mkdir(File dir) throws JetTaskFailureException {
         if (!dir.exists() && !dir.mkdirs()) {
             if (!dir.exists()) {
@@ -185,23 +154,29 @@ public class Utils {
                 compressDirectoryToZipfile(rootDir, sourceDir + File.separator + file.getName(), out);
             } else {
                 ZipArchiveEntry entry = new ZipArchiveEntry(file.getAbsolutePath().substring(rootDir.length() + 1));
-                if (isUnix() && file.canExecute()) {
-                    entry.setUnixMode(0100777);
+                if (Host.isUnix()) {
+                    if (file.canExecute()) {
+                        //set -rwxr-xr-x
+                        entry.setUnixMode(0100755);
+                    } else {
+                        //set -rw-r--r--
+                        entry.setUnixMode(0100644);
+                    }
                 }
                 out.putArchiveEntry(entry);
-                InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()));
-                copy(in, out);
-                closeQuietly(in);
+                try (InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()))) {
+                    copy(in, out);
+                }
                 out.closeArchiveEntry();
             }
         }
     }
 
     public static void compressZipfile(File sourceDir, File outputFile) throws IOException {
-        ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
-                new BufferedOutputStream(new FileOutputStream(outputFile)));
-        compressDirectoryToZipfile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile);
-        closeQuietly(zipFile);
+        try (ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
+                new BufferedOutputStream(new FileOutputStream(outputFile)))) {
+            compressDirectoryToZipfile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile);
+        }
     }
 
     public static void copyQuietly(Path source, Path target) {

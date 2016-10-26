@@ -1,5 +1,6 @@
 package com.excelsiorjet;
 
+import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.JetHome;
 import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.*;
@@ -30,11 +31,12 @@ public class JetCompilerTest {
     @Test
     public void compileAndRunHelloWorld() throws CmdLineToolException, JetHomeException {
         JetHome jetHome = new JetHome();
+        ExcelsiorJet excelsiorJet = new ExcelsiorJet(jetHome, log);
         assertEquals(0,
                 new JetCompiler(jetHome, "testClasses/HelloWorld")
                 .workingDirectory(TestUtils.workDir())
                         .execute());
-        File exe = new File(TestUtils.workDir(), Utils.mangleExeName("HelloWorld"));
+        File exe = new File(TestUtils.workDir(), excelsiorJet.getTargetOS().mangleExeName("HelloWorld"));
         assertTrue(exe.exists());
         new CmdLineTool(exe.getAbsolutePath()).withEnvironment("PATH", jetHome.getJetBinDirectory())
                 .withLog(log).workingDirectory(TestUtils.workDir()).execute();

@@ -23,6 +23,7 @@ package com.excelsiorjet.api.cmd;
 
 import com.excelsiorjet.api.JetHome;
 import com.excelsiorjet.api.JetHomeException;
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -39,7 +40,7 @@ class JetTool extends CmdLineTool {
     private static String[] prependCommand(JetHome jetHome, String tool, String[] args) {
         String newArgs[] = new String[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = Utils.mangleExeName(jetHome.getJetBinDirectory() + File.separator + tool);
+        newArgs[0] = Host.mangleExeName(jetHome.getJetBinDirectory() + File.separator + tool);
         return newArgs;
     }
 

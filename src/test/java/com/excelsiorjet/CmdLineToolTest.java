@@ -3,6 +3,7 @@ package com.excelsiorjet;
 import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
 import com.excelsiorjet.api.log.Log;
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.util.Utils;
 import org.junit.Test;
 
@@ -27,7 +28,7 @@ public class CmdLineToolTest {
     private String getJavaExe() {
         String javaHome = System.getProperty("java.home");
         assertNotNull(javaHome);
-        return Utils.mangleExeName(javaHome + File.separator + "bin" + File.separator + "java");
+        return Host.mangleExeName(javaHome + File.separator + "bin" + File.separator + "java");
     }
 
     @Test

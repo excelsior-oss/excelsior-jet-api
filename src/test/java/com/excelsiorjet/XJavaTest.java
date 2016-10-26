@@ -33,17 +33,4 @@ public class XJavaTest {
                         .execute());
         verify(log).info("Hello world!");
     }
-
-    @Test
-    public void testRun() throws CmdLineToolException, JetHomeException {
-        TestRunExecProfiles execProfiles = new TestRunExecProfiles(TestUtils.workDir(), "test");
-        assertEquals(0,
-                new XJava(jetHome)
-                .addTestRunArgs(execProfiles)
-                .arg("testClasses.HelloWorld")
-                .workingDirectory(TestUtils.workDir())
-                        .execute());
-        assertTrue(execProfiles.getStartup().exists());
-        assertTrue(jetHome.is64bit() || execProfiles.getUsg().exists());
-    }
 }

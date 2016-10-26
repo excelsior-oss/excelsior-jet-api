@@ -52,11 +52,6 @@ public class JetHomeTest {
         new JetHome(TestUtils.getOrCreateFakeJetHome("1050").getAbsolutePath());
     }
 
-    @Test
-    public void checkEdition() throws JetHomeException {
-        assertNotNull(new JetHome().getEdition());
-    }
-
     @After
     public void cleanup() throws IOException {
         TestUtils.cleanFakeJetDir();
