@@ -12,8 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * @author kit
- *         Date: 04.12.2015
+ * @author Nikita Lipsky
  */
 public class XJavaTest {
 

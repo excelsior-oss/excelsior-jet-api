@@ -24,7 +24,7 @@ package com.excelsiorjet.api.platform;
 /**
  * Host platform (OS + CPU) utility methods.
  *
- * @author kit
+ * @author Nikita Lipsky
  */
 public class Host {
 

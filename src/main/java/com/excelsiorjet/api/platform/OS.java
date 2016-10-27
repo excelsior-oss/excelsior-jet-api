@@ -24,7 +24,7 @@ package com.excelsiorjet.api.platform;
 /**
  * List of operating systems currently supported by Excelsior JET.
  *
- * @author kit
+ * @author Nikita Lipsky
  */
 public enum OS {
     WINDOWS,

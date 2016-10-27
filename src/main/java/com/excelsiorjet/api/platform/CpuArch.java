@@ -24,7 +24,7 @@ package com.excelsiorjet.api.platform;
 /**
  * List of CPU architectures currently supported by Excelsior JET.
  *
- * @author kit
+ * @author Nikita Lipsky
  */
 public enum CpuArch {
     X86,
