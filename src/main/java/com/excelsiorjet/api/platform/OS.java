@@ -22,7 +22,7 @@
 package com.excelsiorjet.api.platform;
 
 /**
- * List of operation systems currently supported by Excelsior JET.
+ * List of operating systems currently supported by Excelsior JET.
  *
  * @author kit
  */
