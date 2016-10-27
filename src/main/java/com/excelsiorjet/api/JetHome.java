@@ -149,8 +149,9 @@ public class JetHome {
     }
 
     /**
-     * @return Excelsior JET version, where first two digits is major version and last two digits is minor version.
-     *         Thus for Excelsior JET version 11.3, the returned value will be 1130.
+     * @return Excelsior JET version as a 4-digit decimal number, where the first two digits represent the major
+     *         version and the last two digits - minor version.
+     *         I.e. for Excelsior JET version 11.3 the returned value will be 1130.
      */
     public int getJetVersion() {
         return jetVersion;
