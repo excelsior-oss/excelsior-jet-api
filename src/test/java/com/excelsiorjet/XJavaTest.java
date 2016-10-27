@@ -12,8 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * @author kit
- *         Date: 04.12.2015
+ * @author Nikita Lipsky
  */
 public class XJavaTest {
 
@@ -32,18 +31,5 @@ public class XJavaTest {
                 .workingDirectory(TestUtils.workDir())
                         .execute());
         verify(log).info("Hello world!");
-    }
-
-    @Test
-    public void testRun() throws CmdLineToolException, JetHomeException {
-        TestRunExecProfiles execProfiles = new TestRunExecProfiles(TestUtils.workDir(), "test");
-        assertEquals(0,
-                new XJava(jetHome)
-                .addTestRunArgs(execProfiles)
-                .arg("testClasses.HelloWorld")
-                .workingDirectory(TestUtils.workDir())
-                        .execute());
-        assertTrue(execProfiles.getStartup().exists());
-        assertTrue(jetHome.is64bit() || execProfiles.getUsg().exists());
     }
 }

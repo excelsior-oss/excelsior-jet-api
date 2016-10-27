@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.tasks.JetBuildTaskTest.mockUtilsClass;
+import static com.excelsiorjet.api.tasks.Tests.excelsiorJet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -37,7 +38,7 @@ public class JetProjectTest {
                 dependencies(singletonList(DependencyBuilder.testExternalDependency(extDepDirSpy).pack(ClasspathEntry.PackType.ALL).asDependencySettings()));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.NotPackedDirectory", Tests.testBaseDir.resolve("prj/externalDir")), e.getMessage());
@@ -66,7 +67,7 @@ public class JetProjectTest {
                 dependencies(singletonList(dependencySettings));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             List<String> dependencyIds = Stream.of(dep1, dep2).
@@ -83,7 +84,7 @@ public class JetProjectTest {
                 dependencies(singletonList(dependencySettings));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.DependencyIdRequired"), e.getMessage());
@@ -97,7 +98,7 @@ public class JetProjectTest {
                 dependencies(singletonList(externalDependency));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(artifactId:" + Utils.getCanonicalPath(externalDependency.path) + ")"), e.getMessage());
@@ -111,7 +112,7 @@ public class JetProjectTest {
                 dependencies(singletonList(externalDependency));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(groupId:" + Utils.getCanonicalPath(externalDependency.path) + ")"), e.getMessage());
@@ -125,7 +126,7 @@ public class JetProjectTest {
                 dependencies(singletonList(externalDependency));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.InvalidDependencySetting", "(version:" + Utils.getCanonicalPath(externalDependency.path) + ")"), e.getMessage());
@@ -140,7 +141,7 @@ public class JetProjectTest {
                 projectDependencies(asList(dep1, dep2));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.OverlappedDependency", dep2, dep1), e.getMessage());
@@ -157,7 +158,7 @@ public class JetProjectTest {
                 dependencies(Collections.singletonList(depSet1));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
         } catch (JetTaskFailureException e) {
             fail("No errors expected");
         }
@@ -174,9 +175,7 @@ public class JetProjectTest {
                 dependencies(asList(depSet1, depSet2));
 
         try {
-            ExcelsiorJet excelsiorJet = Mockito.spy(new ExcelsiorJet(Mockito.mock(JetHome.class), null));
-            Mockito.when(excelsiorJet.getEdition()).thenReturn(JetEdition.ENTERPRISE);
-            project.validate(excelsiorJet, false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.OverlappedTomcatDependency", dep2, dep1), e.getMessage());
@@ -193,7 +192,7 @@ public class JetProjectTest {
                 projectDependencies(asList(dep1)).dependencies(asList(externalDependency));
 
         try {
-            project.validate(Mockito.spy(new ExcelsiorJet(null, null)), false);
+            project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
             assertEquals(Txt.s("JetApi.OverlappedExternalDependency", externalDependency.path, dep1), e.getMessage());

@@ -184,14 +184,6 @@ public class JetProject {
     private List<ClasspathEntry> classpathEntries;
 
     /**
-     * If the main artifact of your project is so a called fat jar, i.e. all project dependencies are packed
-     * into the main artifact, you most likely don't need the separate dependencies to be compiled
-     * with Excelsior JET, because all required classes and resources are already inside your main artifact.
-     * For such a case you may set this parameter to {@code true}.
-     */
-    boolean ignoreProjectDependencies;
-
-    /**
      * The target location for application execution profiles gathered during Test Run.
      * It is recommended to commit the collected profiles (.usg, .startup) to VCS to enable the {@code {@link JetBuildTask}}
      * to re-use them during subsequent builds without performing a Test Run.
@@ -544,13 +536,7 @@ public class JetProject {
 
                 break;
             case TOMCAT:
-                JetEdition edition;
-                try {
-                    edition = excelsiorJet.getEdition();
-                } catch (JetHomeException e) {
-                    throw new JetTaskFailureException(e.getMessage());
-                }
-                if ((edition != JetEdition.EVALUATION) && (edition != JetEdition.ENTERPRISE)) {
+                if (!excelsiorJet.isTomcatSupported()) {
                     throw new JetTaskFailureException(s("JetApi.TomcatNotSupported.Failure"));
                 }
 
@@ -603,23 +589,25 @@ public class JetProject {
             case NONE:
                 break;
             case EXCELSIOR_INSTALLER:
-                if (Utils.isOSX()) {
-                    logger.warn(s("JetApi.NoExcelsiorInstallerOnOSX.Warning"));
+                if (!excelsiorJet.isExcelsiorInstallerSupported()) {
+                    logger.warn(s("JetApi.NoExcelsiorInstaller.Warning"));
                     excelsiorJetPackaging = ZIP.toString();
                 }
                 break;
             case OSX_APP_BUNDLE:
-                if (!Utils.isOSX()) {
+                if (!excelsiorJet.getTargetOS().isOSX()) {
                     logger.warn(s("JetApi.OSXBundleOnNotOSX.Warning"));
                     excelsiorJetPackaging = ZIP.toString();
                 }
                 break;
 
             case NATIVE_BUNDLE:
-                if (Utils.isOSX()) {
+                if (excelsiorJet.getTargetOS().isOSX()) {
                     excelsiorJetPackaging = OSX_APP_BUNDLE.toString();
-                } else {
+                } else if (excelsiorJet.isExcelsiorInstallerSupported()){
                     excelsiorJetPackaging = EXCELSIOR_INSTALLER.toString();
+                } else {
+                    excelsiorJetPackaging = ZIP.toString();
                 }
                 break;
 
@@ -811,11 +799,9 @@ public class JetProject {
             }
 
             if (profileStartup) {
-                if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
-                    logger.warn(s("JetApi.NoStartupAcceleratorInStandard.Warning"));
-                    profileStartup = false;
-                } else if (Utils.isOSX()) {
-                    logger.warn(s("JetApi.NoStartupAcceleratorOnOSX.Warning"));
+                if (!excelsiorJet.isStartupAcceleratorSupported()) {
+                    // startup accelerator is enabled by default,
+                    // so if it is not supported, no warn about it.
                     profileStartup = false;
                 }
             }
@@ -844,7 +830,7 @@ public class JetProject {
     }
 
     private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException {
-        if (!Utils.isWindows()) {
+        if (!excelsiorJet.getTargetOS().isWindows()) {
             addWindowsVersionInfo = false;
         }
         if (addWindowsVersionInfo && (excelsiorJet.getEdition() == JetEdition.STANDARD)) {
@@ -913,11 +899,8 @@ public class JetProject {
 
     private void checkGlobalAndSlimDownParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer) {
-            if (excelsiorJet.is64bit()) {
-                logger.warn(s("JetApi.NoGlobalIn64Bit.Warning"));
-                globalOptimizer = false;
-            } else if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
-                logger.warn(s("JetApi.NoGlobalInStandard.Warning"));
+            if (!excelsiorJet.isGlobalOptimizerSupported()) {
+                logger.warn(s("JetApi.NoGlobal.Warning"));
                 globalOptimizer = false;
             }
         }
@@ -927,11 +910,8 @@ public class JetProject {
         }
 
         if (javaRuntimeSlimDown != null) {
-            if (excelsiorJet.is64bit()) {
-                logger.warn(s("JetApi.NoSlimDownIn64Bit.Warning"));
-                javaRuntimeSlimDown = null;
-            } else if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
-                logger.warn(s("JetApi.NoSlimDownInStandard.Warning"));
+            if (!excelsiorJet.isSlimDownSupported()) {
+                logger.warn(s("JetApi.NoSlimDown.Warning"));
                 javaRuntimeSlimDown = null;
             } else {
                 if (javaRuntimeSlimDown.detachedBaseURL == null) {

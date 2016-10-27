@@ -1,9 +1,11 @@
 package com.excelsiorjet;
 
+import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.JetHome;
 import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.*;
 import com.excelsiorjet.api.log.Log;
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.util.Utils;
 import org.junit.After;
 import org.junit.Test;
@@ -28,15 +30,16 @@ public class JetPackagerTest {
 
     @Test
     public void testPackHelloWorld() throws CmdLineToolException, JetHomeException, IOException {
+        ExcelsiorJet excelsiorJet = new ExcelsiorJet(new JetHome(), log);
         assertEquals(0,
                 new JetCompiler("testClasses/HelloWorld")
                 .workingDirectory(TestUtils.workDir())
                         .execute());
-        File exe = new File(TestUtils.workDir(), Utils.mangleExeName("HelloWorld"));
+        File exe = new File(TestUtils.workDir(), excelsiorJet.getTargetOS().mangleExeName("HelloWorld"));
         assertEquals(0,
                 new JetPackager("-add-file", exe.getAbsolutePath(), "/", "-target",
                         targetDir.getAbsolutePath()).execute());
-        File exePacked = new File(TestUtils.workDir(), target + File.separator + Utils.mangleExeName("HelloWorld"));
+        File exePacked = new File(TestUtils.workDir(), target + File.separator + excelsiorJet.getTargetOS().mangleExeName("HelloWorld"));
         assertTrue(exePacked.exists());
         new CmdLineTool(exePacked.getAbsolutePath()).withLog(log).execute();
         verify(log).info("Hello world!");
@@ -48,6 +51,7 @@ public class JetPackagerTest {
         Utils.cleanDirectory(targetDir);
     }
 
+    @Test
     public void createAndTestFakeJC() throws CmdLineToolException, JetHomeException, IOException {
         try {
             File classesDir = TestUtils.classesDir();
@@ -57,7 +61,7 @@ public class JetPackagerTest {
                             .workingDirectory(TestUtils.workDir())
                             .execute());
 
-            File exe = new File(TestUtils.workDir(), Utils.mangleExeName("jc"));
+            File exe = new File(TestUtils.workDir(), Host.mangleExeName("jc"));
             File fakeJetBin = new File(TestUtils.getFakeJetHomeNoCreate(), "bin");
             fakeJetBin.mkdirs();
 

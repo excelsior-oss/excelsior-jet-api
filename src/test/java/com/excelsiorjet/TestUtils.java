@@ -2,6 +2,7 @@ package com.excelsiorjet;
 
 import com.excelsiorjet.api.cmd.JetCompiler;
 import com.excelsiorjet.api.cmd.JetPackager;
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -52,11 +53,11 @@ public class TestUtils {
         try {
             new File(fakeJetHomeBin, "jet.config").createNewFile();
             new File(fakeJetHomeBin, "jet" + version + ".home").createNewFile();
-            File jc = new File(fakeJetHomeBin, Utils.mangleExeName(JetCompiler.JET_COMPILER));
+            File jc = new File(fakeJetHomeBin, Host.mangleExeName(JetCompiler.JET_COMPILER));
             if (!jc.exists()) {
                 jc.createNewFile();
             }
-            File xpack = new File(fakeJetHomeBin, Utils.mangleExeName(JetPackager.JET_PACKAGER));
+            File xpack = new File(fakeJetHomeBin, Host.mangleExeName(JetPackager.JET_PACKAGER));
             if (!xpack.exists()) {
                 xpack.createNewFile();
             }

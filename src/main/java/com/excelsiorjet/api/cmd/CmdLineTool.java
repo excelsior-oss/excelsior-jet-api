@@ -22,6 +22,7 @@
 package com.excelsiorjet.api.cmd;
 
 import com.excelsiorjet.api.log.Log;
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
@@ -61,7 +62,7 @@ public class CmdLineTool {
     }
 
     public CmdLineTool withEnvironment(String var, String val) {
-        this.env.put(Utils.isWindows() ? var.toUpperCase() : var, val);
+        this.env.put(Host.isWindows() ? var.toUpperCase() : var, val);
         return this;
     }
 
@@ -105,7 +106,7 @@ public class CmdLineTool {
             ProcessBuilder pb = new ProcessBuilder(args).directory(workDir).redirectInput(Redirect.INHERIT);
             if (!env.isEmpty()) {
                 Map<String, String> penv = pb.environment();
-                if (Utils.isWindows()) {
+                if (Host.isWindows()) {
                     for (String key : penv.keySet()) {
                         String keyUpper = key.toUpperCase();
                         if (env.containsKey(keyUpper)) {

@@ -23,6 +23,11 @@ package com.excelsiorjet.api;
 
 import com.excelsiorjet.api.cmd.*;
 import com.excelsiorjet.api.log.Log;
+import com.excelsiorjet.api.log.StdOutLog;
+import com.excelsiorjet.api.platform.CpuArch;
+import com.excelsiorjet.api.platform.Host;
+import com.excelsiorjet.api.platform.OS;
+import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -37,9 +42,14 @@ public class ExcelsiorJet {
     private final JetHome jetHome;
     private final Log logger;
 
-    public ExcelsiorJet(JetHome jetHome, Log logger) {
+    private JetEdition edition;
+    private OS targetOS;
+    private CpuArch targetCpu;
+
+    public ExcelsiorJet(JetHome jetHome, Log logger) throws JetHomeException {
         this.jetHome = jetHome;
         this.logger = logger;
+        detectEditionAndTargetPlatform();
     }
 
     public ExcelsiorJet(String jetHome) throws JetHomeException {
@@ -101,24 +111,109 @@ public class ExcelsiorJet {
                 .execute();
     }
 
-    /**
-     * @return bitness of this Excelsior JET instance
-     */
-    public boolean is64bit() throws JetHomeException {
-        return jetHome.is64bit();
+    private String obtainVersionString() throws JetHomeException {
+        try {
+            String[] result = {null};
+            CmdLineTool jetCompiler = new JetCompiler(this.jetHome).withLog(new StdOutLog() {
+                public void info(String info) {
+                    if (result[0] == null) {
+                        if (info.contains("Excelsior JET ")) {
+                            result[0] = info;
+                        }
+                    }
+                }
+
+            });
+            if ((jetCompiler.execute() != 0) || result[0] == null)  {
+                throw new JetHomeException(Txt.s("JetHome.UnableToDetectEdition.Error"));
+            }
+            return result[0];
+        } catch (CmdLineToolException e) {
+            throw new JetHomeException(e.getMessage());
+        }
     }
 
-    /**
-     * @return edition of this Excelsior JET instance
-     */
-    public JetEdition getEdition() throws JetHomeException {
-        return jetHome.getEdition();
+    private void detectEditionAndTargetPlatform() throws JetHomeException {
+        if (edition == null) {
+            String version = obtainVersionString();
+            edition = JetEdition.retrieveEdition(version);
+            if (edition == null) {
+                throw new JetHomeException(Txt.s("JetHome.UnableToDetectEdition.Error"));
+            }
+
+            targetOS = Host.getOS();
+
+            if (version.contains("64-bit")) {
+                targetCpu = CpuArch.AMD64;
+            } else if (version.contains("ARM")) {
+                targetCpu = CpuArch.ARM32;
+                //currently Excelsior JET supports only ARM Linux
+                targetOS = OS.LINUX;
+            } else {
+                targetCpu = CpuArch.X86;
+            }
+        }
+    }
+
+    public JetEdition getEdition() {
+        return edition;
+    }
+
+    public OS getTargetOS()  {
+        return targetOS;
+    }
+
+    private boolean isX86() {
+        return targetCpu == CpuArch.X86;
+    }
+
+    public boolean isGlobalOptimizerSupported() {
+        return isX86() && (getEdition() != JetEdition.STANDARD);
+    }
+
+    public boolean isSlimDownSupported() {
+        return isGlobalOptimizerSupported();
+    }
+
+    public boolean isUsageListGenerationSupported() {
+        return isX86();
+    }
+
+    public boolean isStartupProfileGenerationSupported()  {
+        return getEdition() != JetEdition.STANDARD;
+    }
+
+    public boolean isTomcatSupported() {
+        JetEdition edition = getEdition();
+        return  (edition == JetEdition.EVALUATION) || (edition == JetEdition.ENTERPRISE) ||
+                since11_3() &&
+                        ((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION));
+    }
+
+    public boolean since11_3() {
+        return jetHome.getJetVersion() >= 1130;
+    }
+
+    public boolean isCrossCompilation() {
+        return targetOS != Host.getOS();
+    }
+
+    public boolean isTestRunSupported() {
+        return !isCrossCompilation();
+    }
+
+    public boolean isExcelsiorInstallerSupported() {
+        return !getTargetOS().isOSX() && !((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION));
+    }
+
+    public boolean isStartupAcceleratorSupported() {
+        return !getTargetOS().isOSX() && !isCrossCompilation() && (edition != JetEdition.STANDARD);
     }
 
     /**
      * @return home directory of this Excelsior JET instance
      */
-    public JetHome getJetHome() {
-        return jetHome;
+    public String getJetHome() {
+        return jetHome.getJetHome();
     }
 }

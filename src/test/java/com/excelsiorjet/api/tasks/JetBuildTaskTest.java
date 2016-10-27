@@ -40,7 +40,7 @@ public class JetBuildTaskTest {
         prepareJetBuildDir();
         mockCopying("copyFile");
         File mainJarSpy = Tests.fileSpy(Tests.mainJar);
-        ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
+        ExcelsiorJet excelsiorJet = Tests.excelsiorJet();
 
         JetProject prj = Mockito.spy(Tests.testProject(ApplicationType.PLAIN).
                 mainJar(mainJarSpy));
@@ -64,7 +64,7 @@ public class JetBuildTaskTest {
     public void testExternalJarCopied() throws Exception {
         mockCopying("copyFile");
 
-        ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
+        ExcelsiorJet excelsiorJet = Tests.excelsiorJet();
         File externalJar = Tests.fileSpy(Tests.externalJarAbs);
         File mainJarSpy = Tests.fileSpy(Tests.mainJar);
 
@@ -92,7 +92,7 @@ public class JetBuildTaskTest {
         prepareJetBuildDir();
         mockUtilsClass();
 
-        ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
+        ExcelsiorJet excelsiorJet = Tests.excelsiorJet();
 
         JetProject prj = Mockito.spy(Tests.testProject(ApplicationType.TOMCAT));
         prj.processDependencies();
@@ -114,7 +114,7 @@ public class JetBuildTaskTest {
         ArgumentCaptor<File> mkdirCaptor = ArgumentCaptor.forClass(File.class);
         PowerMockito.doNothing().when(Utils.class, "mkdir", mkdirCaptor.capture());
 
-        ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
+        ExcelsiorJet excelsiorJet = Tests.excelsiorJet();
         File externalJar = Tests.fileSpy(Tests.externalJarAbs);
         ProjectDependency dep = DependencyBuilder.testProjectDependency(externalJar).asProjectDependency();
         DependencySettings depDesc = DependencyBuilder.testDependencySettings().pack(ClasspathEntry.PackType.NONE).version(dep.version).packagePath("extDep").asDependencySettings();
@@ -148,7 +148,7 @@ public class JetBuildTaskTest {
         Path externalDirRel = Paths.get("lib", "externalDir");
         Path externalDirAbs = Tests.projectDir.resolve(externalDirRel);
 
-        ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
+        ExcelsiorJet excelsiorJet = Tests.excelsiorJet();
         File externalDir = Tests.dirSpy(externalDirAbs);
         File mainJarSpy = Tests.fileSpy(Tests.mainJar);
         JetProject prj = Mockito.spy(Tests.testProject(ApplicationType.PLAIN).
@@ -174,7 +174,7 @@ public class JetBuildTaskTest {
     public void testExternalDisabledJarCopiedToLib() throws Exception {
         mockCopying("copyFile");
 
-        ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
+        ExcelsiorJet excelsiorJet = Tests.excelsiorJet();
         File externalJar = Tests.fileSpy(Tests.externalJarAbs);
         DependencySettings dep = DependencyBuilder.testExternalDependency(externalJar).pack(ClasspathEntry.PackType.NONE).disableCopyToPackage(true).asDependencySettings();
         JetProject prj = Mockito.spy(Tests.testProject(ApplicationType.PLAIN).

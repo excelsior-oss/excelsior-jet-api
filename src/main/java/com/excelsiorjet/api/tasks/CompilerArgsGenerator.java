@@ -21,6 +21,7 @@
 */
 package com.excelsiorjet.api.tasks;
 
+import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.util.Utils;
 
@@ -44,8 +45,11 @@ class CompilerArgsGenerator {
 
     private final JetProject project;
 
-    CompilerArgsGenerator(JetProject project) {
+    private final ExcelsiorJet excelsiorJet;
+
+    CompilerArgsGenerator(JetProject project, ExcelsiorJet excelsiorJet) {
         this.project = project;
+        this.excelsiorJet = excelsiorJet;
     }
 
     private String toJetPrjFormat(Path f) {
@@ -102,7 +106,7 @@ class CompilerArgsGenerator {
     private List<String> modules() {
         ArrayList<String> modules = new ArrayList<>();
 
-        if (Utils.isWindows()) {
+        if (excelsiorJet.getTargetOS().isWindows()) {
             if (project.icon().isFile()) {
                 modules.add(toJetPrjFormat(project.icon()));
             }
@@ -145,7 +149,7 @@ class CompilerArgsGenerator {
         }
 
 
-        if (Utils.isWindows()) {
+        if (excelsiorJet.getTargetOS().isWindows()) {
             if (project.hideConsole()) {
                 compilerArgs.add("-gui+");
             }

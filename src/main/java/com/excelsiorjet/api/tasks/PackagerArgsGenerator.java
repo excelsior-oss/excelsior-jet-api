@@ -21,6 +21,7 @@
 */
 package com.excelsiorjet.api.tasks;
 
+import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -39,15 +40,17 @@ import static com.excelsiorjet.api.util.Txt.s;
 public class PackagerArgsGenerator {
 
     private final JetProject project;
+    private final ExcelsiorJet excelsiorJet;
 
-    public PackagerArgsGenerator(JetProject project) {
+    public PackagerArgsGenerator(JetProject project, ExcelsiorJet excelsiorJet) {
         this.project = project;
+        this.excelsiorJet = excelsiorJet;
     }
 
     public ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
         ArrayList<String> xpackArgs = new ArrayList<>();
 
-        String exeName = Utils.mangleExeName(project.outputName());
+        String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         switch (project.appType()) {
             case PLAIN:
                 if (project.packageFilesDir().exists()) {

@@ -23,7 +23,6 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
-import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.util.Txt;
@@ -120,6 +119,9 @@ public class TestRunTask {
     }
 
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
+        if (!excelsiorJet.isTestRunSupported()) {
+            throw new JetTaskFailureException(Txt.s("TestRunTask.NoTestRunForCrossCompilation.Error"));
+        }
         project.validate(excelsiorJet, false);
 
         // creating output dirs
@@ -174,16 +176,12 @@ public class TestRunTask {
 
     private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs) throws JetTaskFailureException {
         List<String> args = new ArrayList<>();
-        try {
-            TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
-            if (excelsiorJet.getJetHome().getEdition() != JetEdition.STANDARD) {
-                args.add("-Djet.jit.profile.startup=" + execProfiles.getStartup().getAbsolutePath());
-            }
-            if (!excelsiorJet.getJetHome().is64bit()) {
-                args.add("-Djet.usage.list=" + execProfiles.getUsg().getAbsolutePath());
-            }
-        } catch (JetHomeException e) {
-            throw new JetTaskFailureException(e.getMessage());
+        TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
+        if (excelsiorJet.isStartupProfileGenerationSupported()) {
+            args.add("-Djet.jit.profile.startup=" + execProfiles.getStartup().getAbsolutePath());
+        }
+        if (excelsiorJet.isUsageListGenerationSupported()) {
+            args.add("-Djet.usage.list=" + execProfiles.getUsg().getAbsolutePath());
         }
 
         args.addAll(additionalVMArgs);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Excelsior LLC.
+ * Copyright (c) 2016, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,23 +19,15 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.cmd;
-
-import com.excelsiorjet.api.JetEdition;
-import com.excelsiorjet.api.JetHome;
-import com.excelsiorjet.api.JetHomeException;
+package com.excelsiorjet.api.platform;
 
 /**
- * Excelsior JET "xjava" tool executor utility class.
+ * List of CPU architectures currently supported by Excelsior JET.
  *
  * @author Nikita Lipsky
  */
-public class XJava extends JetTool {
-
-    private static final String X_JAVA = "xjava";
-
-    public XJava(JetHome jetHome, String... args) {
-        super(jetHome, X_JAVA, args);
-    }
-
+public enum CpuArch {
+    X86,
+    AMD64,
+    ARM32;
 }

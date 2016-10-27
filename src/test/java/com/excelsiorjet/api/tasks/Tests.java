@@ -1,6 +1,9 @@
 package com.excelsiorjet.api.tasks;
 
+import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.log.StdOutLog;
+import com.excelsiorjet.api.platform.OS;
 import com.excelsiorjet.api.tasks.config.TomcatConfig;
 import org.mockito.Mockito;
 
@@ -80,6 +83,14 @@ class Tests {
             project.tomcatConfiguration().warDeployName = "test.war";
         }
         return project;
+    }
+
+    static ExcelsiorJet excelsiorJet() {
+        ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
+        Mockito.doReturn(OS.WINDOWS).when(excelsiorJet).getTargetOS();
+        Mockito.doReturn(JetEdition.ENTERPRISE).when(excelsiorJet).getEdition();
+        Mockito.doReturn(true).when(excelsiorJet).isTomcatSupported();
+        return excelsiorJet;
     }
 
 }

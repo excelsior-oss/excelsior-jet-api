@@ -21,11 +21,9 @@
  */
 package com.excelsiorjet.api;
 
-import com.excelsiorjet.api.cmd.CmdLineTool;
-import com.excelsiorjet.api.cmd.CmdLineToolException;
 import com.excelsiorjet.api.cmd.JetCompiler;
 import com.excelsiorjet.api.cmd.JetPackager;
-import com.excelsiorjet.api.log.StdOutLog;
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -46,10 +44,7 @@ public class JetHome {
     private static final String BIN_DIR = "bin";
 
     private String jetHome;
-
-    private JetEdition edition;
-
-    private boolean is64;
+    private int jetVersion;
 
     /**
      * @param jetHome Excelsior JET home directory
@@ -75,15 +70,16 @@ public class JetHome {
         return -1;
     }
 
-    private static boolean isSupportedJetVersion(String jetHome) {
-        return getJetVersion(jetHome) >= MIN_SUPPORTED_JET_VERSION;
+    private static boolean isSupportedJetVersion(int jetVersion) {
+        return jetVersion >= MIN_SUPPORTED_JET_VERSION;
     }
 
     private void checkAndSetJetHome(String jetHome, String errorPrefix) throws JetHomeException {
         if (!isJetDir(jetHome)) {
             throw new JetHomeException(Txt.s("JetHome.BadJETHomeDir.Error", errorPrefix, jetHome));
         }
-        if (!isSupportedJetVersion(jetHome)) {
+        this.jetVersion = getJetVersion(jetHome);
+        if (!isSupportedJetVersion(this.jetVersion)) {
             throw new JetHomeException(Txt.s("JetHome.UnsupportedJETHomeDir.Error", errorPrefix, jetHome));
         }
         this.jetHome = jetHome;
@@ -96,7 +92,7 @@ public class JetHome {
      * @throws JetHomeException if {@code jetHome} does not point to a supported version of Excelsior JET
      */
     public JetHome(String jetHome) throws JetHomeException {
-        if (Utils.isUnix() && jetHome.startsWith("~/")) {
+        if (Host.isUnix() && jetHome.startsWith("~/")) {
             // expand "~/" on Unixes
             jetHome = System.getProperty("user.home") + jetHome.substring(1);
         }
@@ -133,7 +129,8 @@ public class JetHome {
             for (String p : path.split(File.pathSeparator)) {
                 if (isJetBinDir(p)) {
                     String jetPath = new File(p).getParentFile().getAbsolutePath();
-                    if (isSupportedJetVersion(jetPath)) {
+                    jetVersion = getJetVersion(jetPath);
+                    if (isSupportedJetVersion(jetVersion)) {
                         jetHome = jetPath;
                         return;
                     }
@@ -151,10 +148,19 @@ public class JetHome {
         return getJetBinDirectory(getJetHome());
     }
 
+    /**
+     * @return Excelsior JET version as a 4-digit decimal number, where the first two digits represent the major
+     *         version and the last two digits - minor version.
+     *         I.e. for Excelsior JET version 11.3 the returned value will be 1130.
+     */
+    public int getJetVersion() {
+        return jetVersion;
+    }
+
     private static boolean isJetBinDir(String jetBin) {
         return new File(jetBin, "jet.config").exists() &&
-               new File(jetBin, Utils.mangleExeName(JetCompiler.JET_COMPILER)).exists() &&
-               new File(jetBin, Utils.mangleExeName(JetPackager.JET_PACKAGER)).exists() ;
+               new File(jetBin, Host.mangleExeName(JetCompiler.JET_COMPILER)).exists() &&
+               new File(jetBin, Host.mangleExeName(JetPackager.JET_PACKAGER)).exists() ;
     }
 
     private static String getJetBinDirectory(String jetHome) {
@@ -165,46 +171,4 @@ public class JetHome {
         return isJetBinDir(getJetBinDirectory(jetHome));
     }
 
-    private String obtainVersionString() throws JetHomeException {
-        try {
-            String[] result = {null};
-            CmdLineTool jetCompiler = new JetCompiler(this).withLog(new StdOutLog() {
-                public void info(String info) {
-                    if (result[0] == null) {
-                        if (info.contains("Excelsior JET ")) {
-                            result[0] = info;
-                        }
-                    }
-                }
-
-            });
-            if ((jetCompiler.execute() != 0) || result[0] == null)  {
-                throw new JetHomeException(Txt.s("JetHome.UnableToDetectEdition.Error"));
-            }
-            return result[0];
-        } catch (CmdLineToolException e) {
-            throw new JetHomeException(e.getMessage());
-        }
-    }
-
-    private void detectEditionAndCpuArch() throws JetHomeException {
-        if (edition == null) {
-            String version = obtainVersionString();
-            edition = JetEdition.retrieveEdition(version);
-            if (edition == null) {
-                throw new JetHomeException(Txt.s("JetHome.UnableToDetectEdition.Error"));
-            }
-            is64 = version.contains("64-bit");
-        }
-    }
-
-    public JetEdition getEdition() throws JetHomeException {
-        detectEditionAndCpuArch();
-        return edition;
-    }
-
-    public boolean is64bit() throws JetHomeException {
-        detectEditionAndCpuArch();
-        return is64;
-    }
 }
