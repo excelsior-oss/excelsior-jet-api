@@ -539,9 +539,14 @@ public class JetProject {
         }
 
         switch (appType) {
+            case WINDOWS_SERVICE:
+                if (!excelsiorJet.getTargetOS().isWindows()) {
+                    throw new JetTaskFailureException(s("JetApi.WinServiceNotOnWindows.Failure", appType));
+                }
+                //fall though
+
             case PLAIN:
             case INVOCATION_DYNAMIC_LIBRARY:
-            case WINDOWS_SERVICE:
                 if (mainJar == null) {
                     mainJar = new File(targetDir, artifactName + ".jar");
                 }

@@ -37,7 +37,7 @@ import static com.excelsiorjet.api.util.Txt.s;
  */
 public class WindowsServiceConfig {
 
-    enum LogOnType {
+    public enum LogOnType {
         LOCAL_SYSTEM_ACCOUNT,
         USER_ACCOUNT;
 
@@ -54,10 +54,16 @@ public class WindowsServiceConfig {
         }
     }
 
-    enum StartupType {
-        AUTOMATIC,
-        MANUAL,
-        DISABLED;
+    public enum StartupType {
+        AUTOMATIC("-auto"),
+        MANUAL("-manual"),
+        DISABLED("-disabled");
+
+        private String cmdFlag;
+
+        StartupType(String cmdFlag) {
+            this.cmdFlag = cmdFlag;
+        }
 
         public String toString() {
             return Utils.enumConstantNameToParameter(name());
@@ -69,6 +75,10 @@ public class WindowsServiceConfig {
             } catch (Exception e) {
                 return null;
             }
+        }
+
+        public String toCmdFlag() {
+            return cmdFlag;
         }
     }
 
@@ -173,5 +183,17 @@ public class WindowsServiceConfig {
         } else if (StartupType.fromString(startupType) == null) {
             throw new JetTaskFailureException(s("JetApi.UnknownStartupType.Failure", startupType));
         }
+
+        if (allowDesktopInteraction && (LogOnType.fromString(logOnType) != LogOnType.LOCAL_SYSTEM_ACCOUNT)) {
+            throw new JetTaskFailureException(s("JetApi.IntractiveSeviceForNonLocalSystem.Failure", startupType));
+        }
+    }
+
+    public LogOnType getLogOnType() {
+        return LogOnType.fromString(logOnType);
+    }
+
+    public StartupType getStartupType() {
+        return StartupType.fromString(startupType);
     }
 }

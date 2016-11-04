@@ -24,12 +24,14 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
+import com.excelsiorjet.api.tasks.config.WindowsServiceConfig.LogOnType;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -83,6 +85,10 @@ public class JetBuildTask {
         }
     }
 
+    private boolean useXPackZipping() {
+        return (project.excelsiorJetPackaging() == PackagingType.ZIP) && excelsiorJet.since11_3() &&
+                (project.appType() != ApplicationType.WINDOWS_SERVICE);
+    }
 
     /**
      * Packages the generated executable and required Excelsior JET runtime files
@@ -90,7 +96,7 @@ public class JetBuildTask {
      */
     private void createAppDir(File buildDir, File appDir) throws CmdLineToolException, JetTaskFailureException {
         ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs(appDir.getAbsolutePath());
-        if ((project.excelsiorJetPackaging() == PackagingType.ZIP) && excelsiorJet.since11_3()) {
+        if (useXPackZipping()) {
             //since 11.3 Excelsior JET supports zipping self-contained directories itself
             xpackArgs.add("-backend");
             xpackArgs.add("self-contained-directory"); //setting backend is needed for ARM 32 due to JET-8882 bug
@@ -98,6 +104,92 @@ public class JetBuildTask {
         }
         if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
+        }
+        if (project.appType() == ApplicationType.WINDOWS_SERVICE) {
+            try {
+                createWinServiceInstallScripts(appDir);
+            } catch (IOException e) {
+                throw new JetTaskFailureException(s("JetBuildTask.WinServiceScriptsCreation.Failure", e.toString()), e);
+            }
+        }
+    }
+
+    private void createWinServiceInstallScripts(File appDir) throws IOException {
+        //copy xsrv to app dir
+        Utils.copyFile(new File(excelsiorJet.getJetHome() + File.separator + "bin", "isrv.exe").toPath(),
+                new File(appDir, "isrv.exe").toPath());
+
+        String exeFile = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        String rspFile = project.outputName() + ".rsp";
+
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
+                new FileOutputStream(new File(appDir, rspFile))))) {
+
+            String[] args = new String[] {
+                    "-install " + exeFile,
+                    "-displayname " + Utils.quoteCmdLineArgument(project.windowsServiceConfiguration().displayName),
+                    "-description " + Utils.quoteCmdLineArgument(project.windowsServiceConfiguration().description),
+                    project.windowsServiceConfiguration().getStartupType().toCmdFlag()
+            };
+            for (String arg: args) {
+                out.println(arg);
+            }
+            if (project.windowsServiceConfiguration().arguments != null) {
+                out.println("-args " +
+                        Arrays.stream(project.windowsServiceConfiguration().arguments)
+                                .map(Utils::quoteCmdLineArgument)
+                                .collect(Collectors.joining(" ")));
+            }
+            if (project.windowsServiceConfiguration().dependencies != null) {
+                for (String dependency: project.windowsServiceConfiguration().dependencies) {
+                    out.println("-dependency " + Utils.quoteCmdLineArgument(dependency));
+                }
+            }
+            if (project.windowsServiceConfiguration().allowDesktopInteraction) {
+                out.println("-interactive");
+            }
+        }
+
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
+                new FileOutputStream(new File(appDir, "install.bat"))))) {
+            out.println("@echo off");
+            out.println("set servicename=" + project.windowsServiceConfiguration().name);
+            LogOnType logOnType = project.windowsServiceConfiguration().getLogOnType();
+            switch (logOnType) {
+                case LOCAL_SYSTEM_ACCOUNT:
+                    out.println("isrv @" + rspFile);
+                    break;
+                case USER_ACCOUNT:
+                    //little bit magic for prompting user/password for service installation
+                    out.println("set /p name=\"Enter User (including domain prefix): \"");
+                    out.println("set \"psCommand=powershell -Command \"$pword = read-host 'Enter Password' -AsSecureString ; ^");
+                    out.println("$BSTR=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pword); ^");
+                    out.println("[System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)\"\"");
+                    out.println("for /f \"usebackq delims=\" %%p in (`%psCommand%`) do set password=%%p");
+
+                    out.println("isrv @" + rspFile +  " -user %name% -password %password%");
+                    break;
+                default:
+                    throw new AssertionError("Unknown logOnType: " + logOnType);
+            }
+            out.println("if errorlevel 1 goto :failed");
+            out.println("echo %servicename% service successfully installed");
+            out.println("goto :eof");
+            out.println(":failed");
+            out.println("echo %servicename% service installation failed (already installed" +
+                    (logOnType == LogOnType.USER_ACCOUNT?" or wrong user/password?)" : "?)"));
+        }
+
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
+                new FileOutputStream(new File(appDir, "uninstall.bat"))))) {
+            out.println("@echo off");
+            out.println("set servicename=" + project.windowsServiceConfiguration().name);
+            out.println("isrv -r " + exeFile);
+            out.println("if errorlevel 1 goto :failed");
+            out.println("echo %servicename% service successfully removed");
+            out.println("goto :eof");
+            out.println(":failed");
+            out.println("echo %servicename% service uninstallation failed");
         }
     }
 
@@ -220,7 +312,7 @@ public class JetBuildTask {
         switch (project.excelsiorJetPackaging()) {
             case ZIP:
                 File targetZip = new File(project.jetOutputDir(), project.artifactName() + ".zip");
-                if (excelsiorJet.since11_3()) {
+                if (useXPackZipping()) {
                     new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip);
                 } else {
                     logger.info(s("JetBuildTask.ZipApp.Info"));
