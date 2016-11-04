@@ -123,6 +123,9 @@ public class TestRunTask {
             throw new JetTaskFailureException(Txt.s("TestRunTask.NoTestRunForCrossCompilation.Error"));
         }
         project.validate(excelsiorJet, false);
+        if ((project.appType() == ApplicationType.INVOCATION_DYNAMIC_LIBRARY) && Utils.isEmpty(project.mainClass())) {
+            throw new JetTaskFailureException(Txt.s("TestRunTask.ForInvocationDLL.Error"));
+        }
 
         // creating output dirs
         File buildDir = project.createBuildDir();
@@ -132,6 +135,8 @@ public class TestRunTask {
         File workingDirectory;
         switch (project.appType()) {
             case PLAIN:
+            case WINDOWS_SERVICE:
+            case INVOCATION_DYNAMIC_LIBRARY:
                 List<ClasspathEntry> dependencies = project.copyClasspathEntries();
                 if (project.packageFilesDir().exists()) {
                     //application may access custom package files at runtime. So copy them as well.
@@ -164,7 +169,7 @@ public class TestRunTask {
 
         // Tomcat outputs to std error, so to not confuse users,
         // we  redirect its output to std out in test run
-        boolean errToOut = project.appType() == ApplicationType.PLAIN;
+        boolean errToOut = project.appType() != ApplicationType.TOMCAT;
         int errCode = excelsiorJet.testRun(workingDirectory, logger, errToOut, args.toArray(new String[args.size()]));
         String finishText = Txt.s("TestRunTask.Finish.Info", errCode);
         if (errCode != 0) {

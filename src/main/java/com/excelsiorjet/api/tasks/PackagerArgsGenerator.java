@@ -52,7 +52,12 @@ public class PackagerArgsGenerator {
 
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         switch (project.appType()) {
+            case INVOCATION_DYNAMIC_LIBRARY:
+                //overwrite exe name for dynamic library
+                exeName = excelsiorJet.getTargetOS().mangleDllName(project.outputName());
+                //fall trough
             case PLAIN:
+            case WINDOWS_SERVICE:
                 if (project.packageFilesDir().exists()) {
                     xpackArgs.add("-source");
                     xpackArgs.add(project.packageFilesDir().getAbsolutePath());
@@ -114,7 +119,7 @@ public class PackagerArgsGenerator {
             ));
         }
 
-        if (project.appType() == ApplicationType.PLAIN) {
+        if (project.appType() != ApplicationType.TOMCAT) {
             for (ClasspathEntry classpathEntry : project.classpathEntries()) {
                 Path depInBuildDir = project.toPathRelativeToJetBuildDir(classpathEntry);
                 if (ClasspathEntry.PackType.NONE == classpathEntry.pack) {

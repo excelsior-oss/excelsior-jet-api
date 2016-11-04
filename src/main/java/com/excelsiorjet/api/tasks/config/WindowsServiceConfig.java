@@ -22,7 +22,11 @@
 package com.excelsiorjet.api.tasks.config;
 
 import com.excelsiorjet.api.tasks.JetProject;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.tasks.PackagingType;
+import com.excelsiorjet.api.util.Utils;
+
+import static com.excelsiorjet.api.util.Txt.s;
 
 /**
  * Configuration parameters of Windows Services.
@@ -32,6 +36,41 @@ import com.excelsiorjet.api.tasks.PackagingType;
  * @author Nikita Lipsky
  */
 public class WindowsServiceConfig {
+
+    enum LogOnType {
+        LOCAL_SYSTEM_ACCOUNT,
+        USER_ACCOUNT;
+
+        public String toString() {
+            return Utils.enumConstantNameToParameter(name());
+        }
+
+        public static LogOnType fromString(String logOnType) {
+            try {
+                return LogOnType.valueOf(Utils.parameterToEnumConstantName(logOnType));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+
+    enum StartupType {
+        AUTOMATIC,
+        MANUAL,
+        DISABLED;
+
+        public String toString() {
+            return Utils.enumConstantNameToParameter(name());
+        }
+
+        public static StartupType fromString(String startupType) {
+            try {
+                return StartupType.valueOf(Utils.parameterToEnumConstantName(startupType));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
 
     /**
      * The system name of the service.
@@ -110,4 +149,29 @@ public class WindowsServiceConfig {
      * List of other service names on which the service depends.
      */
     public String[] dependencies;
+
+    public void fillDefaults(JetProject jetProject) throws JetTaskFailureException {
+        if (Utils.isEmpty(name)) {
+            name = jetProject.outputName();
+        }
+
+        if (displayName == null) {
+            displayName = name;
+        }
+
+        if (description == null) {
+            description = displayName;
+        }
+
+        if (logOnType == null) {
+            logOnType = LogOnType.LOCAL_SYSTEM_ACCOUNT.toString();
+        } else if (LogOnType.fromString(logOnType) == null) {
+            throw new JetTaskFailureException(s("JetApi.UnknownLogOnType.Failure", logOnType));
+        }
+        if (startupType == null) {
+            startupType = StartupType.AUTOMATIC.toString();
+        } else if (StartupType.fromString(startupType) == null) {
+            throw new JetTaskFailureException(s("JetApi.UnknownStartupType.Failure", startupType));
+        }
+    }
 }

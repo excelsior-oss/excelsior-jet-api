@@ -221,4 +221,53 @@ public class CompilerArgsGeneratorTest {
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
 
+    @Test
+    public void testInvocationDll() throws Exception {
+        File depFileSpy = Tests.mavenDepSpy("dep.jar");
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(depFileSpy).asProjectDependency();
+        JetProject prj = testProject(ApplicationType.INVOCATION_DYNAMIC_LIBRARY).
+                projectDependencies(singletonList(dep)).
+                dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
+        prj.processDependencies();
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        assertTrue(compilerArgsGenerator.projectFileContent().contains("gendll"));
+    }
+
+    @Test
+    public void testWindowsService() throws Exception {
+        File depFileSpy = Tests.mavenDepSpy("dep.jar");
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(depFileSpy).asProjectDependency();
+        JetProject prj = testProject(ApplicationType.WINDOWS_SERVICE).
+                projectDependencies(singletonList(dep)).
+                dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet);
+        String expectedPrjWinServiceSettings = linesToString(
+                "-servicemain=HelloWorld",
+                "-servicename=test"
+        );
+        assertTrue(compilerArgsGenerator.projectFileContent().contains(expectedPrjWinServiceSettings));
+    }
+
+    @Test
+    public void testWindowsServiceName() throws Exception {
+        File depFileSpy = Tests.mavenDepSpy("dep.jar");
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(depFileSpy).asProjectDependency();
+        JetProject prj = testProject(ApplicationType.WINDOWS_SERVICE).
+                projectDependencies(singletonList(dep)).
+                dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
+        prj.windowsServiceConfiguration().name = "ServiceName";
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet);
+        String expectedPrjWinServiceSettings = linesToString(
+                "-servicemain=HelloWorld",
+                "-servicename=ServiceName"
+        );
+        assertTrue(compilerArgsGenerator.projectFileContent().contains(expectedPrjWinServiceSettings));
+    }
 }

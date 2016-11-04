@@ -267,6 +267,8 @@ public class JetBuildTask {
 
         switch (project.appType()) {
             case PLAIN:
+            case INVOCATION_DYNAMIC_LIBRARY:
+            case WINDOWS_SERVICE:
                 project.copyClasspathEntries();
                 compile(buildDir);
                 break;

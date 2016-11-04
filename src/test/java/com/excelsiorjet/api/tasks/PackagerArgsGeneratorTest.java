@@ -116,4 +116,25 @@ public class PackagerArgsGeneratorTest {
         assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(disableResourceIdx + 1));
         assertEquals("external.jar", xPackArgs.get(disableResourceIdx + 2));
     }
+
+    @Test
+    public void testInvocationDll() throws Exception {
+        File testJarSpy = mavenDepSpy("test.jar");
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(testJarSpy).asProjectDependency();
+        JetProject prj = testProject(ApplicationType.INVOCATION_DYNAMIC_LIBRARY).
+                projectDependencies(singletonList(dep)).
+                dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+
+        int addExeIdx = xPackArgs.indexOf("-add-file");
+        assertTrue(addExeIdx >= 0);
+        assertEquals(excelsiorJet.getTargetOS().mangleDllName("test"), xPackArgs.get(addExeIdx + 1));
+        assertEquals("/", xPackArgs.get(addExeIdx + 2));
+    }
+
+
 }

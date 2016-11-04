@@ -28,6 +28,13 @@ So first, you need to create an instance of `JetProject`, the constructor of whi
                 and have all their dependencies explicitly listed in the JVM classpath at launch time, and
     - `TOMCAT` - **Tomcat Web applications** &mdash; `.war` files that can be deployed to the
                 Apache Tomcat application server.
+    -  `INVOCATION_DYNAMIC_LIBRARY` - **Invocation Dynamic Libraries**, dynamic library (e.g. Windows DLL) callable
+        from applications written in another language
+
+    -  `WINDOWS_SERVICE` - **Windows Services**, is a special long-running process that may be launched
+         during operating system bootstrap (for Windows only)
+
+
 * `targetDir` - target build directory
 * `jetResourcesDir` - directory that contains Excelsior JET specific resource files such as application icons,
                        installer splash,  etc.

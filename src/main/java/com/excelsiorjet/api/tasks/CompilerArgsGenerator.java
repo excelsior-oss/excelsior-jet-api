@@ -72,17 +72,24 @@ class CompilerArgsGenerator {
         }
 
         for (ClasspathEntry dep : project.classpathEntries()) {
-            if (project.appType() == ApplicationType.PLAIN) {
-                out.println("!classpathentry " + toJetPrjFormat(project.toPathRelativeToJetBuildDir(dep)));
-            } else if (project.appType() == ApplicationType.TOMCAT){
-                String warDeployName = project.tomcatConfiguration().warDeployName;
-                String entryPath = ":/WEB-INF/";
-                if (dep.isMainArtifact) {
-                    entryPath += "classes";
-                } else {
-                    entryPath += "lib/" + dep.path.getName();
-                }
-                out.println("!classloaderentry webapp webapps/" + warDeployName.substring(0, warDeployName.lastIndexOf(".war")) + entryPath);
+            switch (project.appType()) {
+                case PLAIN:
+                case INVOCATION_DYNAMIC_LIBRARY:
+                case WINDOWS_SERVICE:
+                    out.println("!classpathentry " + toJetPrjFormat(project.toPathRelativeToJetBuildDir(dep)));
+                    break;
+                case TOMCAT:
+                    String warDeployName = project.tomcatConfiguration().warDeployName;
+                    String entryPath = ":/WEB-INF/";
+                    if (dep.isMainArtifact) {
+                        entryPath += "classes";
+                    } else {
+                        entryPath += "lib/" + dep.path.getName();
+                    }
+                    out.println("!classloaderentry webapp webapps/" + warDeployName.substring(0, warDeployName.lastIndexOf(".war")) + entryPath);
+                    break;
+                default:
+                    throw new AssertionError("Unknown app type");
             }
             if (dep.optimize != null) {
                 out.println("  -optimize=" + dep.optimize.jetValue);
@@ -133,7 +140,23 @@ class CompilerArgsGenerator {
                     compilerArgs.add("-splashgetfrommanifest+");
                 }
 
+                if (excelsiorJet.getTargetOS().isWindows() && project.hideConsole()) {
+                    compilerArgs.add("-gui+");
+                }
+
                 break;
+            case INVOCATION_DYNAMIC_LIBRARY:
+                compilerArgs.add("-gendll+");
+                break;
+            case WINDOWS_SERVICE:
+                compilerArgs.add("-servicemain=" + project.mainClass());
+                compilerArgs.add("-servicename=" + project.windowsServiceConfiguration().name);
+                if (excelsiorJet.getTargetOS().isWindows() && project.multiApp() && project.hideConsole()) {
+                    //hiding console for windows services make sence only for multiApp
+                    compilerArgs.add("-gui+");
+                }
+                break;
+
             case TOMCAT:
                 compilerArgs.add("-apptype=tomcat");
                 compilerArgs.add("-appdir=" + toJetPrjFormat(project.tomcatInBuildDir()));
@@ -148,12 +171,6 @@ class CompilerArgsGenerator {
                 throw new AssertionError("Unknown app type");
         }
 
-
-        if (excelsiorJet.getTargetOS().isWindows()) {
-            if (project.hideConsole()) {
-                compilerArgs.add("-gui+");
-            }
-        }
 
         compilerArgs.add("-outputname=" + project.outputName());
         compilerArgs.add("-decor=ht");
