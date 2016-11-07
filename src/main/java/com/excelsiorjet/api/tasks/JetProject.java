@@ -635,7 +635,7 @@ public class JetProject {
                 throw new JetTaskFailureException(s("JetApi.UnknownPackagingMode.Failure", excelsiorJetPackaging));
         }
 
-        if ((excelsiorJetPackaging() == EXCELSIOR_INSTALLER) &&
+        if ((appType == ApplicationType.WINDOWS_SERVICE) && (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) &&
                 !excelsiorJet.isWindowsServicesInExcelsiorInstallerSupported()) {
             throw new JetTaskFailureException(s("JetApi.WinServiceInEINotSupported.Failure"));
         }
@@ -981,7 +981,12 @@ public class JetProject {
     }
 
     private void checkWindowsServiceConfig() throws JetTaskFailureException {
-        if (appType() == ApplicationType.WINDOWS_SERVICE) {
+        if ((appType() == ApplicationType.WINDOWS_SERVICE) ||
+                (appType == ApplicationType.TOMCAT) &&
+                        (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) &&
+                        tomcatConfiguration.installWindowsService
+                )
+        {
             windowsServiceConfiguration.fillDefaults(this);
         }
     }
@@ -1209,7 +1214,7 @@ public class JetProject {
         return jetOutputDir;
     }
 
-    ApplicationType appType()  {
+    public ApplicationType appType()  {
         return appType;
     }
 

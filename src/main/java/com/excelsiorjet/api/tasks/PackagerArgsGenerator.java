@@ -159,8 +159,14 @@ public class PackagerArgsGenerator {
     public ArrayList<String> getExcelsiorInstallerXPackArgs(File target) throws JetTaskFailureException {
         ArrayList<String> xpackArgs = getCommonXPackArgs();
 
-        if (project.appType() == ApplicationType.WINDOWS_SERVICE) {
+        boolean canInstallTomcatAsService = (project.appType() == ApplicationType.TOMCAT) &&
+                                excelsiorJet.isWindowsServicesInExcelsiorInstallerSupported();
+        if ((project.appType() == ApplicationType.WINDOWS_SERVICE) ||
+                 canInstallTomcatAsService && project.tomcatConfiguration().installWindowsService)
+        {
             addWindowsServiceArgs(xpackArgs);
+        } else if (canInstallTomcatAsService && !project.tomcatConfiguration().installWindowsService) {
+            xpackArgs.add("-no-tomcat-service-install");
         }
 
         if (project.excelsiorInstallerConfiguration().eula.exists()) {
@@ -183,6 +189,9 @@ public class PackagerArgsGenerator {
 
     private void addWindowsServiceArgs(ArrayList<String> xpackArgs) {
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        if (project.appType() == ApplicationType.TOMCAT) {
+            exeName = "bin/" + exeName;
+        }
         WindowsServiceConfig serviceConfig = project.windowsServiceConfiguration();
         String serviceArguments = "";
         if (project.windowsServiceConfiguration().arguments != null) {

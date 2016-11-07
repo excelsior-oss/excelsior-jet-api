@@ -170,7 +170,7 @@ public class PackagerArgsGeneratorTest {
         assertEquals(exeName, xPackArgs.get(serviceStartupIdx + 1));
         assertEquals("system", xPackArgs.get(serviceStartupIdx + 2));
         assertEquals("auto", xPackArgs.get(serviceStartupIdx + 3));
-        assertEquals("no-start-after-install", xPackArgs.get(serviceStartupIdx + 4));
+        assertEquals("start-after-install", xPackArgs.get(serviceStartupIdx + 4));
 
         int dependenciesIdx = xPackArgs.lastIndexOf("-service-dependencies");
         assertTrue(dependenciesIdx > serviceStartupIdx);
@@ -178,4 +178,33 @@ public class PackagerArgsGeneratorTest {
         assertEquals("\"dep1,dep 2\"", xPackArgs.get(dependenciesIdx + 2));
     }
 
+    @Test
+    public void testTomcatWindowsService() throws Exception {
+        File testJarSpy = mavenDepSpy("test.jar");
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(testJarSpy).asProjectDependency();
+        JetProject prj = testProject(ApplicationType.TOMCAT).
+                excelsiorJetPackaging("excelsior-installer").
+                projectDependencies(singletonList(dep)).
+                dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getExcelsiorInstallerXPackArgs(new File("target.exe"));
+
+        String exeName = "bin/" + excelsiorJet.getTargetOS().mangleExeName("test");
+
+        int serviceIdx = xPackArgs.lastIndexOf("-service");
+        assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
+        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
+        assertEquals("\"Apache Tomcat\"", xPackArgs.get(serviceIdx + 3));
+        assertEquals("\"Apache Tomcat Server - http://tomcat.apache.org/\"", xPackArgs.get(serviceIdx + 4));
+
+        int serviceStartupIdx = xPackArgs.lastIndexOf("-service-startup");
+        assertTrue(serviceStartupIdx > serviceIdx);
+        assertEquals(exeName, xPackArgs.get(serviceStartupIdx + 1));
+        assertEquals("system", xPackArgs.get(serviceStartupIdx + 2));
+        assertEquals("auto", xPackArgs.get(serviceStartupIdx + 3));
+        assertEquals("start-after-install", xPackArgs.get(serviceStartupIdx + 4));
+    }
 }

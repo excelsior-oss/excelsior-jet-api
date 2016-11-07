@@ -21,6 +21,7 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.ApplicationType;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.tasks.PackagingType;
@@ -157,7 +158,7 @@ public class WindowsServiceConfig {
      * Available only for {@link PackagingType#EXCELSIOR_INSTALLER} packaging type.
      *
      */
-    public boolean startServiceAfterInstall;
+    public boolean startServiceAfterInstall = true;
 
     /**
      * List of other service names on which the service depends.
@@ -170,11 +171,12 @@ public class WindowsServiceConfig {
         }
 
         if (displayName == null) {
-            displayName = name;
+            displayName = jetProject.appType() == ApplicationType.TOMCAT ? "Apache Tomcat": name;
         }
 
         if (description == null) {
-            description = displayName;
+            description = jetProject.appType() == ApplicationType.TOMCAT ?
+                    "Apache Tomcat Server - http://tomcat.apache.org/": displayName;
         }
 
         if (logOnType == null) {
