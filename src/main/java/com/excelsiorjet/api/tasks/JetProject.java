@@ -540,8 +540,8 @@ public class JetProject {
 
         switch (appType) {
             case WINDOWS_SERVICE:
-                if (!excelsiorJet.getTargetOS().isWindows()) {
-                    throw new JetTaskFailureException(s("JetApi.WinServiceNotOnWindows.Failure", appType));
+                if (!excelsiorJet.isWindowsServicesSupported()) {
+                    throw new JetTaskFailureException(s("JetApi.WinServiceNotSupported.Failure", appType));
                 }
                 //fall though
 
@@ -633,6 +633,11 @@ public class JetProject {
 
             default:
                 throw new JetTaskFailureException(s("JetApi.UnknownPackagingMode.Failure", excelsiorJetPackaging));
+        }
+
+        if ((excelsiorJetPackaging() == EXCELSIOR_INSTALLER) &&
+                !excelsiorJet.isWindowsServicesInExcelsiorInstallerSupported()) {
+            throw new JetTaskFailureException(s("JetApi.WinServiceInEINotSupported.Failure"));
         }
 
         if (execProfilesDir == null) {

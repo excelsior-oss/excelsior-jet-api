@@ -136,5 +136,46 @@ public class PackagerArgsGeneratorTest {
         assertEquals("/", xPackArgs.get(addExeIdx + 2));
     }
 
+    @Test
+    public void testWindowsService() throws Exception {
+        File testJarSpy = mavenDepSpy("test.jar");
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(testJarSpy).asProjectDependency();
+        JetProject prj = testProject(ApplicationType.WINDOWS_SERVICE).
+                excelsiorJetPackaging("excelsior-installer").
+                projectDependencies(singletonList(dep)).
+                dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.windowsServiceConfiguration().dependencies = new String[]{"dep1", "dep 2"};
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+
+
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getExcelsiorInstallerXPackArgs(new File("target.exe"));
+
+        String exeName = excelsiorJet.getTargetOS().mangleExeName("test");
+        int addExeIdx = xPackArgs.indexOf("-add-file");
+        assertTrue(addExeIdx >= 0);
+        assertEquals(exeName, xPackArgs.get(addExeIdx + 1));
+        assertEquals("/", xPackArgs.get(addExeIdx + 2));
+
+        int serviceIdx = xPackArgs.lastIndexOf("-service");
+        assertTrue(serviceIdx > addExeIdx);
+        assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
+        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
+        assertEquals("test", xPackArgs.get(serviceIdx + 3));
+        assertEquals("test", xPackArgs.get(serviceIdx + 4));
+
+        int serviceStartupIdx = xPackArgs.lastIndexOf("-service-startup");
+        assertTrue(serviceStartupIdx > serviceIdx);
+        assertEquals(exeName, xPackArgs.get(serviceStartupIdx + 1));
+        assertEquals("system", xPackArgs.get(serviceStartupIdx + 2));
+        assertEquals("auto", xPackArgs.get(serviceStartupIdx + 3));
+        assertEquals("no-start-after-install", xPackArgs.get(serviceStartupIdx + 4));
+
+        int dependenciesIdx = xPackArgs.lastIndexOf("-service-dependencies");
+        assertTrue(dependenciesIdx > serviceStartupIdx);
+        assertEquals(exeName, xPackArgs.get(dependenciesIdx + 1));
+        assertEquals("\"dep1,dep 2\"", xPackArgs.get(dependenciesIdx + 2));
+    }
 
 }

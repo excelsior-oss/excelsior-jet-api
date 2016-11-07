@@ -210,6 +210,14 @@ public class ExcelsiorJet {
         return !getTargetOS().isOSX() && !isCrossCompilation() && (edition != JetEdition.STANDARD);
     }
 
+    public boolean isWindowsServicesSupported() {
+        return targetOS.isWindows() && (edition != JetEdition.STANDARD);
+    }
+
+    public boolean isWindowsServicesInExcelsiorInstallerSupported() {
+        return isWindowsServicesSupported() && isExcelsiorInstallerSupported() && since11_3();
+    }
+
     /**
      * @return home directory of this Excelsior JET instance
      */

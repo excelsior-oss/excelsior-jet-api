@@ -115,7 +115,7 @@ public class JetBuildTask {
     }
 
     private void createWinServiceInstallScripts(File appDir) throws IOException {
-        //copy xsrv to app dir
+        //copy isrv to app dir
         Utils.copyFile(new File(excelsiorJet.getJetHome() + File.separator + "bin", "isrv.exe").toPath(),
                 new File(appDir, "isrv.exe").toPath());
 
@@ -129,7 +129,7 @@ public class JetBuildTask {
                     "-install " + exeFile,
                     "-displayname " + Utils.quoteCmdLineArgument(project.windowsServiceConfiguration().displayName),
                     "-description " + Utils.quoteCmdLineArgument(project.windowsServiceConfiguration().description),
-                    project.windowsServiceConfiguration().getStartupType().toCmdFlag()
+                    project.windowsServiceConfiguration().getStartupType().toISrvCmdFlag()
             };
             for (String arg: args) {
                 out.println(arg);
@@ -199,22 +199,7 @@ public class JetBuildTask {
      */
     private void packWithEI(File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
         File target = new File(project.jetOutputDir(), excelsiorJet.getTargetOS().mangleExeName(project.artifactName()));
-        ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs();
-        if (project.excelsiorInstallerConfiguration().eula.exists()) {
-            xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
-            xpackArgs.add(project.excelsiorInstallerConfiguration().eula.getAbsolutePath());
-        }
-        if (excelsiorJet.getTargetOS().isWindows() && project.excelsiorInstallerConfiguration().installerSplash.exists()) {
-            xpackArgs.add("-splash");
-            xpackArgs.add(project.excelsiorInstallerConfiguration().installerSplash.getAbsolutePath());
-        }
-        xpackArgs.addAll(Arrays.asList(
-                "-backend", "excelsior-installer",
-                "-company", project.vendor(),
-                "-product", project.product(),
-                "-version", project.version(),
-                "-target", target.getAbsolutePath())
-        );
+        ArrayList<String> xpackArgs = packagerArgsGenerator.getExcelsiorInstallerXPackArgs(target);
         if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }

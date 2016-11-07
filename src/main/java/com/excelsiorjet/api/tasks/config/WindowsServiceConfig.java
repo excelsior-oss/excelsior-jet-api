@@ -55,14 +55,14 @@ public class WindowsServiceConfig {
     }
 
     public enum StartupType {
-        AUTOMATIC("-auto"),
-        MANUAL("-manual"),
-        DISABLED("-disabled");
+        AUTOMATIC("auto"),
+        MANUAL("manual"),
+        DISABLED("disabled");
 
-        private String cmdFlag;
+        private String xpackValue;
 
-        StartupType(String cmdFlag) {
-            this.cmdFlag = cmdFlag;
+        StartupType(String xpackValue) {
+            this.xpackValue = xpackValue;
         }
 
         public String toString() {
@@ -77,8 +77,12 @@ public class WindowsServiceConfig {
             }
         }
 
-        public String toCmdFlag() {
-            return cmdFlag;
+        public String toISrvCmdFlag() {
+            return "-" + xpackValue;
+        }
+
+        public String toXPackValue() {
+            return xpackValue;
         }
     }
 

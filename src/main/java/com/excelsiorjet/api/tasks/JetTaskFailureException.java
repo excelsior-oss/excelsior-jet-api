@@ -27,7 +27,7 @@ package com.excelsiorjet.api.tasks;
  */
 public class JetTaskFailureException extends Exception {
 
-    JetTaskFailureException(String msg, Throwable throwable) {
+    public JetTaskFailureException(String msg, Throwable throwable) {
         super(msg, throwable);
     }
 

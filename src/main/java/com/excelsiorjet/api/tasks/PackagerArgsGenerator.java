@@ -22,6 +22,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -154,6 +155,81 @@ public class PackagerArgsGenerator {
 
         return xpackArgs;
     }
+
+    public ArrayList<String> getExcelsiorInstallerXPackArgs(File target) throws JetTaskFailureException {
+        ArrayList<String> xpackArgs = getCommonXPackArgs();
+
+        if (project.appType() == ApplicationType.WINDOWS_SERVICE) {
+            addWindowsServiceArgs(xpackArgs);
+        }
+
+        if (project.excelsiorInstallerConfiguration().eula.exists()) {
+            xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
+            xpackArgs.add(project.excelsiorInstallerConfiguration().eula.getAbsolutePath());
+        }
+        if (excelsiorJet.getTargetOS().isWindows() && project.excelsiorInstallerConfiguration().installerSplash.exists()) {
+            xpackArgs.add("-splash");
+            xpackArgs.add(project.excelsiorInstallerConfiguration().installerSplash.getAbsolutePath());
+        }
+        xpackArgs.addAll(Arrays.asList(
+                "-backend", "excelsior-installer",
+                "-company", project.vendor(),
+                "-product", project.product(),
+                "-version", project.version(),
+                "-target", target.getAbsolutePath())
+        );
+        return xpackArgs;
+    }
+
+    private void addWindowsServiceArgs(ArrayList<String> xpackArgs) {
+        String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        WindowsServiceConfig serviceConfig = project.windowsServiceConfiguration();
+        String serviceArguments = "";
+        if (project.windowsServiceConfiguration().arguments != null) {
+            // Unfortunately due to design flaw in xpack there is no way to escape spaces in windows service arguments.
+            // So let us not escape them waiting for an issue from users on this subject.
+            serviceArguments = String.join(" ", serviceConfig.arguments);
+        }
+        xpackArgs.addAll(Arrays.asList(
+                "-service",
+                exeName,
+                "\"" + serviceArguments + "\"",
+                Utils.quoteCmdLineArgument(serviceConfig.displayName),
+                Utils.quoteCmdLineArgument(serviceConfig.description)
+        ));
+
+        String logOnType;
+        switch (serviceConfig.getLogOnType()) {
+            case LOCAL_SYSTEM_ACCOUNT:
+                logOnType = serviceConfig.allowDesktopInteraction ? "system-desktop" : "system";
+                break;
+            case USER_ACCOUNT:
+                logOnType = "user";
+                break;
+            default:
+                throw new AssertionError("Unknown logOnType: " + serviceConfig.getLogOnType());
+        }
+
+        String startAfterInstall = serviceConfig.startServiceAfterInstall ? "start-after-install" :
+                "no-start-after-install";
+
+        xpackArgs.addAll(Arrays.asList(
+                "-service-startup",
+                exeName,
+                logOnType,
+                serviceConfig.getStartupType().toXPackValue(),
+                startAfterInstall
+        ));
+
+        if (serviceConfig.dependencies != null) {
+            xpackArgs.addAll(Arrays.asList(
+                    "-service-dependencies",
+                    exeName,
+                    Utils.quoteCmdLineArgument(String.join(",", serviceConfig.dependencies))
+            ));
+        }
+    }
+
 
     // checks that array contains only "none" value.
     // Unfortunately, it is not possible to know if a user sets a parameter to an empty array from Maven.
