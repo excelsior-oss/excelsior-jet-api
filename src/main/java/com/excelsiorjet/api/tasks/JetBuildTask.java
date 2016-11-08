@@ -134,19 +134,19 @@ public class JetBuildTask {
             for (String arg: args) {
                 out.println(arg);
             }
-            if (project.windowsServiceConfiguration().arguments != null) {
-                out.println("-args " +
-                        Arrays.stream(project.windowsServiceConfiguration().arguments)
-                                .map(Utils::quoteCmdLineArgument)
-                                .collect(Collectors.joining(" ")));
-            }
             if (project.windowsServiceConfiguration().dependencies != null) {
                 for (String dependency: project.windowsServiceConfiguration().dependencies) {
-                    out.println("-dependency " + Utils.quoteCmdLineArgument(dependency));
+                    out.println("-dependence " + Utils.quoteCmdLineArgument(dependency));
                 }
             }
             if (project.windowsServiceConfiguration().allowDesktopInteraction) {
                 out.println("-interactive");
+            }
+            if (project.windowsServiceConfiguration().arguments != null) {
+                out.println("-args");
+                for (String arg: project.windowsServiceConfiguration().arguments) {
+                    out.println(arg);
+                }
             }
         }
 
@@ -173,11 +173,20 @@ public class JetBuildTask {
                     throw new AssertionError("Unknown logOnType: " + logOnType);
             }
             out.println("if errorlevel 1 goto :failed");
-            out.println("echo %servicename% service successfully installed");
+            out.println("echo %servicename% service is successfully installed.");
+            if (project.windowsServiceConfiguration().startServiceAfterInstall) {
+                out.println("net start %servicename%");
+                out.println("if errorlevel 1 goto :startfailed");
+            }
             out.println("goto :eof");
             out.println(":failed");
             out.println("echo %servicename% service installation failed (already installed" +
-                    (logOnType == LogOnType.USER_ACCOUNT?" or wrong user/password?)" : "?)"));
+                    (logOnType == LogOnType.USER_ACCOUNT ? " or wrong user/password?)" : "?)"));
+            if (project.windowsServiceConfiguration().startServiceAfterInstall) {
+                out.println("goto :eof");
+                out.println(":startfailed");
+                out.println("echo %servicename% service failed to start (need elevation to admin?)");
+            }
         }
 
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
@@ -186,10 +195,10 @@ public class JetBuildTask {
             out.println("set servicename=" + project.windowsServiceConfiguration().name);
             out.println("isrv -r " + exeFile);
             out.println("if errorlevel 1 goto :failed");
-            out.println("echo %servicename% service successfully removed");
+            out.println("echo %servicename% service is successfully removed.");
             out.println("goto :eof");
             out.println(":failed");
-            out.println("echo %servicename% service uninstallation failed");
+            out.println("echo %servicename% service uninstallation failed.");
         }
     }
 

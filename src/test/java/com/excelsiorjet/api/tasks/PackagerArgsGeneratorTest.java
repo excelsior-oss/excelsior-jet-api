@@ -161,7 +161,7 @@ public class PackagerArgsGeneratorTest {
         int serviceIdx = xPackArgs.lastIndexOf("-service");
         assertTrue(serviceIdx > addExeIdx);
         assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
-        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
+        assertEquals("", xPackArgs.get(serviceIdx + 2));
         assertEquals("test", xPackArgs.get(serviceIdx + 3));
         assertEquals("test", xPackArgs.get(serviceIdx + 4));
 
@@ -175,7 +175,7 @@ public class PackagerArgsGeneratorTest {
         int dependenciesIdx = xPackArgs.lastIndexOf("-service-dependencies");
         assertTrue(dependenciesIdx > serviceStartupIdx);
         assertEquals(exeName, xPackArgs.get(dependenciesIdx + 1));
-        assertEquals("\"dep1,dep 2\"", xPackArgs.get(dependenciesIdx + 2));
+        assertEquals("dep1,dep 2", xPackArgs.get(dependenciesIdx + 2));
     }
 
     @Test
@@ -196,9 +196,9 @@ public class PackagerArgsGeneratorTest {
 
         int serviceIdx = xPackArgs.lastIndexOf("-service");
         assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
-        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
-        assertEquals("\"Apache Tomcat\"", xPackArgs.get(serviceIdx + 3));
-        assertEquals("\"Apache Tomcat Server - http://tomcat.apache.org/\"", xPackArgs.get(serviceIdx + 4));
+        assertEquals("", xPackArgs.get(serviceIdx + 2));
+        assertEquals("Apache Tomcat", xPackArgs.get(serviceIdx + 3));
+        assertEquals("Apache Tomcat Server - http://tomcat.apache.org/", xPackArgs.get(serviceIdx + 4));
 
         int serviceStartupIdx = xPackArgs.lastIndexOf("-service-startup");
         assertTrue(serviceStartupIdx > serviceIdx);

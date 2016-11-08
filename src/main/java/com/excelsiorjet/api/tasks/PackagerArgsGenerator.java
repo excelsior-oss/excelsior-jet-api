@@ -23,12 +23,12 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
-import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -194,17 +194,28 @@ public class PackagerArgsGenerator {
         }
         WindowsServiceConfig serviceConfig = project.windowsServiceConfiguration();
         String serviceArguments = "";
-        if (project.windowsServiceConfiguration().arguments != null) {
-            // Unfortunately due to design flaw in xpack there is no way to escape spaces in windows service arguments.
-            // So let us not escape them waiting for an issue from users on this subject.
-            serviceArguments = String.join(" ", serviceConfig.arguments);
+        if (serviceConfig.arguments != null) {
+            serviceArguments = Arrays.stream(serviceConfig.arguments).map(s ->
+                    s.contains(" ") ?
+                            // This looks weird right?
+                            // In fact this combination of " and \ was found to be working to escape spaces
+                            // within arguments by trial and error.
+                            // In short, there are three levels of magic here.
+                            // First, Java's ProcessImpl does a magic with escaping " inside arguments meeting Windows
+                            // standards but it does it wrong. Then Windows itself does some magic with interpreting
+                            // " and \. Finally xpack does some magic with interpreting " and \.
+                            // This combination may not work on some Windows flavours and with some Java microversions,
+                            // but it least it were tested with Windows 10 and Java 8 Update 101.
+                            "\\\"\\\\\"\\\"" + s + "\\\"\\\\\"\\\"" :
+                            s).
+                    collect(Collectors.joining(" "));
         }
         xpackArgs.addAll(Arrays.asList(
                 "-service",
                 exeName,
-                "\"" + serviceArguments + "\"",
-                Utils.quoteCmdLineArgument(serviceConfig.displayName),
-                Utils.quoteCmdLineArgument(serviceConfig.description)
+                serviceArguments,
+                serviceConfig.displayName,
+                serviceConfig.description
         ));
 
         String logOnType;
@@ -234,7 +245,7 @@ public class PackagerArgsGenerator {
             xpackArgs.addAll(Arrays.asList(
                     "-service-dependencies",
                     exeName,
-                    Utils.quoteCmdLineArgument(String.join(",", serviceConfig.dependencies))
+                    String.join(",", serviceConfig.dependencies)
             ));
         }
     }
