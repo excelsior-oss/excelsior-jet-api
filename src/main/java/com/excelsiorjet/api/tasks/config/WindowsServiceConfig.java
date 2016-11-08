@@ -170,7 +170,7 @@ public class WindowsServiceConfig {
             name = jetProject.outputName();
         }
 
-        if (displayName == null) {
+        if (Utils.isEmpty(displayName)) {
             displayName = jetProject.appType() == ApplicationType.TOMCAT ? "Apache Tomcat": name;
         }
 

@@ -4,6 +4,7 @@ import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.config.DependencySettings;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
 import com.excelsiorjet.api.util.Utils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -161,7 +162,7 @@ public class PackagerArgsGeneratorTest {
         int serviceIdx = xPackArgs.lastIndexOf("-service");
         assertTrue(serviceIdx > addExeIdx);
         assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
-        assertEquals("", xPackArgs.get(serviceIdx + 2));
+        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
         assertEquals("test", xPackArgs.get(serviceIdx + 3));
         assertEquals("test", xPackArgs.get(serviceIdx + 4));
 
@@ -196,7 +197,7 @@ public class PackagerArgsGeneratorTest {
 
         int serviceIdx = xPackArgs.lastIndexOf("-service");
         assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
-        assertEquals("", xPackArgs.get(serviceIdx + 2));
+        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
         assertEquals("Apache Tomcat", xPackArgs.get(serviceIdx + 3));
         assertEquals("Apache Tomcat Server - http://tomcat.apache.org/", xPackArgs.get(serviceIdx + 4));
 

@@ -187,6 +187,11 @@ public class PackagerArgsGenerator {
         return xpackArgs;
     }
 
+    //Surprisingly Windows just removes empty argument from list of arguments if we do not pass "" instead.
+    private String escapeEmptyArgForWindows(String arg) {
+        return arg.isEmpty() ? "\"" + arg + "\"" : arg;
+    }
+
     private void addWindowsServiceArgs(ArrayList<String> xpackArgs) {
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         if (project.appType() == ApplicationType.TOMCAT) {
@@ -213,9 +218,9 @@ public class PackagerArgsGenerator {
         xpackArgs.addAll(Arrays.asList(
                 "-service",
                 exeName,
-                serviceArguments,
+                escapeEmptyArgForWindows(serviceArguments),
                 serviceConfig.displayName,
-                serviceConfig.description
+                escapeEmptyArgForWindows(serviceConfig.description)
         ));
 
         String logOnType;
