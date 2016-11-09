@@ -119,87 +119,11 @@ public class JetBuildTask {
         Utils.copyFile(new File(excelsiorJet.getJetHome() + File.separator + "bin", "isrv.exe").toPath(),
                 new File(appDir, "isrv.exe").toPath());
 
-        String exeFile = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        WindowsServiceScriptsGenerator scriptsGenerator = new WindowsServiceScriptsGenerator(project, excelsiorJet);
         String rspFile = project.outputName() + ".rsp";
-
-        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
-                new FileOutputStream(new File(appDir, rspFile))))) {
-
-            String[] args = new String[] {
-                    "-install " + exeFile,
-                    "-displayname " + Utils.quoteCmdLineArgument(project.windowsServiceConfiguration().displayName),
-                    "-description " + Utils.quoteCmdLineArgument(project.windowsServiceConfiguration().description),
-                    project.windowsServiceConfiguration().getStartupType().toISrvCmdFlag()
-            };
-            for (String arg: args) {
-                out.println(arg);
-            }
-            if (project.windowsServiceConfiguration().dependencies != null) {
-                for (String dependency: project.windowsServiceConfiguration().dependencies) {
-                    out.println("-dependence " + Utils.quoteCmdLineArgument(dependency));
-                }
-            }
-            if (project.windowsServiceConfiguration().allowDesktopInteraction) {
-                out.println("-interactive");
-            }
-            if (project.windowsServiceConfiguration().arguments != null) {
-                out.println("-args");
-                for (String arg: project.windowsServiceConfiguration().arguments) {
-                    out.println(arg);
-                }
-            }
-        }
-
-        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
-                new FileOutputStream(new File(appDir, "install.bat"))))) {
-            out.println("@echo off");
-            out.println("set servicename=" + project.windowsServiceConfiguration().name);
-            LogOnType logOnType = project.windowsServiceConfiguration().getLogOnType();
-            switch (logOnType) {
-                case LOCAL_SYSTEM_ACCOUNT:
-                    out.println("isrv @" + rspFile);
-                    break;
-                case USER_ACCOUNT:
-                    //little bit magic for prompting user/password for service installation
-                    out.println("set /p name=\"Enter User (including domain prefix): \"");
-                    out.println("set \"psCommand=powershell -Command \"$pword = read-host 'Enter Password' -AsSecureString ; ^");
-                    out.println("$BSTR=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pword); ^");
-                    out.println("[System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)\"\"");
-                    out.println("for /f \"usebackq delims=\" %%p in (`%psCommand%`) do set password=%%p");
-
-                    out.println("isrv @" + rspFile +  " -user %name% -password %password%");
-                    break;
-                default:
-                    throw new AssertionError("Unknown logOnType: " + logOnType);
-            }
-            out.println("if errorlevel 1 goto :failed");
-            out.println("echo %servicename% service is successfully installed.");
-            if (project.windowsServiceConfiguration().startServiceAfterInstall) {
-                out.println("net start %servicename%");
-                out.println("if errorlevel 1 goto :startfailed");
-            }
-            out.println("goto :eof");
-            out.println(":failed");
-            out.println("echo %servicename% service installation failed (already installed" +
-                    (logOnType == LogOnType.USER_ACCOUNT ? " or wrong user/password?)" : "?)"));
-            if (project.windowsServiceConfiguration().startServiceAfterInstall) {
-                out.println("goto :eof");
-                out.println(":startfailed");
-                out.println("echo %servicename% service failed to start (need elevation to admin?)");
-            }
-        }
-
-        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
-                new FileOutputStream(new File(appDir, "uninstall.bat"))))) {
-            out.println("@echo off");
-            out.println("set servicename=" + project.windowsServiceConfiguration().name);
-            out.println("isrv -r " + exeFile);
-            out.println("if errorlevel 1 goto :failed");
-            out.println("echo %servicename% service is successfully removed.");
-            out.println("goto :eof");
-            out.println(":failed");
-            out.println("echo %servicename% service uninstallation failed.");
-        }
+        Utils.linesToFile(scriptsGenerator.isrvArgs(), new File(appDir, rspFile));
+        Utils.linesToFile(scriptsGenerator.installBatFileContent(rspFile), new File(appDir, "install.bat"));
+        Utils.linesToFile(scriptsGenerator.uninstallBatFileContent(), new File(appDir, "uninstall.bat"));
     }
 
     /**

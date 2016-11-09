@@ -56,7 +56,7 @@ public class PackagerArgsGenerator {
             case INVOCATION_DYNAMIC_LIBRARY:
                 //overwrite exe name for dynamic library
                 exeName = excelsiorJet.getTargetOS().mangleDllName(project.outputName());
-                //fall trough
+                //fall through
             case PLAIN:
             case WINDOWS_SERVICE:
                 if (project.packageFilesDir().exists()) {
@@ -189,7 +189,7 @@ public class PackagerArgsGenerator {
 
     //Surprisingly Windows just removes empty argument from list of arguments if we do not pass "" instead.
     private String escapeEmptyArgForWindows(String arg) {
-        return arg.isEmpty() ? "\"" + arg + "\"" : arg;
+        return arg.isEmpty() ? "\"\"" : arg;
     }
 
     private void addWindowsServiceArgs(ArrayList<String> xpackArgs) {

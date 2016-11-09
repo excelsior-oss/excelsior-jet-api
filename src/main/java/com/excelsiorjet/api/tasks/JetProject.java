@@ -543,7 +543,7 @@ public class JetProject {
                 if (!excelsiorJet.isWindowsServicesSupported()) {
                     throw new JetTaskFailureException(s("JetApi.WinServiceNotSupported.Failure", appType));
                 }
-                //fall though
+                //fall through
 
             case PLAIN:
             case INVOCATION_DYNAMIC_LIBRARY:
@@ -553,15 +553,6 @@ public class JetProject {
 
                 if (!mainJar.exists()) {
                     throw new JetTaskFailureException(s("JetApi.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
-                }
-                // check main class
-                if (appType != ApplicationType.INVOCATION_DYNAMIC_LIBRARY) {
-                    if (Utils.isEmpty(mainClass)) {
-                        throw new JetTaskFailureException(s("JetApi.MainNotSpecified.Failure"));
-                    } else {
-                        //normalize main
-                        mainClass = mainClass.replace('.', '/');
-                    }
                 }
 
                 break;
@@ -580,8 +571,27 @@ public class JetProject {
 
                 tomcatConfiguration.fillDefaults();
 
-                mainClass = "org/apache/catalina/startup/Bootstrap";
+                break;
+            default:
+                throw new AssertionError("Unknown application type");
+        }
 
+        // check main class
+        switch (appType) {
+            case PLAIN:
+            case WINDOWS_SERVICE:
+                if (Utils.isEmpty(mainClass)) {
+                    throw new JetTaskFailureException(s("JetApi.MainNotSpecified.Failure"));
+                } else {
+                    //normalize main
+                    mainClass = mainClass.replace('.', '/');
+                }
+                break;
+            case INVOCATION_DYNAMIC_LIBRARY:
+                //no need to check main here
+                break;
+            case TOMCAT:
+                mainClass = "org/apache/catalina/startup/Bootstrap";
                 break;
             default:
                 throw new AssertionError("Unknown application type");

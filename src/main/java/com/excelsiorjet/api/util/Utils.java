@@ -252,4 +252,11 @@ public class Utils {
                 filter(item -> item != null).
                 collect(Collectors.joining(":", "(", ")"));
     }
+
+    public static void linesToFile(List<String> lines, File file) throws FileNotFoundException {
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(
+                new FileOutputStream(file)))) {
+            lines.forEach(out::println);
+        }
+    }
 }
