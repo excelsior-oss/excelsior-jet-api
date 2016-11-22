@@ -75,10 +75,10 @@ public class TomcatConfig {
     public boolean genScripts = true;
 
     /**
-     * If you opt {@code excelsior-installer} packaging for Tomcat on Windows then
-     * by default, the installer registers the Tomcat executable as a Windows service.
+     * If you opt for {@code excelsior-installer} packaging for Tomcat on Windows,
+     * the installer will register the Tomcat executable as a Windows service by default.
      * You may set this parameter to {@code false} to disable that behavior.
-     * The functionality is only available since 11.3 Excelsior JET version.
+     * The functionality is available for Excelsior JET 11.3 and above.
      */
     public boolean installWindowsService = true;
 
