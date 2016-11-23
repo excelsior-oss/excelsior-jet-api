@@ -53,7 +53,7 @@ public class PackagerArgsGenerator {
 
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         switch (project.appType()) {
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
                 //overwrite exe name for dynamic library
                 exeName = excelsiorJet.getTargetOS().mangleDllName(project.outputName());
                 //fall through

@@ -23,7 +23,6 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
-import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
@@ -123,7 +122,7 @@ public class TestRunTask {
             throw new JetTaskFailureException(Txt.s("TestRunTask.NoTestRunForCrossCompilation.Error"));
         }
         project.validate(excelsiorJet, false);
-        if ((project.appType() == ApplicationType.INVOCATION_DYNAMIC_LIBRARY) && Utils.isEmpty(project.mainClass())) {
+        if ((project.appType() == ApplicationType.DYNAMIC_LIBRARY) && Utils.isEmpty(project.mainClass())) {
             throw new JetTaskFailureException(Txt.s("TestRunTask.ForInvocationDLL.Error"));
         }
 
@@ -136,7 +135,7 @@ public class TestRunTask {
         switch (project.appType()) {
             case PLAIN:
             case WINDOWS_SERVICE:
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
                 List<ClasspathEntry> dependencies = project.copyClasspathEntries();
                 if (project.packageFilesDir().exists()) {
                     //application may access custom package files at runtime. So copy them as well.

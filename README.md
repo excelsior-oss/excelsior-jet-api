@@ -28,7 +28,7 @@ So first, you need to create an instance of `JetProject`, the constructor of whi
                 and have all their dependencies explicitly listed in the JVM classpath at launch time, and
     - `TOMCAT` - **Tomcat Web applications** &mdash; `.war` files that can be deployed to the
                 Apache Tomcat application server.
-    - `INVOCATION_DYNAMIC_LIBRARY` - **Invocation Dynamic Libraries**, (e.g. Windows DLLs) callable
+    - `DYNAMIC_LIBRARY` - **Invocation Dynamic Libraries**, (e.g. Windows DLLs) callable
        from applications written in non-JVM languages via the Invocation API.
     - `WINDOWS_SERVICE` - **Windows Services**, special long-running processes that may be launched
       during operating system bootstrap (Windows only) and use the Excelsior WinService API.

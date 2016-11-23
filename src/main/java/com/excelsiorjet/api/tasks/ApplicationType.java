@@ -41,7 +41,7 @@ public enum ApplicationType {
     /**
      * Dynamic library callable from a non-Java environment.
      */
-    INVOCATION_DYNAMIC_LIBRARY,
+    DYNAMIC_LIBRARY,
 
     /**
      * Windows service (Windows only).

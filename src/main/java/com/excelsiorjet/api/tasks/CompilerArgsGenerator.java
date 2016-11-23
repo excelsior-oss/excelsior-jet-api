@@ -74,7 +74,7 @@ class CompilerArgsGenerator {
         for (ClasspathEntry dep : project.classpathEntries()) {
             switch (project.appType()) {
                 case PLAIN:
-                case INVOCATION_DYNAMIC_LIBRARY:
+                case DYNAMIC_LIBRARY:
                 case WINDOWS_SERVICE:
                     out.println("!classpathentry " + toJetPrjFormat(project.toPathRelativeToJetBuildDir(dep)));
                     break;
@@ -140,21 +140,13 @@ class CompilerArgsGenerator {
                     compilerArgs.add("-splashgetfrommanifest+");
                 }
 
-                if (excelsiorJet.getTargetOS().isWindows() && project.hideConsole()) {
-                    compilerArgs.add("-gui+");
-                }
-
                 break;
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
                 compilerArgs.add("-gendll+");
                 break;
             case WINDOWS_SERVICE:
                 compilerArgs.add("-servicemain=" + project.mainClass());
                 compilerArgs.add("-servicename=" + project.windowsServiceConfiguration().name);
-                if (excelsiorJet.getTargetOS().isWindows() && project.multiApp() && project.hideConsole()) {
-                    //hiding console for windows services make sence only for multiApp
-                    compilerArgs.add("-gui+");
-                }
                 break;
 
             case TOMCAT:
@@ -169,6 +161,26 @@ class CompilerArgsGenerator {
                 break;
             default:
                 throw new AssertionError("Unknown app type");
+        }
+
+        //hideConsole handling
+        if (excelsiorJet.getTargetOS().isWindows() && project.hideConsole()) {
+            switch (project.appType()) {
+                case WINDOWS_SERVICE:
+                    if (!project.multiApp()) {
+                        //hiding console for windows services make sense only for multiApp
+                        break;
+                    }
+                    //fall through
+                case PLAIN:
+                case TOMCAT:
+                    compilerArgs.add("-gui+");
+                    break;
+                case DYNAMIC_LIBRARY:
+                    break;
+                default:
+                    throw new AssertionError("Unknown app type");
+            }
         }
 
 

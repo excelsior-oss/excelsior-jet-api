@@ -3,8 +3,6 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.config.DependencySettings;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
-import com.excelsiorjet.api.util.Utils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -122,7 +120,7 @@ public class PackagerArgsGeneratorTest {
     public void testInvocationDll() throws Exception {
         File testJarSpy = mavenDepSpy("test.jar");
         ProjectDependency dep = DependencyBuilder.testProjectDependency(testJarSpy).asProjectDependency();
-        JetProject prj = testProject(ApplicationType.INVOCATION_DYNAMIC_LIBRARY).
+        JetProject prj = testProject(ApplicationType.DYNAMIC_LIBRARY).
                 projectDependencies(singletonList(dep)).
                 dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
         ExcelsiorJet excelsiorJet = excelsiorJet();

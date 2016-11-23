@@ -74,7 +74,7 @@ class Tests {
                 excelsiorJetPackaging("none");
         switch (appType) {
             case PLAIN:
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
             case WINDOWS_SERVICE:
                 project.mainJar(fileSpy(mainJar.toString()));
                 break;

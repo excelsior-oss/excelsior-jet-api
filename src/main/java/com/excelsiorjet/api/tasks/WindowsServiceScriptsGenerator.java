@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Generates contents for Windows Service install.bat/uninstall.bat scripts
+ * Generates contents for Windows Service install.bat/uninstall.bat scripts.
  *
  * @author Nikita Lipsky
  */

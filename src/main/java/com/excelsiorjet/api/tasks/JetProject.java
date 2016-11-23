@@ -89,7 +89,7 @@ public class JetProject {
      * and Tomcat Web Applications are supported.
      *
      * @see ApplicationType#PLAIN
-     * @see ApplicationType#INVOCATION_DYNAMIC_LIBRARY
+     * @see ApplicationType#DYNAMIC_LIBRARY
      * @see ApplicationType#WINDOWS_SERVICE
      * @see ApplicationType#TOMCAT
      */
@@ -546,7 +546,7 @@ public class JetProject {
                 //fall through
 
             case PLAIN:
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
                 if (mainJar == null) {
                     mainJar = new File(targetDir, artifactName + ".jar");
                 }
@@ -587,7 +587,7 @@ public class JetProject {
                     mainClass = mainClass.replace('.', '/');
                 }
                 break;
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
                 //no need to check main here
                 break;
             case TOMCAT:
@@ -736,7 +736,7 @@ public class JetProject {
         classpathEntries = new ArrayList<>();
         switch (appType()) {
             case PLAIN:
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
             case WINDOWS_SERVICE:
             {
                 // Values of the seenDeps HashMap can either be of type ProjectDependevcy or DependencySettings.

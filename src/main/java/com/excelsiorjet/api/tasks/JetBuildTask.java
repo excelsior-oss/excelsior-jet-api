@@ -24,14 +24,11 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
-import com.excelsiorjet.api.tasks.config.WindowsServiceConfig.LogOnType;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -277,7 +274,7 @@ public class JetBuildTask {
 
         switch (project.appType()) {
             case PLAIN:
-            case INVOCATION_DYNAMIC_LIBRARY:
+            case DYNAMIC_LIBRARY:
             case WINDOWS_SERVICE:
                 project.copyClasspathEntries();
                 compile(buildDir);
