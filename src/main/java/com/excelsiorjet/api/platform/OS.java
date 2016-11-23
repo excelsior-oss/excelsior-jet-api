@@ -57,8 +57,33 @@ public enum OS {
         }
     }
 
+    public String getDllFileExtension() {
+        switch (this) {
+            case WINDOWS:   return ".dll";
+            case LINUX:     return ".so";
+            case OSX:       return ".dylib";
+            default:
+                throw new AssertionError("Unknown OS: " + this);
+        }
+    }
+
+    public String getDllFilePrefix() {
+        switch (this) {
+            case WINDOWS:   return "";
+            case LINUX:     return "lib";
+            case OSX:       return "lib";
+            default:
+                throw new AssertionError("Unknown OS: " + this);
+        }
+    }
+
+
     public String mangleExeName(String exe) {
         return exe + getExeFileExtension();
+    }
+
+    public String mangleDllName(String dll) {
+        return getDllFilePrefix() + dll + getDllFileExtension();
     }
 }
 

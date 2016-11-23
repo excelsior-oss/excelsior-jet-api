@@ -85,9 +85,12 @@ public class JetProject {
     private String version;
 
     /**
-     * Application type. Currently, Plain Java SE Applications and Tomcat Web Applications are supported.
+     * Application type. Currently, Plain Java SE Applications, Invocation Dynamic Libraries, Windows Services
+     * and Tomcat Web Applications are supported.
      *
      * @see ApplicationType#PLAIN
+     * @see ApplicationType#DYNAMIC_LIBRARY
+     * @see ApplicationType#WINDOWS_SERVICE
      * @see ApplicationType#TOMCAT
      */
     private ApplicationType appType;
@@ -321,6 +324,21 @@ public class JetProject {
     private ExcelsiorInstallerConfig excelsiorInstallerConfiguration;
 
     /**
+     * Windows Service configuration parameters.
+     *
+     * @see WindowsServiceConfig#name
+     * @see WindowsServiceConfig#displayName
+     * @see WindowsServiceConfig#description
+     * @see WindowsServiceConfig#arguments
+     * @see WindowsServiceConfig#logOnType
+     * @see WindowsServiceConfig#allowDesktopInteraction
+     * @see WindowsServiceConfig#startupType
+     * @see WindowsServiceConfig#startServiceAfterInstall
+     * @see WindowsServiceConfig#dependencies
+     */
+    private WindowsServiceConfig windowsServiceConfiguration;
+
+    /**
      * OS X Application Bundle configuration parameters.
      *
      * @see OSXAppBundleConfig#fileName
@@ -521,17 +539,20 @@ public class JetProject {
         }
 
         switch (appType) {
+            case WINDOWS_SERVICE:
+                if (!excelsiorJet.isWindowsServicesSupported()) {
+                    throw new JetTaskFailureException(s("JetApi.WinServiceNotSupported.Failure", appType));
+                }
+                //fall through
+
             case PLAIN:
+            case DYNAMIC_LIBRARY:
                 if (mainJar == null) {
                     mainJar = new File(targetDir, artifactName + ".jar");
                 }
 
                 if (!mainJar.exists()) {
                     throw new JetTaskFailureException(s("JetApi.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
-                }
-                // check main class
-                if (Utils.isEmpty(mainClass)) {
-                    throw new JetTaskFailureException(s("JetApi.MainNotSpecified.Failure"));
                 }
 
                 break;
@@ -552,13 +573,22 @@ public class JetProject {
 
                 break;
             default:
-                throw new JetTaskFailureException(s("JetApi.BadPackaging.Failure", appType));
+                throw new AssertionError("Unknown application type");
         }
 
+        // check main class
         switch (appType) {
             case PLAIN:
-                //normalize main and set outputName
-                mainClass = mainClass.replace('.', '/');
+            case WINDOWS_SERVICE:
+                if (Utils.isEmpty(mainClass)) {
+                    throw new JetTaskFailureException(s("JetApi.MainNotSpecified.Failure"));
+                } else {
+                    //normalize main
+                    mainClass = mainClass.replace('.', '/');
+                }
+                break;
+            case DYNAMIC_LIBRARY:
+                //no need to check main here
                 break;
             case TOMCAT:
                 mainClass = "org/apache/catalina/startup/Bootstrap";
@@ -615,6 +645,11 @@ public class JetProject {
                 throw new JetTaskFailureException(s("JetApi.UnknownPackagingMode.Failure", excelsiorJetPackaging));
         }
 
+        if ((appType == ApplicationType.WINDOWS_SERVICE) && (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) &&
+                !excelsiorJet.isWindowsServicesInExcelsiorInstallerSupported()) {
+            throw new JetTaskFailureException(s("JetApi.WinServiceInEINotSupported.Failure"));
+        }
+
         if (execProfilesDir == null) {
             execProfilesDir = jetResourcesDir;
         }
@@ -654,7 +689,7 @@ public class JetProject {
 
         // allProjectDependencies = project dependencies + main artifact
         List<ProjectDependency> allProjectDependencies = new ArrayList<>(projectDependencies);
-        ProjectDependency mainArtifactDep = new ProjectDependency(groupId, projectName, version, appType == ApplicationType.PLAIN ? mainJar : mainWar, true);
+        ProjectDependency mainArtifactDep = new ProjectDependency(groupId, projectName, version, appType != ApplicationType.TOMCAT ? mainJar : mainWar, true);
         // in original implementation main artifact is preceded other dependencies
         allProjectDependencies.add(0, mainArtifactDep);
 
@@ -699,49 +734,55 @@ public class JetProject {
 
         DependencySettingsResolver dependencySettingsResolver = new DependencySettingsResolver(groupId, dependenciesSettings);
         classpathEntries = new ArrayList<>();
-        if (appType() == ApplicationType.PLAIN) {
-            // Values of the seenDeps HashMap can either be of type ProjectDependevcy or DependencySettings.
-            // DependencySettings are put there while processing external dependencies.
-            HashMap<String, Object> seenDeps = new HashMap<>();
-            for (ProjectDependency prjDep : allProjectDependencies) {
-                ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
-                String packagePath = toPathRelativeToJetBuildDir(cpEntry).toString();
-                ProjectDependency oldDep = (ProjectDependency) seenDeps.put(packagePath, prjDep);
-                if (oldDep != null) {
-                    throw new JetTaskFailureException(s("JetApi.OverlappedDependency", prjDep, oldDep));
-                } else {
-                    classpathEntries.add(cpEntry);
-                }
-            }
-            for (DependencySettings extDep : externalDependencies) {
-                ClasspathEntry cpEntry = new ClasspathEntry(extDep, false);
-                Object oldDep = seenDeps.put(toPathRelativeToJetBuildDir(cpEntry).toString(), extDep);
-                if (oldDep != null) {
-                    throw new JetTaskFailureException(s("JetApi.OverlappedExternalDependency", extDep.path, oldDep));
-                }
-                classpathEntries.add(cpEntry);
-            }
-
-        } else if (appType() == ApplicationType.TOMCAT) {
-            HashMap<String, ProjectDependency> seenDeps = new HashMap<>();
-            for (ProjectDependency prjDep : allProjectDependencies) {
-                if (!prjDep.isMainArtifact || dependencySettingsResolver.hasSettingsFor(prjDep)) {
+        switch (appType()) {
+            case PLAIN:
+            case DYNAMIC_LIBRARY:
+            case WINDOWS_SERVICE:
+            {
+                // Values of the seenDeps HashMap can either be of type ProjectDependevcy or DependencySettings.
+                // DependencySettings are put there while processing external dependencies.
+                HashMap<String, Object> seenDeps = new HashMap<>();
+                for (ProjectDependency prjDep : allProjectDependencies) {
                     ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
-
-                    ProjectDependency oldDep = null;
-                    if (!prjDep.isMainArtifact) {
-                        String depName = cpEntry.path.getName();
-                        oldDep = seenDeps.put(depName, prjDep);
-                    }
+                    String packagePath = toPathRelativeToJetBuildDir(cpEntry).toString();
+                    ProjectDependency oldDep = (ProjectDependency) seenDeps.put(packagePath, prjDep);
                     if (oldDep != null) {
-                        throw new JetTaskFailureException(s("JetApi.OverlappedTomcatDependency", prjDep, oldDep));
+                        throw new JetTaskFailureException(s("JetApi.OverlappedDependency", prjDep, oldDep));
                     } else {
                         classpathEntries.add(cpEntry);
                     }
                 }
+                for (DependencySettings extDep : externalDependencies) {
+                    ClasspathEntry cpEntry = new ClasspathEntry(extDep, false);
+                    Object oldDep = seenDeps.put(toPathRelativeToJetBuildDir(cpEntry).toString(), extDep);
+                    if (oldDep != null) {
+                        throw new JetTaskFailureException(s("JetApi.OverlappedExternalDependency", extDep.path, oldDep));
+                    }
+                    classpathEntries.add(cpEntry);
+                }
             }
-        } else {
-            throw new AssertionError("Unknown application type: " + appType());
+                break;
+            case TOMCAT:
+                HashMap<String, ProjectDependency> seenDeps = new HashMap<>();
+                for (ProjectDependency prjDep : allProjectDependencies) {
+                    if (!prjDep.isMainArtifact || dependencySettingsResolver.hasSettingsFor(prjDep)) {
+                        ClasspathEntry cpEntry = dependencySettingsResolver.resolve(prjDep);
+
+                        ProjectDependency oldDep = null;
+                        if (!prjDep.isMainArtifact) {
+                            String depName = cpEntry.path.getName();
+                            oldDep = seenDeps.put(depName, prjDep);
+                        }
+                        if (oldDep != null) {
+                            throw new JetTaskFailureException(s("JetApi.OverlappedTomcatDependency", prjDep, oldDep));
+                        } else {
+                            classpathEntries.add(cpEntry);
+                        }
+                    }
+                }
+                break;
+            default:
+                throw new AssertionError("Unknown application type: " + appType());
         }
     }
 
@@ -761,20 +802,8 @@ public class JetProject {
             splash = new File(jetResourcesDir, "splash.png");
         }
 
-        switch (appType) {
-            case PLAIN:
-                if (outputName == null) {
-                    int lastSlash = mainClass.lastIndexOf('/');
-                    outputName = lastSlash < 0 ? mainClass : mainClass.substring(lastSlash + 1);
-                }
-                break;
-            case TOMCAT:
-                if (outputName == null) {
-                    outputName = projectName;
-                }
-                break;
-            default:
-                throw new AssertionError("Unknown application type");
+        if (outputName == null) {
+            outputName = projectName;
         }
 
         if (stackTraceSupport == null) {
@@ -821,6 +850,8 @@ public class JetProject {
             checkGlobalAndSlimDownParameters(excelsiorJet);
 
             checkExcelsiorInstallerConfig();
+
+            checkWindowsServiceConfig();
 
             checkOSXBundleConfig();
 
@@ -956,6 +987,17 @@ public class JetProject {
     private void checkExcelsiorInstallerConfig() throws JetTaskFailureException {
         if (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) {
             excelsiorInstallerConfiguration.fillDefaults(this);
+        }
+    }
+
+    private void checkWindowsServiceConfig() throws JetTaskFailureException {
+        if ((appType() == ApplicationType.WINDOWS_SERVICE) ||
+                (appType == ApplicationType.TOMCAT) &&
+                        (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) &&
+                        tomcatConfiguration.installWindowsService
+                )
+        {
+            windowsServiceConfiguration.fillDefaults(this);
         }
     }
 
@@ -1118,6 +1160,10 @@ public class JetProject {
         return excelsiorInstallerConfiguration;
     }
 
+    WindowsServiceConfig windowsServiceConfiguration() {
+        return windowsServiceConfiguration;
+    }
+
     String version() {
         return version;
     }
@@ -1126,7 +1172,7 @@ public class JetProject {
         return osxBundleConfiguration;
     }
 
-    String outputName() {
+    public String outputName() {
         return outputName;
     }
 
@@ -1178,7 +1224,7 @@ public class JetProject {
         return jetOutputDir;
     }
 
-    ApplicationType appType()  {
+    public ApplicationType appType()  {
         return appType;
     }
 
@@ -1311,6 +1357,11 @@ public class JetProject {
         return this;
     }
 
+    public JetProject windowsServiceConfiguration(WindowsServiceConfig windowsServiceConfiguration) {
+        this.windowsServiceConfiguration = windowsServiceConfiguration;
+        return this;
+    }
+
     public JetProject version(String version) {
         this.version = version;
         return this;
@@ -1412,6 +1463,14 @@ public class JetProject {
 
     public File mainJar() {
         return mainJar;
+    }
+
+    public static ApplicationType checkAndGetAppType(String appType) throws JetTaskFailureException {
+        ApplicationType applicationType = ApplicationType.fromString(appType);
+        if (applicationType == null) {
+            throw new JetTaskFailureException(s("JetApi.UnknownAppType.Failure", appType));
+        }
+        return applicationType;
     }
 
     Path toPathRelativeToJetBuildDir(ClasspathEntry classpathEntry) {

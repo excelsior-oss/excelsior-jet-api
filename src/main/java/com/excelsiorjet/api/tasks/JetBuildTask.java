@@ -29,7 +29,6 @@ import com.excelsiorjet.api.util.Utils;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -83,6 +82,10 @@ public class JetBuildTask {
         }
     }
 
+    private boolean useXPackZipping() {
+        return (project.excelsiorJetPackaging() == PackagingType.ZIP) && excelsiorJet.since11_3() &&
+                (project.appType() != ApplicationType.WINDOWS_SERVICE);
+    }
 
     /**
      * Packages the generated executable and required Excelsior JET runtime files
@@ -90,7 +93,7 @@ public class JetBuildTask {
      */
     private void createAppDir(File buildDir, File appDir) throws CmdLineToolException, JetTaskFailureException {
         ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs(appDir.getAbsolutePath());
-        if ((project.excelsiorJetPackaging() == PackagingType.ZIP) && excelsiorJet.since11_3()) {
+        if (useXPackZipping()) {
             //since 11.3 Excelsior JET supports zipping self-contained directories itself
             xpackArgs.add("-backend");
             xpackArgs.add("self-contained-directory"); //setting backend is needed for ARM 32 due to JET-8882 bug
@@ -99,6 +102,25 @@ public class JetBuildTask {
         if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
+        if (project.appType() == ApplicationType.WINDOWS_SERVICE) {
+            try {
+                createWinServiceInstallScripts(appDir);
+            } catch (IOException e) {
+                throw new JetTaskFailureException(s("JetBuildTask.WinServiceScriptsCreation.Failure", e.toString()), e);
+            }
+        }
+    }
+
+    private void createWinServiceInstallScripts(File appDir) throws IOException {
+        //copy isrv to app dir
+        Utils.copyFile(new File(excelsiorJet.getJetHome() + File.separator + "bin", "isrv.exe").toPath(),
+                new File(appDir, "isrv.exe").toPath());
+
+        WindowsServiceScriptsGenerator scriptsGenerator = new WindowsServiceScriptsGenerator(project, excelsiorJet);
+        String rspFile = project.outputName() + ".rsp";
+        Utils.linesToFile(scriptsGenerator.isrvArgs(), new File(appDir, rspFile));
+        Utils.linesToFile(scriptsGenerator.installBatFileContent(rspFile), new File(appDir, "install.bat"));
+        Utils.linesToFile(scriptsGenerator.uninstallBatFileContent(), new File(appDir, "uninstall.bat"));
     }
 
     /**
@@ -107,22 +129,7 @@ public class JetBuildTask {
      */
     private void packWithEI(File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
         File target = new File(project.jetOutputDir(), excelsiorJet.getTargetOS().mangleExeName(project.artifactName()));
-        ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs();
-        if (project.excelsiorInstallerConfiguration().eula.exists()) {
-            xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
-            xpackArgs.add(project.excelsiorInstallerConfiguration().eula.getAbsolutePath());
-        }
-        if (excelsiorJet.getTargetOS().isWindows() && project.excelsiorInstallerConfiguration().installerSplash.exists()) {
-            xpackArgs.add("-splash");
-            xpackArgs.add(project.excelsiorInstallerConfiguration().installerSplash.getAbsolutePath());
-        }
-        xpackArgs.addAll(Arrays.asList(
-                "-backend", "excelsior-installer",
-                "-company", project.vendor(),
-                "-product", project.product(),
-                "-version", project.version(),
-                "-target", target.getAbsolutePath())
-        );
+        ArrayList<String> xpackArgs = packagerArgsGenerator.getExcelsiorInstallerXPackArgs(target);
         if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
@@ -220,7 +227,7 @@ public class JetBuildTask {
         switch (project.excelsiorJetPackaging()) {
             case ZIP:
                 File targetZip = new File(project.jetOutputDir(), project.artifactName() + ".zip");
-                if (excelsiorJet.since11_3()) {
+                if (useXPackZipping()) {
                     new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip);
                 } else {
                     logger.info(s("JetBuildTask.ZipApp.Info"));
@@ -267,6 +274,8 @@ public class JetBuildTask {
 
         switch (project.appType()) {
             case PLAIN:
+            case DYNAMIC_LIBRARY:
+            case WINDOWS_SERVICE:
                 project.copyClasspathEntries();
                 compile(buildDir);
                 break;

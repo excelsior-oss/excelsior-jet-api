@@ -22,12 +22,13 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.util.Utils;
+import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -52,7 +53,12 @@ public class PackagerArgsGenerator {
 
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         switch (project.appType()) {
+            case DYNAMIC_LIBRARY:
+                //overwrite exe name for dynamic library
+                exeName = excelsiorJet.getTargetOS().mangleDllName(project.outputName());
+                //fall through
             case PLAIN:
+            case WINDOWS_SERVICE:
                 if (project.packageFilesDir().exists()) {
                     xpackArgs.add("-source");
                     xpackArgs.add(project.packageFilesDir().getAbsolutePath());
@@ -114,7 +120,7 @@ public class PackagerArgsGenerator {
             ));
         }
 
-        if (project.appType() == ApplicationType.PLAIN) {
+        if (project.appType() != ApplicationType.TOMCAT) {
             for (ClasspathEntry classpathEntry : project.classpathEntries()) {
                 Path depInBuildDir = project.toPathRelativeToJetBuildDir(classpathEntry);
                 if (ClasspathEntry.PackType.NONE == classpathEntry.pack) {
@@ -149,6 +155,106 @@ public class PackagerArgsGenerator {
 
         return xpackArgs;
     }
+
+    public ArrayList<String> getExcelsiorInstallerXPackArgs(File target) throws JetTaskFailureException {
+        ArrayList<String> xpackArgs = getCommonXPackArgs();
+
+        boolean canInstallTomcatAsService = (project.appType() == ApplicationType.TOMCAT) &&
+                                excelsiorJet.isWindowsServicesInExcelsiorInstallerSupported();
+        if ((project.appType() == ApplicationType.WINDOWS_SERVICE) ||
+                 canInstallTomcatAsService && project.tomcatConfiguration().installWindowsService)
+        {
+            addWindowsServiceArgs(xpackArgs);
+        } else if (canInstallTomcatAsService && !project.tomcatConfiguration().installWindowsService) {
+            xpackArgs.add("-no-tomcat-service-install");
+        }
+
+        if (project.excelsiorInstallerConfiguration().eula.exists()) {
+            xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
+            xpackArgs.add(project.excelsiorInstallerConfiguration().eula.getAbsolutePath());
+        }
+        if (excelsiorJet.getTargetOS().isWindows() && project.excelsiorInstallerConfiguration().installerSplash.exists()) {
+            xpackArgs.add("-splash");
+            xpackArgs.add(project.excelsiorInstallerConfiguration().installerSplash.getAbsolutePath());
+        }
+        xpackArgs.addAll(Arrays.asList(
+                "-backend", "excelsior-installer",
+                "-company", project.vendor(),
+                "-product", project.product(),
+                "-version", project.version(),
+                "-target", target.getAbsolutePath())
+        );
+        return xpackArgs;
+    }
+
+    //Surprisingly Windows just removes empty argument from list of arguments if we do not pass "" instead.
+    private String escapeEmptyArgForWindows(String arg) {
+        return arg.isEmpty() ? "\"\"" : arg;
+    }
+
+    private void addWindowsServiceArgs(ArrayList<String> xpackArgs) {
+        String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        if (project.appType() == ApplicationType.TOMCAT) {
+            exeName = "bin/" + exeName;
+        }
+        WindowsServiceConfig serviceConfig = project.windowsServiceConfiguration();
+        String serviceArguments = "";
+        if (serviceConfig.arguments != null) {
+            serviceArguments = Arrays.stream(serviceConfig.arguments).map(s ->
+                    s.contains(" ") ?
+                            // This looks weird right?
+                            // In fact this combination of " and \ was found to be working to escape spaces
+                            // within arguments by trial and error.
+                            // In short, there are three levels of magic here.
+                            // First, Java's ProcessImpl does a magic with escaping " inside arguments meeting Windows
+                            // standards but it does it wrong. Then Windows itself does some magic with interpreting
+                            // " and \. Finally xpack does some magic with interpreting " and \.
+                            // This combination may not work on some Windows flavours and with some Java microversions,
+                            // but it least it were tested with Windows 10 and Java 8 Update 101.
+                            "\\\"\\\\\"\\\"" + s + "\\\"\\\\\"\\\"" :
+                            s).
+                    collect(Collectors.joining(" "));
+        }
+        xpackArgs.addAll(Arrays.asList(
+                "-service",
+                exeName,
+                escapeEmptyArgForWindows(serviceArguments),
+                serviceConfig.displayName,
+                escapeEmptyArgForWindows(serviceConfig.description)
+        ));
+
+        String logOnType;
+        switch (serviceConfig.getLogOnType()) {
+            case LOCAL_SYSTEM_ACCOUNT:
+                logOnType = serviceConfig.allowDesktopInteraction ? "system-desktop" : "system";
+                break;
+            case USER_ACCOUNT:
+                logOnType = "user";
+                break;
+            default:
+                throw new AssertionError("Unknown logOnType: " + serviceConfig.getLogOnType());
+        }
+
+        String startAfterInstall = serviceConfig.startServiceAfterInstall ? "start-after-install" :
+                "no-start-after-install";
+
+        xpackArgs.addAll(Arrays.asList(
+                "-service-startup",
+                exeName,
+                logOnType,
+                serviceConfig.getStartupType().toXPackValue(),
+                startAfterInstall
+        ));
+
+        if (serviceConfig.dependencies != null) {
+            xpackArgs.addAll(Arrays.asList(
+                    "-service-dependencies",
+                    exeName,
+                    String.join(",", serviceConfig.dependencies)
+            ));
+        }
+    }
+
 
     // checks that array contains only "none" value.
     // Unfortunately, it is not possible to know if a user sets a parameter to an empty array from Maven.
