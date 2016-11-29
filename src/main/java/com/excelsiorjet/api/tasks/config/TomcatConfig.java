@@ -36,6 +36,7 @@ import static com.excelsiorjet.api.util.Txt.s;
 public class TomcatConfig {
 
     public static final String WEBAPPS_DIR = "webapps";
+    public static final String WAR_EXT = ".war";
 
     /**
      * The location of the master Tomcat application server installation,
@@ -82,7 +83,7 @@ public class TomcatConfig {
      */
     public boolean installWindowsService = true;
 
-    public void fillDefaults() throws JetTaskFailureException {
+    public void fillDefaults(String mainWarName) throws JetTaskFailureException {
         // check Tomcat home
         if (Utils.isEmpty(tomcatHome)) {
             tomcatHome = System.getProperty("tomcat.home");
@@ -102,12 +103,22 @@ public class TomcatConfig {
             throw new JetTaskFailureException(s("JetApi.TomcatDoesNotExist.Failure", tomcatHome));
         }
 
-        if (!new File(tomcatHome, WEBAPPS_DIR).exists()) {
+        File webApps = new File(tomcatHome, WEBAPPS_DIR);
+
+        if (!webApps.exists()) {
             throw new JetTaskFailureException(s("JetApi.TomcatWebappsDoesNotExist.Failure", tomcatHome));
         }
 
-        if (!Utils.isEmpty(warDeployName) && !warDeployName.endsWith(".war")) {
-            warDeployName = warDeployName + ".war";
+        if (Utils.isEmpty(warDeployName)) {
+            warDeployName = mainWarName;
+        } else if (!warDeployName.endsWith(WAR_EXT)) {
+            warDeployName = warDeployName + WAR_EXT;
+        }
+
+        String explodedWar = warDeployName.substring(0, warDeployName.length() - WAR_EXT.length());
+
+        if (new File(webApps, warDeployName).exists() || new File(webApps, explodedWar).exists()) {
+            throw new JetTaskFailureException(s("JetApi.WarAlreadyDeployedIntoTomcat.Failure", explodedWar, tomcatHome));
         }
     }
 }

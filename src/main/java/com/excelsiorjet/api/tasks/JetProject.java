@@ -569,7 +569,11 @@ public class JetProject {
                     throw new JetTaskFailureException(s("JetApi.MainWarNotFound.Failure", mainWar.getAbsolutePath()));
                 }
 
-                tomcatConfiguration.fillDefaults();
+                if (!mainWar.getName().endsWith(TomcatConfig.WAR_EXT)) {
+                    throw new JetTaskFailureException(s("JetApi.MainWarShouldEndWithWar.Failure", mainWar.getAbsolutePath()));
+                }
+
+                tomcatConfiguration.fillDefaults(mainWar.getName());
 
                 break;
             default:
@@ -1057,10 +1061,10 @@ public class JetProject {
     void copyTomcatAndWar() throws IOException {
         try {
             Utils.copyDirectory(Paths.get(tomcatConfiguration.tomcatHome), tomcatInBuildDir().toPath());
-            String warName = (Utils.isEmpty(tomcatConfiguration.warDeployName)) ? mainWar.getName() : tomcatConfiguration.warDeployName;
+            String warName = tomcatConfiguration.warDeployName;
             Utils.copyFile(mainWar.toPath(), new File(tomcatInBuildDir(), TomcatConfig.WEBAPPS_DIR + File.separator + warName).toPath());
         } catch (IOException e) {
-            throw new IOException(s("JetMojo.ErrorCopyingTomcat.Exception"), e);
+            throw new IOException(s("JetApi.ErrorCopyingTomcat.Exception", tomcatConfiguration.tomcatHome), e);
         }
     }
 
