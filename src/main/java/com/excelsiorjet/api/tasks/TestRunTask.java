@@ -71,6 +71,7 @@ import static java.util.Arrays.asList;
 public class TestRunTask {
 
     private static final String BOOTSTRAP_JAR = "bootstrap.jar";
+    private static final String TOMCAT_JULI_JAR = "tomcat-juli.jar";
 
     private final ExcelsiorJet excelsiorJet;
     private final JetProject project;
@@ -99,6 +100,10 @@ public class TestRunTask {
         String bootstrapJarCP = bootManifest.getMainAttributes().getValue("CLASS-PATH");
         if (bootstrapJarCP != null) {
             classPath.addAll(asList(bootstrapJarCP.split("\\s+")));
+        }
+
+        if (!classPath.contains(TOMCAT_JULI_JAR) && new File(tomcatBin, TOMCAT_JULI_JAR).exists()) {
+            classPath.add(TOMCAT_JULI_JAR);
         }
 
         classPath.add(excelsiorJet.getJetHome() + File.separator + "lib" + File.separator + "tomcat" + File.separator + "TomcatSupport.jar");
