@@ -120,6 +120,11 @@ public class PackagerArgsGenerator {
             ));
         }
 
+        if (excelsiorJet.isCompactProfilesSupported()) {
+            xpackArgs.add("-profile");
+            xpackArgs.add(project.compactProfile().toString());
+        }
+
         if (project.appType() != ApplicationType.TOMCAT) {
             for (ClasspathEntry classpathEntry : project.classpathEntries()) {
                 Path depInBuildDir = project.toPathRelativeToJetBuildDir(classpathEntry);

@@ -218,6 +218,10 @@ public class ExcelsiorJet {
         return isWindowsServicesSupported() && isExcelsiorInstallerSupported() && since11_3();
     }
 
+    public boolean isCompactProfilesSupported() {
+        return since11_3() && (edition != JetEdition.STANDARD);
+    }
+
     /**
      * @return home directory of this Excelsior JET instance
      */
