@@ -839,7 +839,7 @@ public class JetProject {
         try {
             checkVersionInfo(excelsiorJet);
 
-            if (multiApp && (excelsiorJet.getEdition() == JetEdition.STANDARD)) {
+            if (multiApp && !excelsiorJet.isMultiAppSupported()) {
                 logger.warn(s("JetApi.NoMultiappInStandard.Warning"));
                 multiApp = false;
             }
@@ -853,7 +853,7 @@ public class JetProject {
             }
 
             if (protectData) {
-                if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
+                if (!excelsiorJet.isDataProtectionSupported()) {
                     throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
                 } else {
                     if (cryptSeed == null) {
@@ -868,7 +868,13 @@ public class JetProject {
                     throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
                 }
             } else if (profile != null) {
-                throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
+                switch (compactProfile()) {
+                    case COMPACT1: case COMPACT2: case COMPACT3:
+                        throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
+                    case AUTO: case FULL:
+                        break;
+                    default:  throw new AssertionError("Unknown compact profile: " + compactProfile());
+                }
             }
 
             checkTrialVersionConfig(excelsiorJet);
@@ -1001,7 +1007,7 @@ public class JetProject {
                 throw new JetTaskFailureException(s("JetApi.NoExpireMessage.Failure"));
             }
 
-            if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
+            if (!excelsiorJet.isTrialSupported()) {
                 logger.warn(s("JetApi.NoTrialsInStandard.Warning"));
                 trialVersion = null;
             }

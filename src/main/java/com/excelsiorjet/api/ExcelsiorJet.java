@@ -222,6 +222,18 @@ public class ExcelsiorJet {
         return since11_3() && (edition != JetEdition.STANDARD);
     }
 
+    public boolean isMultiAppSupported() {
+        return edition != JetEdition.STANDARD;
+    }
+
+    public boolean isTrialSupported() {
+        return edition != JetEdition.STANDARD;
+    }
+
+    public boolean isDataProtectionSupported() {
+        return edition != JetEdition.STANDARD;
+    }
+
     /**
      * @return home directory of this Excelsior JET instance
      */
