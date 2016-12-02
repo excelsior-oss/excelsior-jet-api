@@ -206,4 +206,18 @@ public class PackagerArgsGeneratorTest {
         assertEquals("auto", xPackArgs.get(serviceStartupIdx + 3));
         assertEquals("start-after-install", xPackArgs.get(serviceStartupIdx + 4));
     }
+
+    @Test
+    public void testCompactProfile() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN).compactProfile("compact3");
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+
+        int profileIdx = xPackArgs.indexOf("-profile");
+        assertTrue(profileIdx >= 0);
+        assertEquals("compact3", xPackArgs.get(profileIdx + 1));
+
+    }
 }

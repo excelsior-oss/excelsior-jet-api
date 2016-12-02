@@ -306,6 +306,19 @@ public class JetProject {
     private SlimDownConfig javaRuntimeSlimDown;
 
     /**
+     * Java SE 8 defines three subsets of the standard Platform API called compact profiles.
+     * Excelsior JET enables you to deploy your application with one of those subsets.
+     * You may set this parameter to specify a particular profile.
+     * Valid values are: {@code auto} (default),  {@code compact1},  {@code compact2},  {@code compact3}, {@code full}
+     *  <p>
+     * {@code auto} value (default) forces Excelsior JET to detect which parts of the Java SE Platform API
+     * are referenced by the application and select the smallest compact profile that includes them all,
+     * or the entire Platform API if there is no such profile.
+     * </p>
+     */
+    private String profile;
+
+    /**
      * Trial version configuration parameters.
      *
      * @see TrialVersionConfig#expireInDays
@@ -569,7 +582,11 @@ public class JetProject {
                     throw new JetTaskFailureException(s("JetApi.MainWarNotFound.Failure", mainWar.getAbsolutePath()));
                 }
 
-                tomcatConfiguration.fillDefaults();
+                if (!mainWar.getName().endsWith(TomcatConfig.WAR_EXT)) {
+                    throw new JetTaskFailureException(s("JetApi.MainWarShouldEndWithWar.Failure", mainWar.getAbsolutePath()));
+                }
+
+                tomcatConfiguration.fillDefaults(mainWar.getName());
 
                 break;
             default:
@@ -822,7 +839,7 @@ public class JetProject {
         try {
             checkVersionInfo(excelsiorJet);
 
-            if (multiApp && (excelsiorJet.getEdition() == JetEdition.STANDARD)) {
+            if (multiApp && !excelsiorJet.isMultiAppSupported()) {
                 logger.warn(s("JetApi.NoMultiappInStandard.Warning"));
                 multiApp = false;
             }
@@ -836,12 +853,27 @@ public class JetProject {
             }
 
             if (protectData) {
-                if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
+                if (!excelsiorJet.isDataProtectionSupported()) {
                     throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
                 } else {
                     if (cryptSeed == null) {
                         cryptSeed = Utils.randomAlphanumeric(64);
                     }
+                }
+            }
+            if (excelsiorJet.isCompactProfilesSupported()) {
+                if (profile == null) {
+                    profile = CompactProfileType.AUTO.toString();
+                } else if (compactProfile() == null) {
+                    throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
+                }
+            } else if (profile != null) {
+                switch (compactProfile()) {
+                    case COMPACT1: case COMPACT2: case COMPACT3:
+                        throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
+                    case AUTO: case FULL:
+                        break;
+                    default:  throw new AssertionError("Unknown compact profile: " + compactProfile());
                 }
             }
 
@@ -975,7 +1007,7 @@ public class JetProject {
                 throw new JetTaskFailureException(s("JetApi.NoExpireMessage.Failure"));
             }
 
-            if (excelsiorJet.getEdition() == JetEdition.STANDARD) {
+            if (!excelsiorJet.isTrialSupported()) {
                 logger.warn(s("JetApi.NoTrialsInStandard.Warning"));
                 trialVersion = null;
             }
@@ -1057,10 +1089,10 @@ public class JetProject {
     void copyTomcatAndWar() throws IOException {
         try {
             Utils.copyDirectory(Paths.get(tomcatConfiguration.tomcatHome), tomcatInBuildDir().toPath());
-            String warName = (Utils.isEmpty(tomcatConfiguration.warDeployName)) ? mainWar.getName() : tomcatConfiguration.warDeployName;
+            String warName = tomcatConfiguration.warDeployName;
             Utils.copyFile(mainWar.toPath(), new File(tomcatInBuildDir(), TomcatConfig.WEBAPPS_DIR + File.separator + warName).toPath());
         } catch (IOException e) {
-            throw new IOException(s("JetMojo.ErrorCopyingTomcat.Exception"), e);
+            throw new IOException(s("JetApi.ErrorCopyingTomcat.Exception", tomcatConfiguration.tomcatHome), e);
         }
     }
 
@@ -1151,6 +1183,11 @@ public class JetProject {
     SlimDownConfig javaRuntimeSlimDown() {
         return javaRuntimeSlimDown;
     }
+
+    CompactProfileType compactProfile() {
+        return CompactProfileType.fromString(profile);
+    }
+
 
     TrialVersionConfig trialVersion() {
         return trialVersion;
@@ -1344,6 +1381,11 @@ public class JetProject {
 
     public JetProject javaRuntimeSlimDown(SlimDownConfig javaRuntimeSlimDown) {
         this.javaRuntimeSlimDown = javaRuntimeSlimDown;
+        return this;
+    }
+
+    public JetProject compactProfile(String profile) {
+        this.profile = profile;
         return this;
     }
 

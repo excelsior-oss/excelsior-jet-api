@@ -70,6 +70,7 @@ class Tests {
                 packageFilesDir(projectDir.resolve("src").resolve("jetresources").resolve("packageFiles").toFile()).
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).
+                compactProfile("auto").
                 outputName("test").
                 excelsiorJetPackaging("none");
         switch (appType) {
@@ -104,6 +105,7 @@ class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isWindowsServicesSupported();
         Mockito.doReturn(true).when(excelsiorJet).isExcelsiorInstallerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isWindowsServicesInExcelsiorInstallerSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isCompactProfilesSupported();
         return excelsiorJet;
     }
 
