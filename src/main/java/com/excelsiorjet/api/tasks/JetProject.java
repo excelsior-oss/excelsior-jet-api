@@ -297,6 +297,31 @@ public class JetProject {
     private boolean globalOptimizer;
 
     /**
+     * (32-bit only)
+     * Reduce disk footprint via compressing rarely used Java SE API classes in the resulting package.
+     * Valid values are: {@code none},  {@code medium} (default),  {@code high-memory},  {@code high-disk}.
+     * <p>
+     * The feature is only available if {@link #globalOptimizer} is enabled.
+     * In this mode Java SE classes that were not compiled into the resulting executable are placed in bytecode form
+     * into the resulting package and can be compressed using the following modes:
+     * <dl>
+     * <dt>none</dt>
+     * <dd>disable compression</dd>
+     * <dt>medium</dt>
+     * <dd>use simple compression with minimum overhead at runtime on decompression</dd>
+     * <dt>high-memory</dt>
+     * <dd>Java SE API classes are compressed as a whole resulting into much better disk footprint reduction
+     * than medium compression. However if the compressed classes will be accessed at runtime the whole bundle
+     * must be decompressed to retrieve a necessary class. high-memory reduction mode decompresses the bundle
+     * into the heap (that can be garbage collected lately)</dd>
+     * <dt>high-disk</dt>
+     * <dd>The same as high-memory but on demand decompression occurs to the temp directory.
+     * </dl>
+     * </p>
+     */
+    private String diskFootprintReduction;
+
+    /**
      * (32-bit only) Java Runtime Slim-Down configuration parameters.
      *
      * @see SlimDownConfig#detachedBaseURL
@@ -879,7 +904,7 @@ public class JetProject {
 
             checkTrialVersionConfig(excelsiorJet);
 
-            checkGlobalAndSlimDownParameters(excelsiorJet);
+            checkGlobalAndRelatedParameters(excelsiorJet);
 
             checkExcelsiorInstallerConfig();
 
@@ -960,7 +985,11 @@ public class JetProject {
         return String.join(".", (CharSequence[]) finalVersions);
     }
 
-    private void checkGlobalAndSlimDownParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+    TestRunExecProfiles testRunExecProfiles() {
+        return new TestRunExecProfiles(execProfilesDir, execProfilesName);
+    }
+
+    private void checkGlobalAndRelatedParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer) {
             if (!excelsiorJet.isGlobalOptimizerSupported()) {
                 logger.warn(s("JetApi.NoGlobal.Warning"));
@@ -990,8 +1019,21 @@ public class JetProject {
 
         }
 
+        if (diskFootprintReduction != null) {
+            if (diskFootprintReduction() == null) {
+                throw new JetTaskFailureException(s("JetApi.UnknownDiskFootprintReductionType.Failure", profile));
+            }
+            if (!excelsiorJet.isDiskFootprintReductionSupported()) {
+                logger.warn(s("JetApi.NoDiskFootprintReduction.Warning"));
+                diskFootprintReduction = null;
+            } else if (!globalOptimizer) {
+                logger.warn(s("JetApi.DiskFootprintReductionForGlobalOnly.Warning"));
+                diskFootprintReduction = null;
+            }
+        }
+
         if (globalOptimizer) {
-            TestRunExecProfiles execProfiles = new TestRunExecProfiles(execProfilesDir, execProfilesName);
+            TestRunExecProfiles execProfiles = testRunExecProfiles();
             if (!execProfiles.getUsg().exists()) {
                 throw new JetTaskFailureException(s("JetApi.NoTestRun.Failure"));
             }
@@ -1186,6 +1228,10 @@ public class JetProject {
 
     CompactProfileType compactProfile() {
         return CompactProfileType.fromString(profile);
+    }
+
+    DiskFootprintReductionType diskFootprintReduction() {
+        return DiskFootprintReductionType.fromString(diskFootprintReduction);
     }
 
 
@@ -1386,6 +1432,11 @@ public class JetProject {
 
     public JetProject compactProfile(String profile) {
         this.profile = profile;
+        return this;
+    }
+
+    public JetProject diskFootprintReduction(String diskFootprintReduction) {
+        this.diskFootprintReduction = diskFootprintReduction;
         return this;
     }
 

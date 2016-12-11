@@ -1,9 +1,11 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.tasks.config.DependencySettings;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -219,5 +221,23 @@ public class PackagerArgsGeneratorTest {
         assertTrue(profileIdx >= 0);
         assertEquals("compact3", xPackArgs.get(profileIdx + 1));
 
+    }
+
+    @Test
+    public void testDiskFootprintReduction() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN).globalOptimizer(true).diskFootprintReduction("high-memory");
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.execProfilesDir(prj.jetResourcesDir()).execProfilesName("test");
+        TestRunExecProfiles testRunExecProfiles = Mockito.mock(TestRunExecProfiles.class);
+        Mockito.doReturn(fileSpy("test.usg")).when(testRunExecProfiles).getUsg();
+        prj = Mockito.spy(prj);
+        Mockito.when(prj.testRunExecProfiles()).thenReturn(testRunExecProfiles);
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+
+        int profileIdx = xPackArgs.indexOf("-reduce-disk-footprint");
+        assertTrue(profileIdx >= 0);
+        assertEquals("high-memory", xPackArgs.get(profileIdx + 1));
     }
 }

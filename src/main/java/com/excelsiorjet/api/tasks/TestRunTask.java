@@ -185,7 +185,7 @@ public class TestRunTask {
 
     private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs) throws JetTaskFailureException {
         List<String> args = new ArrayList<>();
-        TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
+        TestRunExecProfiles execProfiles = project.testRunExecProfiles();
         if (excelsiorJet.isStartupProfileGenerationSupported()) {
             args.add("-Djet.jit.profile.startup=" + execProfiles.getStartup().getAbsolutePath());
         }

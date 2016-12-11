@@ -119,7 +119,7 @@ class CompilerArgsGenerator {
             }
         }
 
-        TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
+        TestRunExecProfiles execProfiles = project.testRunExecProfiles();
         if (execProfiles.getUsg().exists()) {
             modules.add(toJetPrjFormat(execProfiles.getUsg()));
         }
@@ -217,7 +217,7 @@ class CompilerArgsGenerator {
             compilerArgs.add("-cryptseed=" + project.cryptSeed());
         }
 
-        TestRunExecProfiles execProfiles = new TestRunExecProfiles(project.execProfilesDir(), project.execProfilesName());
+        TestRunExecProfiles execProfiles = project.testRunExecProfiles();
         if (execProfiles.getStartup().exists()) {
             compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
         }
