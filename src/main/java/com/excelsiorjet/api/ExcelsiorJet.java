@@ -238,6 +238,10 @@ public class ExcelsiorJet {
         return since11_3() && isGlobalOptimizerSupported();
     }
 
+    public boolean isWindowsVersionInfoSupported() {
+        return targetOS.isWindows() && (edition != JetEdition.STANDARD);
+    }
+
     /**
      * @return home directory of this Excelsior JET instance
      */
