@@ -259,4 +259,26 @@ public class Utils {
             lines.forEach(out::println);
         }
     }
+
+    public static String deriveFourDigitVersion(String version) {
+        String[] versions = version.split("\\.");
+        String[] finalVersions = new String[]{"0", "0", "0", "0"};
+        for (int i = 0; i < Math.min(versions.length, 4); ++i) {
+            try {
+                finalVersions[i] = Integer.decode(versions[i]).toString();
+            } catch (NumberFormatException e) {
+                int minusPos = versions[i].indexOf('-');
+                if (minusPos > 0) {
+                    String v = versions[i].substring(0, minusPos);
+                    try {
+                        finalVersions[i] = Integer.decode(v).toString();
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+            }
+        }
+        return String.join(".", (CharSequence[]) finalVersions);
+    }
+
+
 }
