@@ -245,9 +245,9 @@ public class JetProject {
     private String product;
 
     /**
-     * Inception year of this project.
+     * The inception year of this project.
      *
-     * Used to construct default value of {@link WindowsVersionInfoConfig#copyright}.
+     * Used to construct the default value of {@link WindowsVersionInfoConfig#copyright}.
      */
     private String inceptionYear;
 
