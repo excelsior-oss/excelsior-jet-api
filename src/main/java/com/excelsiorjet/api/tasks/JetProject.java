@@ -902,7 +902,11 @@ public class JetProject {
         }
     }
 
-    private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException {
+    private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+        if (!addWindowsVersionInfo && !windowsVersionInfoConfiguration.isEmpty()) {
+            throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure", profile));
+        }
+
         if (!excelsiorJet.getTargetOS().isWindows()) {
             addWindowsVersionInfo = false;
         }

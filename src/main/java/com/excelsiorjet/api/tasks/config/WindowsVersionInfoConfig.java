@@ -26,6 +26,8 @@ import com.excelsiorjet.api.util.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -102,5 +104,9 @@ public class WindowsVersionInfoConfig {
         if (description == null) {
             description = product;
         }
+    }
+
+    public boolean isEmpty() {
+        return Stream.of(company, product, version, copyright, description).allMatch(Objects::isNull);
     }
 }
