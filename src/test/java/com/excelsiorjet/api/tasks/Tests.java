@@ -7,6 +7,7 @@ import com.excelsiorjet.api.platform.OS;
 import com.excelsiorjet.api.tasks.config.ExcelsiorInstallerConfig;
 import com.excelsiorjet.api.tasks.config.TomcatConfig;
 import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
+import com.excelsiorjet.api.tasks.config.WindowsVersionInfoConfig;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -70,6 +71,7 @@ class Tests {
                 packageFilesDir(projectDir.resolve("src").resolve("jetresources").resolve("packageFiles").toFile()).
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).
+                windowsVersionInfoConfiguration(new WindowsVersionInfoConfig()).
                 compactProfile("auto").
                 outputName("test").
                 excelsiorJetPackaging("none");
