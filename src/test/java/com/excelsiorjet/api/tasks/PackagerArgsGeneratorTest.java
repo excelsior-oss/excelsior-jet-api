@@ -211,7 +211,8 @@ public class PackagerArgsGeneratorTest {
 
     @Test
     public void testCompactProfile() throws JetTaskFailureException {
-        JetProject prj = testProject(ApplicationType.PLAIN).compactProfile("compact3");
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        prj.runtimeConfiguration().profile = "compact3";
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
@@ -225,7 +226,8 @@ public class PackagerArgsGeneratorTest {
 
     @Test
     public void testDiskFootprintReduction() throws JetTaskFailureException {
-        JetProject prj = testProject(ApplicationType.PLAIN).globalOptimizer(true).diskFootprintReduction("high-memory");
+        JetProject prj = testProject(ApplicationType.PLAIN).globalOptimizer(true);
+        prj.runtimeConfiguration().diskFootprintReduction = "high-memory";
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.execProfilesDir(prj.jetResourcesDir()).execProfilesName("test");
         TestRunExecProfiles testRunExecProfiles = Mockito.mock(TestRunExecProfiles.class);

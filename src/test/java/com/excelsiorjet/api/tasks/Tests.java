@@ -4,10 +4,7 @@ import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.OS;
-import com.excelsiorjet.api.tasks.config.ExcelsiorInstallerConfig;
-import com.excelsiorjet.api.tasks.config.TomcatConfig;
-import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
-import com.excelsiorjet.api.tasks.config.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.*;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -72,7 +69,7 @@ class Tests {
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).
                 windowsVersionInfoConfiguration(new WindowsVersionInfoConfig()).
-                compactProfile("auto").
+                runtimeConfiguration(new RuntimeConfig()).
                 outputName("test").
                 excelsiorJetPackaging("none");
         switch (appType) {
@@ -96,6 +93,8 @@ class Tests {
             default:
                 throw new AssertionError("Unknown app type");
         }
+        //some tests disable validation where this default is set. TODO: refactor it
+        project.runtimeConfiguration().profile = "auto";
         return project;
     }
 

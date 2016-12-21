@@ -22,7 +22,6 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.Log;
@@ -34,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
@@ -274,59 +272,21 @@ public class JetProject {
      * The Global Optimizer is enabled automatically when you enable Java Runtime Slim-Down.
      *
      * @see TestRunTask
-     * @see #javaRuntimeSlimDown
+     * @see RuntimeConfig#slimDown
      */
     private boolean globalOptimizer;
 
     /**
-     * (32-bit only)
-     * Reduce the disk footprint of the application by including the supposedly unused Java SE API
-     * classes in the resulting package in a compressed form.
-     * Valid values are: {@code none},  {@code medium} (default),  {@code high-memory},  {@code high-disk}.
-     * <p>
-     * The feature is only available if {@link #globalOptimizer} is enabled.
-     * In this mode, the Java SE classes that were not compiled into the resulting executable are placed
-     * into the resulting package in bytecode form, possibly compressed depending on the mode:
-     * </p>
-     * <dl>
-     * <dt>none</dt>
-     * <dd>Disable compression</dd>
-     * <dt>medium</dt>
-     * <dd>Use a simple compression algorithm that has minimal run time overheads and permits
-     * selective decompression.</dd>
-     * <dt>high-memory</dt>
-     * <dd>Compress all unused Java SE API classes as a whole. This results in more significant disk
-     * footprint reduction compared to than medium compression. However, if one of the compressed classes
-     * is needed at run time, the entire bundle must be decompressed to retrieve it.
-     * In the {@code high-memory} reduction mode the bundle is decompressed 
-     * onto the heap and can be garbage collected later.</dd>
-     * <dt>high-disk</dt>
-     * <dd>Same as {@code high-memory}, but decompress to the temp directory.</dd>
-     * </dl>
-     */
-    private String diskFootprintReduction;
-
-    /**
-     * (32-bit only) Java Runtime Slim-Down configuration parameters.
+     * Runtime configuration parameters.
      *
-     * @see SlimDownConfig#detachedBaseURL
-     * @see SlimDownConfig#detachComponents
-     * @see SlimDownConfig#detachedPackage
+     * @see RuntimeConfig#kind
+     * @see RuntimeConfig#profile
+     * @see RuntimeConfig#components
+     * @see RuntimeConfig#locales
+     * @see RuntimeConfig#diskFootprintReduction
+     * @see RuntimeConfig#location
      */
-    private SlimDownConfig javaRuntimeSlimDown;
-
-    /**
-     * Java SE 8 defines three subsets of the standard Platform API called compact profiles.
-     * Excelsior JET enables you to deploy your application with one of those subsets.
-     * You may set this parameter to specify a particular profile.
-     * Valid values are: {@code auto} (default),  {@code compact1},  {@code compact2},  {@code compact3}, {@code full}
-     *  <p>
-     * {@code auto} value (default) forces Excelsior JET to detect which parts of the Java SE Platform API
-     * are referenced by the application and select the smallest compact profile that includes them all,
-     * or the entire Platform API if there is no such profile.
-     * </p>
-     */
-    private String profile;
+    private RuntimeConfig runtimeConfiguration;
 
     /**
      * Trial version configuration parameters.
@@ -470,29 +430,6 @@ public class JetProject {
      */
     private boolean hideConsole;
 
-    /**
-     * Add optional JET Runtime components to the package.
-     * By default, only the {@code jce} component (Java Crypto Extension) is added.
-     * You may pass a special value {@code all} to include all available optional components at once
-     * or {@code none} to not include any of them.
-     * Available optional components:
-     * {@code runtime_utilities}, {@code fonts}, {@code awt_natives}, {@code api_classes}, {@code jce},
-     * {@code accessibility}, {@code javafx}, {@code javafx-webkit}, {@code nashorn}, {@code cldr}
-     */
-    private String[] optRtFiles;
-
-    /**
-     * Add locales and charsets.
-     * By default only {@code European} locales are added.
-     * You may pass a special value {@code all} to include all available locales at once
-     * or {@code none} to not include any additional locales.
-     * Available locales and charsets:
-     *    {@code European}, {@code Indonesian}, {@code Malay}, {@code Hebrew}, {@code Arabic},
-     *    {@code Chinese}, {@code Japanese}, {@code Korean}, {@code Thai}, {@code Vietnamese}, {@code Hindi},
-     *    {@code Extended_Chinese}, {@code Extended_Japanese}, {@code Extended_Korean}, {@code Extended_Thai},
-     *    {@code Extended_IBM}, {@code Extended_Macintosh}, {@code Latin_3}
-     */
-    private String[] locales;
     /**
      * Additional compiler options and equations.
      * The commonly used compiler options and equations are mapped to the respective project parameters,
@@ -871,25 +808,12 @@ public class JetProject {
                     }
                 }
             }
-            if (excelsiorJet.isCompactProfilesSupported()) {
-                if (profile == null) {
-                    profile = CompactProfileType.AUTO.toString();
-                } else if (compactProfile() == null) {
-                    throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
-                }
-            } else if (profile != null) {
-                switch (compactProfile()) {
-                    case COMPACT1: case COMPACT2: case COMPACT3:
-                        throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
-                    case AUTO: case FULL:
-                        break;
-                    default:  throw new AssertionError("Unknown compact profile: " + compactProfile());
-                }
-            }
+
+            runtimeConfiguration.fillDefaults(this, excelsiorJet);
 
             checkTrialVersionConfig(excelsiorJet);
 
-            checkGlobalAndRelatedParameters(excelsiorJet);
+            checkGlobal(excelsiorJet);
 
             checkExcelsiorInstallerConfig();
 
@@ -904,7 +828,7 @@ public class JetProject {
 
     private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (!addWindowsVersionInfo && !windowsVersionInfoConfiguration.isEmpty()) {
-            throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure", profile));
+            throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure"));
         }
 
         if (!excelsiorJet.getTargetOS().isWindows()) {
@@ -939,46 +863,11 @@ public class JetProject {
         return new TestRunExecProfiles(execProfilesDir, execProfilesName);
     }
 
-    private void checkGlobalAndRelatedParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+    private void checkGlobal(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer) {
             if (!excelsiorJet.isGlobalOptimizerSupported()) {
                 logger.warn(s("JetApi.NoGlobal.Warning"));
                 globalOptimizer = false;
-            }
-        }
-
-        if ((javaRuntimeSlimDown != null) && !javaRuntimeSlimDown.isEnabled()) {
-            javaRuntimeSlimDown = null;
-        }
-
-        if (javaRuntimeSlimDown != null) {
-            if (!excelsiorJet.isSlimDownSupported()) {
-                logger.warn(s("JetApi.NoSlimDown.Warning"));
-                javaRuntimeSlimDown = null;
-            } else {
-                if (javaRuntimeSlimDown.detachedBaseURL == null) {
-                    throw new JetTaskFailureException(s("JetApi.DetachedBaseURLMandatory.Failure"));
-                }
-
-                if (javaRuntimeSlimDown.detachedPackage == null) {
-                    javaRuntimeSlimDown.detachedPackage = artifactName + ".pkl";
-                }
-
-                globalOptimizer = true;
-            }
-
-        }
-
-        if (diskFootprintReduction != null) {
-            if (diskFootprintReduction() == null) {
-                throw new JetTaskFailureException(s("JetApi.UnknownDiskFootprintReductionType.Failure", profile));
-            }
-            if (!excelsiorJet.isDiskFootprintReductionSupported()) {
-                logger.warn(s("JetApi.NoDiskFootprintReduction.Warning"));
-                diskFootprintReduction = null;
-            } else if (!globalOptimizer) {
-                logger.warn(s("JetApi.DiskFootprintReductionForGlobalOnly.Warning"));
-                diskFootprintReduction = null;
             }
         }
 
@@ -1164,22 +1053,13 @@ public class JetProject {
         return windowsVersionInfoConfiguration;
     }
 
-    boolean globalOptimizer() {
+    public boolean globalOptimizer() {
         return globalOptimizer;
     }
 
-    SlimDownConfig javaRuntimeSlimDown() {
-        return javaRuntimeSlimDown;
+    public RuntimeConfig runtimeConfiguration() {
+        return runtimeConfiguration;
     }
-
-    CompactProfileType compactProfile() {
-        return CompactProfileType.fromString(profile);
-    }
-
-    DiskFootprintReductionType diskFootprintReduction() {
-        return DiskFootprintReductionType.fromString(diskFootprintReduction);
-    }
-
 
     TrialVersionConfig trialVersion() {
         return trialVersion;
@@ -1245,10 +1125,6 @@ public class JetProject {
         return profileStartupTimeout;
     }
 
-    String[] optRtFiles() {
-        return optRtFiles;
-    }
-
     File jetOutputDir() {
         return jetOutputDir;
     }
@@ -1259,10 +1135,6 @@ public class JetProject {
 
     String[] compilerOptions() {
         return compilerOptions;
-    }
-
-    String[] locales() {
-        return locales;
     }
 
     public String[] runArgs() {
@@ -1361,18 +1233,8 @@ public class JetProject {
         return this;
     }
 
-    public JetProject javaRuntimeSlimDown(SlimDownConfig javaRuntimeSlimDown) {
-        this.javaRuntimeSlimDown = javaRuntimeSlimDown;
-        return this;
-    }
-
-    public JetProject compactProfile(String profile) {
-        this.profile = profile;
-        return this;
-    }
-
-    public JetProject diskFootprintReduction(String diskFootprintReduction) {
-        this.diskFootprintReduction = diskFootprintReduction;
+    public JetProject runtimeConfiguration(RuntimeConfig runtimeConfiguration) {
+        this.runtimeConfiguration = runtimeConfiguration;
         return this;
     }
 
@@ -1456,11 +1318,6 @@ public class JetProject {
         return this;
     }
 
-    public JetProject optRtFiles(String[] optRtFiles) {
-        this.optRtFiles = optRtFiles;
-        return this;
-    }
-
     public JetProject jetOutputDir(File jetOutputDir) {
         this.jetOutputDir = jetOutputDir;
         return this;
@@ -1473,11 +1330,6 @@ public class JetProject {
 
     public JetProject compilerOptions(String[] compilerOptions) {
         this.compilerOptions = compilerOptions;
-        return this;
-    }
-
-    public JetProject locales(String[] locales) {
-        this.locales = locales;
         return this;
     }
 
