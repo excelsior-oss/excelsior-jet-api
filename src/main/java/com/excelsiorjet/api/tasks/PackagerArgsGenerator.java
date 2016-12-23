@@ -53,6 +53,7 @@ public class PackagerArgsGenerator {
     public ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
         ArrayList<String> xpackArgs = new ArrayList<>();
 
+        File source = null;
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         switch (project.appType()) {
             case DYNAMIC_LIBRARY:
@@ -63,7 +64,8 @@ public class PackagerArgsGenerator {
             case WINDOWS_SERVICE:
                 if (project.packageFilesDir().exists()) {
                     xpackArgs.add("-source");
-                    xpackArgs.add(project.packageFilesDir().getAbsolutePath());
+                    source = project.packageFilesDir();
+                    xpackArgs.add(source.getAbsolutePath());
                 }
 
                 xpackArgs.addAll(Arrays.asList(
@@ -72,7 +74,8 @@ public class PackagerArgsGenerator {
                 break;
             case TOMCAT:
                 xpackArgs.add("-source");
-                xpackArgs.add(project.tomcatInBuildDir().getAbsolutePath());
+                source = project.tomcatInBuildDir();
+                xpackArgs.add(source.getAbsolutePath());
                 if (project.packageFilesDir().exists()) {
                     logger.warn(s("TestRunTask.PackageFilesIgnoredForTomcat.Warning"));
                 }
@@ -82,6 +85,26 @@ public class PackagerArgsGenerator {
         }
 
         RuntimeConfig runtime = project.runtimeConfiguration();
+
+        if (runtime.location != null) {
+            String defaultRtLocation = "rt";
+            String rtLocation = defaultRtLocation;
+            if (source != null) {
+                if (new File(source, runtime.location).exists()) {
+                    throw new JetTaskFailureException(s("JetBuildTask.RuntimeLocationClash.Failure", runtime.location, source.getAbsolutePath()));
+                }
+                //check that user files does not contain a file with "rt" name;
+                int i = 0;
+                while (new File(source, rtLocation).exists()) {
+                    // if "rt" file exists in user files, xpack will try to assign "rt_i" for runtime,
+                    rtLocation = defaultRtLocation + '_' + i++;
+                }
+            }
+            if (!runtime.location.equals("rt")) {
+                xpackArgs.addAll(Arrays.asList("-move-file", rtLocation, runtime.location));
+            }
+        }
+
         if (!Utils.isEmpty(runtime.components)) {
             if (checkNone(runtime.components)) {
                 xpackArgs.add("-remove-opt-rt-files");

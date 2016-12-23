@@ -242,4 +242,19 @@ public class PackagerArgsGeneratorTest {
         assertTrue(profileIdx >= 0);
         assertEquals("high-memory", xPackArgs.get(profileIdx + 1));
     }
+
+    @Test
+    public void testRtLocation() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        prj.runtimeConfiguration().location = "hidden/rt";
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+
+        int profileIdx = xPackArgs.indexOf("-move-file");
+        assertTrue(profileIdx >= 0);
+        assertEquals("rt", xPackArgs.get(profileIdx + 1));
+        assertEquals("hidden/rt", xPackArgs.get(profileIdx + 2));
+    }
 }

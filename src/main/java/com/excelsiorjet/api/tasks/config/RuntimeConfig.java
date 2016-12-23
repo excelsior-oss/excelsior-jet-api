@@ -1,10 +1,7 @@
 package com.excelsiorjet.api.tasks.config;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.tasks.CompactProfileType;
-import com.excelsiorjet.api.tasks.DiskFootprintReductionType;
-import com.excelsiorjet.api.tasks.JetProject;
-import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import com.excelsiorjet.api.tasks.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -16,8 +13,44 @@ import static com.excelsiorjet.api.util.Txt.s;
  */
 public class RuntimeConfig {
 
+    /**
+     * Excelsior JET VM comes with multiple implementations of the runtime system,
+     * optimized for different hardware configurations and application types.
+     * It enables your application to effectively utilize the computing power of systems
+     * that support parallel execution (examples are multi-processor servers,
+     * multi-core chips and CPUs that support Hyper-Threading Technology), thereby improving performance.
+     *
+     * Available runtime kinds: {@code desktop}, {@code server}, {@code classic}
+     *
+     * <dl>
+     * <dt>desktop</dt>
+     * <dd> The Desktop Runtime is suitable for applications that typically run on conventional desktop
+     * and notebook computers. It is optimized for single-CPU systems, including those based on multi-core chips.
+     * This is the best choice for rich clients, visualization and engineering design tools, and other desktop applications.
+     * </dd>
+     * <dt>server</dt>
+     * <dd>The Server Runtime fits best for highly concurrent server applications.
+     * It provides out-of-the-box performance and scalability and takes full advantage of the computing power of
+     * multi-processor hardware. In particular, the Server Runtime includes the CoreBalance garbage collector
+     * that fully utilizes parallel hardware to reduce average and maximum pause time.
+     * Note that Excelsior JET, Enterprise Edition is the only retail version that includes the Server Runtime.
+     * </dd>
+     * <dt>classic</dt>
+     * <dd>The Classic Runtime is designed to use on low-end hardware which does not support parallel execution
+     * such as uniprocessor systems equipped with old CPU models of the x86 architecture.
+     * It is not recommended for use on HyperThread/multi-core CPU and multi-processor systems.
+     * Note that the Classic Runtime is the only option in the Standard Edition of Excelsior JET.
+     * </dd>
+     * </dl>
+     */
     public String kind;
 
+    /**
+     * By default, Excelsior JET places required Excelsior JET runtime files near to compiled executable
+     * to a folder with "rt" name.
+     * You may change its default location with this parameter.
+     * The functionality is available for Excelsior JET 11.3 and above.
+     */
     public String location;
 
     /**
@@ -54,6 +87,7 @@ public class RuntimeConfig {
      * are referenced by the application and select the smallest compact profile that includes them all,
      * or the entire Platform API if there is no such profile.
      * </p>
+     * The functionality is available for Excelsior JET 11.3 and above.
      */
     public String profile;
 
@@ -95,13 +129,29 @@ public class RuntimeConfig {
     public SlimDownConfig slimDown;
 
     public void fillDefaults(JetProject jetProject, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
-        if (excelsiorJet.isCompactProfilesSupported()) {
-            if (profile == null) {
-                profile = CompactProfileType.AUTO.toString();
-            } else if (compactProfile() == null) {
-                throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
+
+        if (kind != null) {
+            if (kind() == null) {
+                throw new JetTaskFailureException(s("JetApi.UnknownRuntimeKind.Failure", kind));
             }
-        } else if (profile != null) {
+            if (!excelsiorJet.isRuntimeSupported(kind())) {
+                throw new JetTaskFailureException(s("JetApi.RuntimeKindNotSupported.Failure", kind));
+            }
+        }
+
+        if (location != null) {
+            if (!excelsiorJet.isChangeRTLocationAvailable()) {
+                throw new JetTaskFailureException(s("JetApi.RuntimeLocationNotAvailable.Failure", kind));
+            }
+        }
+
+        if (profile == null) {
+            profile = CompactProfileType.AUTO.toString();
+        }
+        if (compactProfile() == null) {
+            throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
+        }
+        if (!excelsiorJet.isCompactProfilesSupported()) {
             switch (compactProfile()) {
                 case COMPACT1: case COMPACT2: case COMPACT3:
                     throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
@@ -155,6 +205,8 @@ public class RuntimeConfig {
         return DiskFootprintReductionType.fromString(diskFootprintReduction);
     }
 
-
+    public RuntimeKindType kind() {
+        return RuntimeKindType.fromString(kind);
+    }
 
 }

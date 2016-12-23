@@ -27,6 +27,7 @@ import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.CpuArch;
 import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.platform.OS;
+import com.excelsiorjet.api.tasks.RuntimeKindType;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -242,10 +243,29 @@ public class ExcelsiorJet {
         return targetOS.isWindows() && (edition != JetEdition.STANDARD);
     }
 
+    public boolean isRuntimeSupported(RuntimeKindType kind) {
+        switch (kind) {
+            case SERVER:
+                return (edition == JetEdition.ENTERPRISE) || (edition == JetEdition.EVALUATION) ||
+                        (since11_3() && ((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION)));
+            case DESKTOP:
+                return edition != JetEdition.STANDARD;
+            case CLASSIC:
+                return true;
+            default:
+                throw new AssertionError("Unknown runtime kind:" + kind);
+        }
+    }
+
+    public boolean isChangeRTLocationAvailable() {
+        return since11_3();
+    }
+
     /**
      * @return home directory of this Excelsior JET instance
      */
     public String getJetHome() {
         return jetHome.getJetHome();
     }
+
 }

@@ -224,6 +224,10 @@ class CompilerArgsGenerator {
             compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
         }
 
+        if (project.runtimeConfiguration().kind() != null) {
+            compilerArgs.add("-jetrt=" + project.runtimeConfiguration().kind());
+        }
+
         switch (project.inlineExpansion()) {
             case TINY_METHODS_ONLY:
                 compilerArgs.add("-inline-");
