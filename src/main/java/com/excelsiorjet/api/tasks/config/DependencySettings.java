@@ -21,6 +21,7 @@
  */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.OptimizationPreset;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -95,13 +96,15 @@ public class DependencySettings {
 
     /**
      * A hint telling the plugin if this dependency is a third-party library or your own code.
+     * The hint affects default values of {@link #protect} and {@link #optimize} modes
+     * when {@link OptimizationPreset#SMART} is enabled for the project:
      * <p>
      * If set to {@code true}, sets {@link #protect} to {@code "not-required"} and {@link #optimize} to {@code "auto-detect"}.
      * </p>
      * <p>
      * If set to {@code false}, sets both {@link #protect} and {@link #optimize} to {@code "all"}.
      * </p>
-     * If you set this property, you must not set {@link #optimize} and {@link #protect} at the same time.
+     * If you set this property, you should not set {@link #optimize} and {@link #protect} at the same time.
      */
     public Boolean isLibrary;
 

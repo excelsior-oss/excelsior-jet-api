@@ -36,10 +36,11 @@ public class CompilerArgsGeneratorTest {
     }
 
     @Test
-    public void testDependencyPack() throws Exception {
+    public void testDependencySmartPackAll() throws Exception {
         File depFileSpy = Tests.mavenDepSpy("dep.jar");
         ProjectDependency dep = DependencyBuilder.testProjectDependency(depFileSpy).asProjectDependency();
         JetProject prj = testProject(ApplicationType.PLAIN).
+                optimizationPreset(OptimizationPreset.SMART.toString()).
                 projectDependencies(singletonList(dep)).
                 dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).pack(ClasspathEntry.PackType.ALL).asDependencySettings()));
         prj.processDependencies();
@@ -58,7 +59,7 @@ public class CompilerArgsGeneratorTest {
     }
 
     @Test
-    public void testDependencyDefaultPackValue() throws Exception {
+    public void testDependencyDefaultValues() throws Exception {
         File depFileSpy = Tests.mavenDepSpy("dep.jar");
         JetProject prj = testProject(ApplicationType.PLAIN).
                 projectDependencies(singletonList(DependencyBuilder.testProjectDependency(depFileSpy).asProjectDependency()));
@@ -70,8 +71,8 @@ public class CompilerArgsGeneratorTest {
                 "  -protect=all",
                 "!end",
                 "!classpathentry lib/dep.jar",
-                "  -optimize=autodetect",
-                "  -protect=nomatter",
+                "  -optimize=all",
+                "  -protect=all",
                 "!end");
         assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
     }
@@ -100,6 +101,7 @@ public class CompilerArgsGeneratorTest {
         DependencySettings groupSettings = DependencyBuilder.groupDependencySettings("groupId").pack(ClasspathEntry.PackType.ALL).asDependencySettings();
         DependencySettings artSettings = DependencyBuilder.artifactDependencySettings("artifactId").pack(ClasspathEntry.PackType.NONE).asDependencySettings();
         JetProject prj = testProject(ApplicationType.PLAIN).
+                optimizationPreset(OptimizationPreset.SMART.toString()).
                 projectDependencies(singletonList(dep1)).
                 dependencies(asList(artSettings, groupSettings));
         prj.processDependencies();
@@ -124,6 +126,7 @@ public class CompilerArgsGeneratorTest {
         ProjectDependency dep2 = DependencyBuilder.testProjectDependency(Tests.mavenDepSpy("dep2.jar")).artifactId("artifactId2").asProjectDependency();
         DependencySettings groupSettings = DependencyBuilder.groupDependencySettings("groupId").pack(ClasspathEntry.PackType.ALL).asDependencySettings();
         JetProject prj = testProject(ApplicationType.PLAIN).
+                optimizationPreset(OptimizationPreset.SMART.toString()).
                 projectDependencies(asList(dep1, dep2)).
                 dependencies(singletonList(groupSettings));
         prj.processDependencies();
