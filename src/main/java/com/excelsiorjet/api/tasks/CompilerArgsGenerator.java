@@ -23,6 +23,7 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.tasks.config.WindowsVersionInfoConfig;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -193,11 +194,12 @@ class CompilerArgsGenerator {
         }
 
         if (project.isAddWindowsVersionInfo()) {
-            compilerArgs.add("-versioninfocompanyname=" + project.vendor());
-            compilerArgs.add("-versioninfoproductname=" + project.product());
-            compilerArgs.add("-versioninfoproductversion=" + project.winVIVersion());
-            compilerArgs.add("-versioninfolegalcopyright=" + project.winVICopyright());
-            compilerArgs.add("-versioninfofiledescription=" + project.winVIDescription());
+            WindowsVersionInfoConfig versionInfo = project.windowsVersionInfoConfiguration();
+            compilerArgs.add("-versioninfocompanyname=" + versionInfo.company);
+            compilerArgs.add("-versioninfoproductname=" + versionInfo.product);
+            compilerArgs.add("-versioninfoproductversion=" + versionInfo.version);
+            compilerArgs.add("-versioninfolegalcopyright=" + versionInfo.copyright);
+            compilerArgs.add("-versioninfofiledescription=" + versionInfo.description);
         }
 
         if (project.multiApp()) {

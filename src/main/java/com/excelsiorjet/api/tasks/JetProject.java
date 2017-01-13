@@ -80,7 +80,7 @@ public class JetProject {
     /**
      * Project version. Required for Excelsior Installer.
      * Note: To specify a different (more precise) version number for the Windows executable version-information resource,
-     * use the {@link #winVIVersion} parameter.
+     * use the {@link WindowsVersionInfoConfig#version} parameter.
      */
     private String version;
 
@@ -217,17 +217,6 @@ public class JetProject {
     private String[] jvmArgs;
 
     /**
-     * (Windows) If set to {@code true}, a version-information resource will be added to the final executable.
-     *
-     * @see #vendor vendor
-     * @see #product product
-     * @see #winVIVersion winVIVersion
-     * @see #winVICopyright winVICopyright
-     * @see #winVIDescription winVIDescription
-     */
-    private boolean addWindowsVersionInfo;
-
-    /**
      * Application packaging mode. Permitted values are:
      * <dl>
      * <dt>zip</dt>
@@ -256,34 +245,27 @@ public class JetProject {
     private String product;
 
     /**
-     * (Windows) Version number string for the version-information resource.
-     * (Both {@code ProductVersion} and {@code FileVersion} resource strings are set to the same value.)
-     * Must have {@code v1.v2.v3.v4} format where {@code vi} is a number.
-     * If not set, {@code ${project.version}} is used. If the value does not meet the required format,
-     * it is coerced. For instance, "1.2.3-SNAPSHOT" becomes "1.2.3.0"
+     * The inception year of this project.
      *
-     * @see #version version
-     */
-    private String winVIVersion;
-
-    /**
-     * (Windows) Legal copyright notice string for the version-information resource.
-     * By default, {@code "Copyright © {$project.inceptionYear},[curYear] [vendor]"} is used.
-     */
-    private String winVICopyright;
-
-    /**
-     * Inception year of this project.
-     *
-     * Used to construct default value of {@link #winVICopyright}.
+     * Used to construct the default value of {@link WindowsVersionInfoConfig#copyright}.
      */
     private String inceptionYear;
 
     /**
-     * (Windows) File description string for the version-information resource.
-     * The value of {@link #product} is used by default.
+     * (Windows) If set to {@code true}, a version-information resource will be added to the final executable.
+     *
+     * @see WindowsVersionInfoConfig#company
+     * @see WindowsVersionInfoConfig#product
+     * @see WindowsVersionInfoConfig#version
+     * @see WindowsVersionInfoConfig#copyright
+     * @see WindowsVersionInfoConfig#description
      */
-    private String winVIDescription;
+    private boolean addWindowsVersionInfo;
+
+    /**
+     * Windows version-information resource description.
+     */
+    private WindowsVersionInfoConfig windowsVersionInfoConfiguration;
 
     /**
      * (32-bit only) If set to {@code true}, the Global Optimizer is enabled,
@@ -920,11 +902,15 @@ public class JetProject {
         }
     }
 
-    private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException {
+    private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+        if (!addWindowsVersionInfo && !windowsVersionInfoConfiguration.isEmpty()) {
+            throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure", profile));
+        }
+
         if (!excelsiorJet.getTargetOS().isWindows()) {
             addWindowsVersionInfo = false;
         }
-        if (addWindowsVersionInfo && (excelsiorJet.getEdition() == JetEdition.STANDARD)) {
+        if (addWindowsVersionInfo && !excelsiorJet.isWindowsVersionInfoSupported()) {
             logger.warn(s("JetApi.NoVersionInfoInStandard.Warning"));
             addWindowsVersionInfo = false;
         }
@@ -945,47 +931,8 @@ public class JetProject {
             }
         }
         if (addWindowsVersionInfo) {
-            if (winVIVersion == null) {
-                winVIVersion = version;
-            }
-
-            //Coerce winVIVersion to v1.v2.v3.v4 format.
-            String finalVersion = deriveFourDigitVersion(winVIVersion);
-            if (!winVIVersion.equals(finalVersion)) {
-                logger.warn(s("JetApi.NotCompatibleExeVersion.Warning", winVIVersion, finalVersion));
-                winVIVersion = finalVersion;
-            }
-
-            if (winVICopyright == null) {
-                String inceptionYear = this.inceptionYear;
-                String curYear = new SimpleDateFormat("yyyy").format(new Date());
-                String years = Utils.isEmpty(inceptionYear) ? curYear : inceptionYear + "," + curYear;
-                winVICopyright = "Copyright \\x00a9 " + years + " " + vendor;
-            }
-            if (winVIDescription == null) {
-                winVIDescription = product;
-            }
+            windowsVersionInfoConfiguration.fillDefaults(this);
         }
-    }
-
-    private String deriveFourDigitVersion(String version) {
-        String[] versions = version.split("\\.");
-        String[] finalVersions = new String[]{"0", "0", "0", "0"};
-        for (int i = 0; i < Math.min(versions.length, 4); ++i) {
-            try {
-                finalVersions[i] = Integer.decode(versions[i]).toString();
-            } catch (NumberFormatException e) {
-                int minusPos = versions[i].indexOf('-');
-                if (minusPos > 0) {
-                    String v = versions[i].substring(0, minusPos);
-                    try {
-                        finalVersions[i] = Integer.decode(v).toString();
-                    } catch (NumberFormatException ignore) {
-                    }
-                }
-            }
-        }
-        return String.join(".", (CharSequence[]) finalVersions);
     }
 
     TestRunExecProfiles testRunExecProfiles() {
@@ -1080,10 +1027,10 @@ public class JetProject {
 
     private void checkOSXBundleConfig() {
         if (excelsiorJetPackaging() == OSX_APP_BUNDLE) {
-            String fourDigitVersion = deriveFourDigitVersion(version);
+            String fourDigitVersion = Utils.deriveFourDigitVersion(version);
             osxBundleConfiguration.fillDefaults(this, outputName, product,
-                    deriveFourDigitVersion(version),
-                    deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
+                    Utils.deriveFourDigitVersion(version),
+                    Utils.deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
             if (!osxBundleConfiguration.icon.exists()) {
                 logger.warn(s("JetApi.NoIconForOSXAppBundle.Warning"));
             }
@@ -1205,20 +1152,16 @@ public class JetProject {
         return addWindowsVersionInfo;
     }
 
+    public String inceptionYear() {
+        return inceptionYear;
+    }
+
     PackagingType excelsiorJetPackaging() {
         return PackagingType.fromString(excelsiorJetPackaging);
     }
 
-    String winVIVersion() {
-        return winVIVersion;
-    }
-
-    String winVICopyright() {
-        return winVICopyright;
-    }
-
-    String winVIDescription() {
-        return winVIDescription;
+    WindowsVersionInfoConfig windowsVersionInfoConfiguration() {
+        return windowsVersionInfoConfiguration;
     }
 
     boolean globalOptimizer() {
@@ -1250,7 +1193,7 @@ public class JetProject {
         return windowsServiceConfiguration;
     }
 
-    String version() {
+    public String version() {
         return version;
     }
 
@@ -1403,23 +1346,13 @@ public class JetProject {
         return this;
     }
 
-    public JetProject winVIVersion(String winVIVersion) {
-        this.winVIVersion = winVIVersion;
-        return this;
-    }
-
-    public JetProject winVICopyright(String winVICopyright) {
-        this.winVICopyright = winVICopyright;
+    public JetProject windowsVersionInfoConfiguration(WindowsVersionInfoConfig windowsVersionInfoConfiguration) {
+        this.windowsVersionInfoConfiguration = windowsVersionInfoConfiguration;
         return this;
     }
 
     public JetProject inceptionYear(String inceptionYear) {
         this.inceptionYear = inceptionYear;
-        return this;
-    }
-
-    public JetProject winVIDescription(String winVIDescription) {
-        this.winVIDescription = winVIDescription;
         return this;
     }
 
