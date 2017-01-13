@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,28 +19,34 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.enums;
 
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Stacktrace support types.
+ * Excelsior Installer installation directory type enumeration.
  */
-public enum StackTraceSupportType {
-    MINIMAL,
-    FULL,
-    NONE;
+public enum InstallationDirectoryType {
+    PROGRAM_FILES,
+    SYSTEM_DRIVE,
+    ABSOLUTE_PATH,
+    CURRENT_DIRECTORY,
+    USER_HOME;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static StackTraceSupportType fromString(String stackTraceSupport) {
+    public static InstallationDirectoryType fromString(String type) {
+        if (type == null) {
+            return null;
+        }
         try {
-            return StackTraceSupportType.valueOf(Utils.parameterToEnumConstantName(stackTraceSupport));
+            return InstallationDirectoryType.valueOf(Utils.parameterToEnumConstantName(type));
         } catch (Exception e) {
             return null;
         }
     }
+
 
 }

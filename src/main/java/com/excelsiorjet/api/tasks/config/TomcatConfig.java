@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -82,6 +82,13 @@ public class TomcatConfig {
      * The functionality is available for Excelsior JET 11.3 and above.
      */
     public boolean installWindowsService = true;
+
+    /**
+     * If you opt for {@code excelsior-installer} packaging for Tomcat on Windows,
+     * you may have the Excelsior Installer wizard prompt the user to specify the Tomcat HTTP port during installation
+     * setting this parameter to {@code true}.
+     */
+    public boolean allowUserToChangeTomcatPort;
 
     public void fillDefaults(String mainWarName) throws JetTaskFailureException {
         // check Tomcat home

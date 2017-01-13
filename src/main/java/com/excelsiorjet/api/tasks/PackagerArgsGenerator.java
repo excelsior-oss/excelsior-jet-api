@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -22,8 +22,10 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.tasks.config.PackageFile;
 import com.excelsiorjet.api.tasks.config.RuntimeConfig;
 import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
+import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -71,14 +73,18 @@ public class PackagerArgsGenerator {
                 xpackArgs.addAll(Arrays.asList(
                         "-add-file", exeName, "/"
                 ));
+                if (project.packageFiles().size() > 0) {
+                    for (PackageFile pfile: project.packageFiles()) {
+                        xpackArgs.addAll(Arrays.asList(
+                                "-add-file", pfile.path.getAbsolutePath(), pfile.packagePath
+                        ));
+                    }
+                }
                 break;
             case TOMCAT:
                 xpackArgs.add("-source");
                 source = project.tomcatInBuildDir();
                 xpackArgs.add(source.getAbsolutePath());
-                if (project.packageFilesDir().exists()) {
-                    logger.warn(s("TestRunTask.PackageFilesIgnoredForTomcat.Warning"));
-                }
                 break;
             default:
                 throw new AssertionError("Unknown app type");

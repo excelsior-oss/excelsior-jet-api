@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,28 +19,29 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.enums;
 
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Runtime flavors enumeration.
+ * (Windows) Excelsior Installer shortcut location enumeration.
  */
-public enum RuntimeFlavorType {
-    CLASSIC,
+public enum ShortcutLocationType {
+    PROGRAM_FOLDER,
     DESKTOP,
-    SERVER;
+    START_MENU,
+    STARTUP;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static RuntimeFlavorType fromString(String flavor) {
-        if (flavor == null) {
+    public static ShortcutLocationType fromString(String location) {
+        if (location == null) {
             return null;
         }
         try {
-            return RuntimeFlavorType.valueOf(Utils.parameterToEnumConstantName(flavor));
+            return ShortcutLocationType.valueOf(Utils.parameterToEnumConstantName(location));
         } catch (Exception e) {
             return null;
         }

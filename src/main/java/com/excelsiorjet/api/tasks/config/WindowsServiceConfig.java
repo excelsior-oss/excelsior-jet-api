@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -21,10 +21,10 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
-import com.excelsiorjet.api.tasks.ApplicationType;
+import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.PackagingType;
+import com.excelsiorjet.api.tasks.config.enums.PackagingType;
 import com.excelsiorjet.api.util.Utils;
 
 import static com.excelsiorjet.api.util.Txt.s;
@@ -32,7 +32,7 @@ import static com.excelsiorjet.api.util.Txt.s;
 /**
  * Configuration parameters of Windows Services.
  *
- * @see com.excelsiorjet.api.tasks.ApplicationType#WINDOWS_SERVICE
+ * @see ApplicationType#WINDOWS_SERVICE
  *
  * @author Nikita Lipsky
  */

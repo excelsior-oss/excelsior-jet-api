@@ -4,7 +4,7 @@ import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
 import com.excelsiorjet.api.tasks.config.WindowsServiceConfig.LogOnType;
 import com.excelsiorjet.api.tasks.config.WindowsServiceConfig.StartupType;
-import com.excelsiorjet.api.util.Utils;
+import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import org.junit.Before;
 import org.junit.Test;
 

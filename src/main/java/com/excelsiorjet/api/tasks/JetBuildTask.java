@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -24,6 +24,8 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
+import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
+import com.excelsiorjet.api.tasks.config.enums.PackagingType;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,29 +19,33 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.enums;
 
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Inline expansion type.
+ * Excelsior JET Packaging types.
  */
-public enum InlineExpansionType {
-    VERY_AGGRESSIVE,
-    AGGRESSIVE, //default
-    MEDIUM,
-    LOW,
-    TINY_METHODS_ONLY;
+public enum PackagingType {
+    NONE,
+    ZIP,
+    EXCELSIOR_INSTALLER,
+    OSX_APP_BUNDLE,
+    NATIVE_BUNDLE;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static InlineExpansionType fromString(String inlineExpansion) {
+    public static PackagingType fromString(String packaging) {
         try {
-            return InlineExpansionType.valueOf(Utils.parameterToEnumConstantName(inlineExpansion));
+            return PackagingType.valueOf(Utils.parameterToEnumConstantName(packaging));
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public boolean isNativeBundle() {
+        return (this == EXCELSIOR_INSTALLER) || (this == OSX_APP_BUNDLE) || (this == NATIVE_BUNDLE);
     }
 }

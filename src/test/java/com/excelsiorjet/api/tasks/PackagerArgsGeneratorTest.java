@@ -3,12 +3,15 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.tasks.config.DependencySettings;
+import com.excelsiorjet.api.tasks.config.PackageFile;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static com.excelsiorjet.api.tasks.Tests.*;
 import static java.util.Collections.singletonList;
@@ -256,5 +259,31 @@ public class PackagerArgsGeneratorTest {
         assertTrue(profileIdx >= 0);
         assertEquals("rt", xPackArgs.get(profileIdx + 1));
         assertEquals("hidden/rt", xPackArgs.get(profileIdx + 2));
+    }
+
+    @Test
+    public void testPackageFiles() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        prj.packageFiles(Arrays.asList(new PackageFile(fileSpy("test.file"), null),
+                                       new PackageFile(fileSpy("test2.file"), "test/location")));
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+
+        int addExeIdx = xPackArgs.indexOf("-add-file");
+        assertTrue(addExeIdx >= 0);
+        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
+        assertEquals("/", xPackArgs.get(addExeIdx + 2));
+
+        int pFileIdx = addExeIdx + 3;
+        assertEquals("-add-file", xPackArgs.get(pFileIdx));
+        assertEquals("test.file", new File(xPackArgs.get(pFileIdx + 1)).getName());
+        assertEquals("/", xPackArgs.get(pFileIdx + 2));
+
+        int pFile2Idx = pFileIdx + 3;
+        assertEquals("-add-file", xPackArgs.get(pFile2Idx));
+        assertEquals("test2.file", new File(xPackArgs.get(pFile2Idx + 1)).getName());
+        assertEquals("test/location", xPackArgs.get(pFile2Idx + 2));
     }
 }

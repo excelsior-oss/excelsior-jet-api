@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -27,7 +27,7 @@ import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.CpuArch;
 import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.platform.OS;
-import com.excelsiorjet.api.tasks.RuntimeFlavorType;
+import com.excelsiorjet.api.tasks.config.enums.RuntimeFlavorType;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 

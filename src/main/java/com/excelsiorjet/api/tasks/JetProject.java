@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -26,6 +26,7 @@ import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.tasks.config.*;
+import com.excelsiorjet.api.tasks.config.enums.*;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -36,7 +37,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
-import static com.excelsiorjet.api.tasks.PackagingType.*;
+import static com.excelsiorjet.api.tasks.config.enums.PackagingType.*;
 import static com.excelsiorjet.api.util.Txt.s;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -126,8 +127,16 @@ public class JetProject {
      * The contents of the directory will be recursively copied to the final application package.
      *
      * By default, the value is set to "packageFiles" subfolder of {@link #jetResourcesDir}
+     *
+     * @see #packageFiles
      */
     private File packageFilesDir;
+
+    /**
+     * If you only need to add a few additional package files,
+     * it may be more convenient to specify them separately then to prepare {@link #packageFilesDir} directory.
+     */
+    private List<PackageFile> packageFiles;
 
     /**
      * Name of the final artifact of the enclosing project. Used as the default value for {@link #mainJar} and {@link #mainWar},
@@ -666,6 +675,28 @@ public class JetProject {
         if (Utils.isEmpty(execProfilesName)) {
             execProfilesName = projectName;
         }
+
+        if (packageFilesDir().exists() && appType == ApplicationType.TOMCAT) {
+            throw new JetTaskFailureException(s("JetApi.PackageFilesForTomcat.Error", "packageFilesDir"));
+        }
+
+        if (packageFiles.size() > 0) {
+            if (appType == ApplicationType.TOMCAT) {
+                throw new JetTaskFailureException(s("JetApi.PackageFilesForTomcat.Error", "packageFiles"));
+            }
+            for (PackageFile pFile: packageFiles) {
+                if (pFile.path == null) {
+                    throw new JetTaskFailureException(s("JetApi.PathNotSetForPackageFile.Error"));
+                }
+                if (!pFile.path.exists()) {
+                    throw new JetTaskFailureException(s("JetApi.PackageFileDoesNotExist.Error", pFile.path.getAbsolutePath()));
+                }
+                if (pFile.packagePath == null) {
+                    pFile.packagePath = "/";
+                }
+            }
+        }
+
         if (validateForBuild) {
             validateForBuild(excelsiorJet);
         }
@@ -1070,6 +1101,10 @@ public class JetProject {
         return packageFilesDir;
     }
 
+    List<PackageFile> packageFiles() {
+        return packageFiles;
+    }
+
     File execProfilesDir() {
         return execProfilesDir;
     }
@@ -1229,6 +1264,11 @@ public class JetProject {
 
     public JetProject packageFilesDir(File packageFilesDir) {
         this.packageFilesDir = packageFilesDir;
+        return this;
+    }
+
+    public JetProject packageFiles(List<PackageFile> packageFiles) {
+        this.packageFiles = packageFiles;
         return this;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,45 +19,29 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.enums;
 
-import com.excelsiorjet.api.tasks.ClasspathEntry.OptimizationType;
-import com.excelsiorjet.api.tasks.ClasspathEntry.ProtectionType;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Optimization presets enumeration.
+ * Inline expansion type.
  */
-public enum OptimizationPreset {
-    TYPICAL,
-    SMART;
+public enum InlineExpansionType {
+    VERY_AGGRESSIVE,
+    AGGRESSIVE, //default
+    MEDIUM,
+    LOW,
+    TINY_METHODS_ONLY;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static OptimizationPreset fromString(String preset) {
+    public static InlineExpansionType fromString(String inlineExpansion) {
         try {
-            return OptimizationPreset.valueOf(Utils.parameterToEnumConstantName(preset));
+            return InlineExpansionType.valueOf(Utils.parameterToEnumConstantName(inlineExpansion));
         } catch (Exception e) {
             return null;
         }
     }
-
-    public ProtectionType getDefaultProtectionType(boolean forLibrary) {
-        if (forLibrary && this == SMART) {
-            return ProtectionType.NOT_REQUIRED;
-        } else {
-            return ProtectionType.ALL;
-        }
-    }
-
-    public OptimizationType getDefaultOptimizationType(boolean forLibrary) {
-        if (forLibrary && this == SMART) {
-            return OptimizationType.AUTO_DETECT;
-        } else {
-            return OptimizationType.ALL;
-        }
-    }
-
 }

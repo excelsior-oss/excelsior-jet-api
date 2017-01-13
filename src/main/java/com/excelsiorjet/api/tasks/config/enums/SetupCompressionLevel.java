@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,29 +19,28 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.enums;
 
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Disk footprint reduction modes enumeration.
+ * Excelsior Installer compression level enumeration.
  */
-public enum DiskFootprintReductionType {
-    NONE,
+public enum SetupCompressionLevel {
+    FAST,
     MEDIUM,
-    HIGH_DISK,
-    HIGH_MEMORY;
+    HIGH;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static DiskFootprintReductionType fromString(String profile) {
-        if (profile == null) {
+    public static SetupCompressionLevel fromString(String compressionLevel) {
+        if (compressionLevel == null) {
             return null;
         }
         try {
-            return DiskFootprintReductionType.valueOf(Utils.parameterToEnumConstantName(profile));
+            return SetupCompressionLevel.valueOf(Utils.parameterToEnumConstantName(compressionLevel));
         } catch (Exception e) {
             return null;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -21,7 +21,7 @@
  */
 package com.excelsiorjet.api.tasks.config;
 
-import com.excelsiorjet.api.tasks.OptimizationPreset;
+import com.excelsiorjet.api.tasks.config.enums.OptimizationPreset;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;

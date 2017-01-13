@@ -5,11 +5,14 @@ import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.OS;
 import com.excelsiorjet.api.tasks.config.*;
+import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
+import com.excelsiorjet.api.tasks.config.enums.RuntimeFlavorType;
 import org.mockito.Mockito;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.ResourceBundle;
 
 import static java.util.Collections.emptyList;
@@ -66,6 +69,7 @@ class Tests {
                 mainClass("HelloWorld").
                 jetBuildDir(jetBuildDir.toFile()).
                 packageFilesDir(projectDir.resolve("src").resolve("jetresources").resolve("packageFiles").toFile()).
+                packageFiles(Collections.emptyList()).
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).
                 windowsVersionInfoConfiguration(new WindowsVersionInfoConfig()).
