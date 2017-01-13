@@ -297,6 +297,34 @@ public class JetProject {
     private boolean globalOptimizer;
 
     /**
+     * (32-bit only)
+     * Reduce the disk footprint of the application by including the supposedly unused Java SE API
+     * classes in the resulting package in a compressed form.
+     * Valid values are: {@code none},  {@code medium} (default),  {@code high-memory},  {@code high-disk}.
+     * <p>
+     * The feature is only available if {@link #globalOptimizer} is enabled.
+     * In this mode, the Java SE classes that were not compiled into the resulting executable are placed
+     * into the resulting package in bytecode form, possibly compressed depending on the mode:
+     * </p>
+     * <dl>
+     * <dt>none</dt>
+     * <dd>Disable compression</dd>
+     * <dt>medium</dt>
+     * <dd>Use a simple compression algorithm that has minimal run time overheads and permits
+     * selective decompression.</dd>
+     * <dt>high-memory</dt>
+     * <dd>Compress all unused Java SE API classes as a whole. This results in more significant disk
+     * footprint reduction compared to than medium compression. However, if one of the compressed classes
+     * is needed at run time, the entire bundle must be decompressed to retrieve it.
+     * In the {@code high-memory} reduction mode the bundle is decompressed 
+     * onto the heap and can be garbage collected later.</dd>
+     * <dt>high-disk</dt>
+     * <dd>Same as {@code high-memory}, but decompress to the temp directory.</dd>
+     * </dl>
+     */
+    private String diskFootprintReduction;
+
+    /**
      * (32-bit only) Java Runtime Slim-Down configuration parameters.
      *
      * @see SlimDownConfig#detachedBaseURL
@@ -879,7 +907,7 @@ public class JetProject {
 
             checkTrialVersionConfig(excelsiorJet);
 
-            checkGlobalAndSlimDownParameters(excelsiorJet);
+            checkGlobalAndRelatedParameters(excelsiorJet);
 
             checkExcelsiorInstallerConfig();
 
@@ -960,7 +988,11 @@ public class JetProject {
         return String.join(".", (CharSequence[]) finalVersions);
     }
 
-    private void checkGlobalAndSlimDownParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+    TestRunExecProfiles testRunExecProfiles() {
+        return new TestRunExecProfiles(execProfilesDir, execProfilesName);
+    }
+
+    private void checkGlobalAndRelatedParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer) {
             if (!excelsiorJet.isGlobalOptimizerSupported()) {
                 logger.warn(s("JetApi.NoGlobal.Warning"));
@@ -990,8 +1022,21 @@ public class JetProject {
 
         }
 
+        if (diskFootprintReduction != null) {
+            if (diskFootprintReduction() == null) {
+                throw new JetTaskFailureException(s("JetApi.UnknownDiskFootprintReductionType.Failure", profile));
+            }
+            if (!excelsiorJet.isDiskFootprintReductionSupported()) {
+                logger.warn(s("JetApi.NoDiskFootprintReduction.Warning"));
+                diskFootprintReduction = null;
+            } else if (!globalOptimizer) {
+                logger.warn(s("JetApi.DiskFootprintReductionForGlobalOnly.Warning"));
+                diskFootprintReduction = null;
+            }
+        }
+
         if (globalOptimizer) {
-            TestRunExecProfiles execProfiles = new TestRunExecProfiles(execProfilesDir, execProfilesName);
+            TestRunExecProfiles execProfiles = testRunExecProfiles();
             if (!execProfiles.getUsg().exists()) {
                 throw new JetTaskFailureException(s("JetApi.NoTestRun.Failure"));
             }
@@ -1186,6 +1231,10 @@ public class JetProject {
 
     CompactProfileType compactProfile() {
         return CompactProfileType.fromString(profile);
+    }
+
+    DiskFootprintReductionType diskFootprintReduction() {
+        return DiskFootprintReductionType.fromString(diskFootprintReduction);
     }
 
 
@@ -1386,6 +1435,11 @@ public class JetProject {
 
     public JetProject compactProfile(String profile) {
         this.profile = profile;
+        return this;
+    }
+
+    public JetProject diskFootprintReduction(String diskFootprintReduction) {
+        this.diskFootprintReduction = diskFootprintReduction;
         return this;
     }
 

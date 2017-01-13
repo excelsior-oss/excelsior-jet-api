@@ -234,6 +234,10 @@ public class ExcelsiorJet {
         return edition != JetEdition.STANDARD;
     }
 
+    public boolean isDiskFootprintReductionSupported() {
+        return since11_3() && isGlobalOptimizerSupported();
+    }
+
     /**
      * @return home directory of this Excelsior JET instance
      */

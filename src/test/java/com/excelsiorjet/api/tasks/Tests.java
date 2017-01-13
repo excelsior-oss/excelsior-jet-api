@@ -106,6 +106,8 @@ class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isExcelsiorInstallerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isWindowsServicesInExcelsiorInstallerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isCompactProfilesSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isGlobalOptimizerSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isDiskFootprintReductionSupported();
         return excelsiorJet;
     }
 

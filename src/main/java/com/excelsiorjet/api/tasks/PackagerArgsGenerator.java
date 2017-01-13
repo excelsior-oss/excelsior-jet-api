@@ -125,6 +125,11 @@ public class PackagerArgsGenerator {
             xpackArgs.add(project.compactProfile().toString());
         }
 
+        if (project.diskFootprintReduction() != null) {
+            xpackArgs.add("-reduce-disk-footprint");
+            xpackArgs.add(project.diskFootprintReduction().toString());
+        }
+
         if (project.appType() != ApplicationType.TOMCAT) {
             for (ClasspathEntry classpathEntry : project.classpathEntries()) {
                 Path depInBuildDir = project.toPathRelativeToJetBuildDir(classpathEntry);
