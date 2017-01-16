@@ -21,8 +21,15 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
-import com.sun.org.apache.xpath.internal.operations.String;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import com.excelsiorjet.api.tasks.config.enums.InstallationDirectoryType;
+
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import static com.excelsiorjet.api.util.Txt.s;
 
 /**
  * Installation directory configuration.
@@ -57,6 +64,33 @@ public class InstallationDirectory {
     /**
      * Prohibits changes of the installation directory, if set to {@code true}.
      */
-    public boolean fixed;
+    public Boolean fixed;
+
+    public boolean isEmpty() {
+        return Stream.of(type, path, fixed).allMatch(Objects::isNull);
+    }
+
+    void validate(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
+        if (type != null) {
+            InstallationDirectoryType dirType = InstallationDirectoryType.fromString(type);
+            if (dirType == null) {
+                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownInstallationDirectoryType", type));
+            } else {
+                switch (dirType) {
+                    case PROGRAM_FILES:
+                    case SYSTEM_DRIVE:
+                        if (!excelsiorJet.getTargetOS().isWindows()) {
+                            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.OnlyWindowsInstallationDirectoryType", type));
+                        }
+                }
+            }
+        } else {
+            type = (excelsiorJet.getTargetOS().isWindows() ? InstallationDirectoryType.PROGRAM_FILES :
+                                                             InstallationDirectoryType.CURRENT_DIRECTORY).toString();
+        }
+        if (fixed == null) {
+            fixed = false;
+        }
+    }
 
 }

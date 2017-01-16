@@ -891,7 +891,7 @@ public class JetProject {
 
             checkGlobal(excelsiorJet);
 
-            checkExcelsiorInstallerConfig();
+            checkExcelsiorInstallerConfig(excelsiorJet);
 
             checkWindowsServiceConfig();
 
@@ -973,9 +973,9 @@ public class JetProject {
         }
     }
 
-    private void checkExcelsiorInstallerConfig() throws JetTaskFailureException {
+    private void checkExcelsiorInstallerConfig(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         if (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) {
-            excelsiorInstallerConfiguration.fillDefaults(this);
+            excelsiorInstallerConfiguration.fillDefaults(this, excelsiorJet);
         }
     }
 

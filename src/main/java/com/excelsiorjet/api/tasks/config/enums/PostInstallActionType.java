@@ -19,37 +19,30 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.enums;
 
-import java.io.File;
+import com.excelsiorjet.api.util.Utils;
 
 /**
- * Description of a file within resulting package.
- *
- * @author Nikita Lipsky
+ * (Windows) Excelsior Installer post install actions enumeration.
  */
-public class PackageFile {
+public enum PostInstallActionType {
+    RUN,
+    OPEN,
+    RESTART;
 
-    /**
-     * Path to the file on the host system.
-     */
-    public File path;
-
-    /**
-     * Location of the file in the resulting package.
-     * If it is no set, the file will be added to the root installation directory.
-     */
-    public String packagePath;
-
-    public boolean isEmpty() {
-        return (path == null) && (packagePath == null);
+    public String toString() {
+        return Utils.enumConstantNameToParameter(name());
     }
 
-    public PackageFile() {
-    }
-
-    public PackageFile(File path, String packagePath) {
-        this.path = path;
-        this.packagePath = packagePath;
+    public static PostInstallActionType fromString(String postInstallAction) {
+        if (postInstallAction == null) {
+            return null;
+        }
+        try {
+            return PostInstallActionType.valueOf(Utils.parameterToEnumConstantName(postInstallAction));
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

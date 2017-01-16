@@ -21,6 +21,12 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import com.excelsiorjet.api.tasks.config.enums.PostInstallActionType;
+import com.excelsiorjet.api.util.Utils;
+
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
  * (Winodws) Post install checkbox description.
  *
@@ -30,7 +36,7 @@ public class PostInstallCheckbox {
 
     /**
      * Post install checkbox type.
-     * Valid values are {@code run}, {@code open}, {@code restart}.
+     * Valid values are {@code run} (default), {@code open}, {@code restart}.
      */
     public String type;
 
@@ -58,4 +64,32 @@ public class PostInstallCheckbox {
      * Valid for {@code run} type only.
      */
     public String[] arguments;
+
+    public PostInstallActionType type() {
+        return PostInstallActionType.fromString(type);
+    }
+
+    void validate() throws JetTaskFailureException {
+        if ((type != null) && (type() == null)) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownPostInstallActionType", type));
+        }
+
+        if (type == null) {
+            type = PostInstallActionType.RUN.toString();
+        }
+
+        if ((type() != PostInstallActionType.RESTART) && (target == null)) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.PostInstallActionTargetNull"));
+        }
+
+        if (type() != PostInstallActionType.RUN) {
+            if (workingDirectory != null) {
+                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.NotRunPostInstallActionParameter", "workingDirectory", target));
+            }
+            if (!Utils.isEmpty(arguments)) {
+                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.NotRunPostInstallActionParameter", "arguments", target));
+            }
+        }
+    }
+
 }

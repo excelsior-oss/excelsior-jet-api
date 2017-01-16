@@ -22,6 +22,9 @@
 package com.excelsiorjet.api.tasks.config;
 
 import com.excelsiorjet.api.tasks.JetProject;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
+
+import static com.excelsiorjet.api.util.Txt.s;
 
 /**
  * (Winodws) File association description.
@@ -75,4 +78,27 @@ public class FileAssociation {
      * in the Excelsior Installer wizard.
      */
     public boolean checked;
+
+    void validate() throws JetTaskFailureException {
+        if (extension == null) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileAssociationExtensionNull"));
+        }
+
+        if (target == null) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileAssociationTargetNull", extension));
+        }
+
+        if ((icon.path != null) && !icon.path.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileAssociationIconDoesNotExist", icon.path, extension));
+        }
+
+        if (description == null) {
+            description = "";
+        }
+
+        if (targetDescription == null) {
+            targetDescription = "";
+        }
+    }
+
 }

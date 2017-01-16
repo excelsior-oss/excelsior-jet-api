@@ -22,6 +22,10 @@
 package com.excelsiorjet.api.tasks.config;
 
 import com.excelsiorjet.api.tasks.JetProject;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import com.excelsiorjet.api.tasks.config.enums.ShortcutLocationType;
+
+import static com.excelsiorjet.api.util.Txt.s;
 
 /**
  * (Winodws) Shortcut description.
@@ -66,4 +70,34 @@ public class Shortcut {
      * Command line arguments for the target.
      */
     public String[] arguments;
+
+    ShortcutLocationType location() {
+        return ShortcutLocationType.fromString(location);
+    }
+
+    void validate() throws JetTaskFailureException {
+        if (name == null) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutNameNull"));
+        }
+
+        if ((location != null) && (location() == null)) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownShortcutLocationType", name, location));
+        }
+
+        if (location == null) {
+            location = ShortcutLocationType.PROGRAM_FOLDER.toString();
+        }
+
+        if (target == null) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutTargetNull", name));
+        }
+
+        if ((icon.path != null) && !icon.path.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist", icon.path, name));
+        }
+
+        if (workingDirectory == null) {
+            workingDirectory = "";
+        }
+    }
 }

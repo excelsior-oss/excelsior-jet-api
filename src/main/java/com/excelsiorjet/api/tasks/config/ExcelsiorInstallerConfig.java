@@ -21,8 +21,12 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import com.excelsiorjet.api.tasks.config.enums.InstallationDirectoryType;
+import com.excelsiorjet.api.tasks.config.enums.SetupCompressionLevel;
+import com.excelsiorjet.api.tasks.config.enums.SetupLanguage;
 
 import java.io.File;
 import java.io.IOException;
@@ -112,7 +116,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * The functionality is available for Excelsior JET 11.3 and above.
      */
-    public boolean cleanupAfterUninstall;
+    public Boolean cleanupAfterUninstall;
 
     /**
      * Compression level used for files packaging into setup.
@@ -171,7 +175,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * @see #postInstallCheckboxes
      */
-    public boolean noDefaultPostInstallActions;
+    public Boolean noDefaultPostInstallActions;
 
     /**
      * Post install actions descriptions.
@@ -193,6 +197,8 @@ public class ExcelsiorInstallerConfig {
 
     /**
      * Install callback dynamic library.
+     * If not set, and the file {@code install.dll/libinstall.so} in {@link JetProject#jetResourcesDir} folder exists,
+     * that file is used by convention.
      * <p>
      * The functionality is available for Excelsior JET 11.3 and above.
      * </p>
@@ -207,6 +213,8 @@ public class ExcelsiorInstallerConfig {
      * You may omit {@link PackageFile#path} parameter of the uninstallCallback,
      * if {@link JetProject#packageFilesDir} already contains a library at the specified {@link PackageFile#packagePath}
      * parameter else the library will be added to the package at the specified location.
+     * If the file {@code uninstall.dll/libuninstall.so} in {@link JetProject#jetResourcesDir} folder exists,
+     * that file is used by convention.
      * </p>
      * The functionality is available for Excelsior JET 11.3 and above.
      */
@@ -214,6 +222,8 @@ public class ExcelsiorInstallerConfig {
 
     /**
      * (Windows) Image to display on the first screen of the installation wizard. Recommended size: 177*314px.
+     * If not set, and the file {@code welcomeImage.bmp} in {@link JetProject#jetResourcesDir} folder exists,
+     * that file is used by convention.
      * <p>
      * The functionality is available for Excelsior JET 11.3 and above.
      * </p>
@@ -222,6 +232,8 @@ public class ExcelsiorInstallerConfig {
 
     /**
      * (Windows) Image to display in the upper-right corner on subsequent screens. Recommended size: 109*59px.
+     * If not set, and the file {@code installerImage.bmp} in {@link JetProject#jetResourcesDir} folder exists,
+     * that file is used by convention.
      * <p>
      * The functionality is available for Excelsior JET 11.3 and above.
      * </p>
@@ -230,13 +242,15 @@ public class ExcelsiorInstallerConfig {
 
     /**
      * (Windows) Image to display on the first screen of the uninstall wizard. Recommended size: 177*314px.
+     * If not set, and the file {@code uninstallerImage.bmp} in {@link JetProject#jetResourcesDir} folder exists,
+     * that file is used by convention.
      * <p>
      * The functionality is available for Excelsior JET 11.3 and above.
      * </p>
      */
     public File uninstallerImage;
 
-    public void fillDefaults(JetProject project) throws JetTaskFailureException {
+    public void fillDefaults(JetProject project, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         //check eula settings
         if (!VALID_EULA_ENCODING_VALUES.contains(eulaEncoding)) {
             throw new JetTaskFailureException(s("JetApi.Package.Eula.UnsupportedEncoding", eulaEncoding));
@@ -244,10 +258,115 @@ public class ExcelsiorInstallerConfig {
 
         if (eula == null) {
             eula = new File(project.jetResourcesDir(), "eula.txt");
+        } else if (!eula.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", eula, "eula"));
         }
 
         if (installerSplash == null) {
             installerSplash = new File(project.jetResourcesDir(), "installerSplash.bmp");
+        } else if (!installerSplash.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", installerSplash, "installerSplash"));
+        }
+
+        if (!excelsiorJet.since11_3()) {
+            String parameter = null;
+            if (language != null) {
+                parameter = "language";
+            } else if (compressionLevel != null) {
+                parameter = "compressionLevel";
+            } else if (!installationDirectory.isEmpty()) {
+                parameter = "installationDirectory";
+            } else if (!shortcuts.isEmpty()) {
+                parameter = "shortcuts";
+            } else if (cleanupAfterUninstall != null) {
+                parameter = "cleanupAfterUninstall";
+            } else if (registryKey != null) {
+                parameter = "registryKey";
+            } else if (noDefaultPostInstallActions != null) {
+                parameter = "noDefaultPostInstallActions";
+            } else if (!postInstallCheckboxes.isEmpty()) {
+                parameter = "postInstallCheckboxes";
+            } else if (!fileAssociations.isEmpty()) {
+                parameter = "fileAssociations";
+            } else if (installCallback != null) {
+                parameter = "installCallback";
+            } else if (!uninstallCallback.isEmpty()) {
+                parameter = "uninstallCallback";
+            } else if (welcomeImage != null) {
+                parameter = "welcomeImage";
+            } else if (installerImage != null) {
+                parameter = "installerImage";
+            } else if (uninstallerImage != null) {
+                parameter = "uninstallerImage";
+            }
+            if (parameter != null) {
+                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.Since11_3Parameter", parameter));
+            }
+        }
+
+        if ((language != null) && (SetupLanguage.fromString(language) == null)) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedLanguage", language));
+        }
+
+        if (cleanupAfterUninstall == null) {
+            cleanupAfterUninstall = false;
+        }
+
+        if ((compressionLevel != null) && (SetupCompressionLevel.fromString(compressionLevel) == null)) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownCompressionLevel", compressionLevel));
+        }
+
+        if (!installationDirectory.isEmpty()) {
+            installationDirectory.validate(excelsiorJet);
+        }
+
+        for (Shortcut shortcut: shortcuts) {
+            shortcut.validate();
+        }
+
+        if (noDefaultPostInstallActions == null) {
+            noDefaultPostInstallActions = false;
+        }
+
+        for (PostInstallCheckbox postInstallCheckbox: postInstallCheckboxes) {
+            postInstallCheckbox.validate();
+        }
+
+        for (FileAssociation fileAssociation: fileAssociations) {
+            fileAssociation.validate();
+        }
+
+        if (installCallback == null) {
+            installCallback = new File(project.jetResourcesDir(), excelsiorJet.getTargetOS().mangleDllName("install"));
+        } else if (!installCallback.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", installCallback, "installCallback"));
+        }
+
+        if (uninstallCallback.isEmpty()) {
+            File uninstall = new File(project.jetResourcesDir(), excelsiorJet.getTargetOS().mangleDllName("uninstall"));
+            if (uninstall.exists()) {
+                uninstallCallback.path = uninstall;
+            }
+        } else if ((uninstallCallback.path != null) && !uninstallCallback.path.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", uninstallCallback.path, "uninstallCallback"));
+        }
+
+        if (welcomeImage == null) {
+            welcomeImage = new File(project.jetResourcesDir(), "welcomeImage.bmp");
+        } else if (!welcomeImage.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", welcomeImage, "welcomeImage"));
+        }
+
+        if (installerImage == null) {
+            installerImage = new File(project.jetResourcesDir(), "installerImage.bmp");
+        } else if (!installerImage.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", installerImage, "installerImage"));
+        }
+
+        if (uninstallerImage == null) {
+            uninstallerImage = new File(project.jetResourcesDir(), "uninstallerImage.bmp");
+        } else if (!uninstallerImage.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", uninstallerImage, "uninstallerImage"));
         }
     }
 
