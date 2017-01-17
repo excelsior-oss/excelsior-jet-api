@@ -24,6 +24,7 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
+import com.excelsiorjet.api.tasks.PackagerArgsGenerator.Option;
 import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import com.excelsiorjet.api.tasks.config.enums.PackagingType;
 import com.excelsiorjet.api.util.Utils;
@@ -31,6 +32,7 @@ import com.excelsiorjet.api.util.Utils;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -89,12 +91,34 @@ public class JetBuildTask {
                 (project.appType() != ApplicationType.WINDOWS_SERVICE);
     }
 
+    private ArrayList<String> getXPackArgs(ArrayList<Option> xpackOptions, File rspFile) throws JetTaskFailureException {
+        if (excelsiorJet.since11_3()) {
+            try {
+                Utils.linesToFile(xpackOptions.stream().map(Option::toRspFileLine).collect(Collectors.toList()), rspFile);
+            } catch (FileNotFoundException e) {
+                throw new JetTaskFailureException("Cannot create file " + rspFile, e);
+            }
+            ArrayList<String> xpackArgs = PackagerArgsGenerator.optionsToArgs(xpackOptions, true);
+            xpackArgs.add("-arg-file");
+            xpackArgs.add(rspFile.getAbsolutePath());
+            return xpackArgs;
+        } else {
+            return PackagerArgsGenerator.optionsToArgs(xpackOptions, false);
+        }
+    }
+
+    private ArrayList<String> getCommonXPackArgs(String targetDir, File buildDir, String suffix) throws JetTaskFailureException {
+        File rspFile = new File(buildDir, project.outputName() + suffix + ".xpack");
+        ArrayList<Option> xpackOptions = packagerArgsGenerator.getCommonXPackOptions(targetDir);
+        return getXPackArgs(xpackOptions, rspFile);
+    }
+
     /**
      * Packages the generated executable and required Excelsior JET runtime files
      * as a self-contained directory
      */
     private void createAppDir(File buildDir, File appDir) throws CmdLineToolException, JetTaskFailureException {
-        ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs(appDir.getAbsolutePath());
+        ArrayList<String> xpackArgs = getCommonXPackArgs(appDir.getAbsolutePath(), buildDir, ".SFD");
         if (useXPackZipping()) {
             //since 11.3 Excelsior JET supports zipping self-contained directories itself
             xpackArgs.add("-backend");
@@ -125,13 +149,19 @@ public class JetBuildTask {
         Utils.linesToFile(scriptsGenerator.uninstallBatFileContent(), new File(appDir, "uninstall.bat"));
     }
 
+    private ArrayList<String> getExcelsiorInstallerXPackArgs(File target, File buildDir) throws JetTaskFailureException {
+        File rspFile = new File(buildDir, project.outputName() + ".EI.xpack");
+        ArrayList<Option> xpackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(target);
+        return getXPackArgs(xpackOptions, rspFile);
+    }
+
     /**
      * Packages the generated executable and required Excelsior JET runtime files
      * as a excelsior installer file.
      */
     private void packWithEI(File buildDir) throws CmdLineToolException, JetTaskFailureException, IOException {
         File target = new File(project.jetOutputDir(), excelsiorJet.getTargetOS().mangleExeName(project.artifactName()));
-        ArrayList<String> xpackArgs = packagerArgsGenerator.getExcelsiorInstallerXPackArgs(target);
+        ArrayList<String> xpackArgs = getExcelsiorInstallerXPackArgs(target, buildDir);
         if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
@@ -183,7 +213,7 @@ public class JetBuildTask {
                             "</plist>\n");
         }
 
-        ArrayList<String> xpackArgs = packagerArgsGenerator.getCommonXPackArgs(contentsMacOs.getAbsolutePath());
+        ArrayList<String> xpackArgs = getCommonXPackArgs(contentsMacOs.getAbsolutePath(), buildDir, ".OSXBundle");
         if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }

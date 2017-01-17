@@ -77,6 +77,13 @@ public class PackagerArgsGenerator {
             Option option2 = (Option) obj;
             return option.equals(option2.option) && Arrays.equals(parameters, option2.parameters);
         }
+
+        String toRspFileLine() {
+            String line = option + " " +
+                    Arrays.stream(parameters).map(p -> p.isEmpty() || p.contains(" ") ? "\"" + p + "\"" : p)
+                            .collect(Collectors.joining(" "));
+            return validForRspFile ? line : "#" + line;
+        }
     }
 
     public PackagerArgsGenerator(JetProject project, ExcelsiorJet excelsiorJet) {
@@ -261,7 +268,7 @@ public class PackagerArgsGenerator {
         String serviceArguments = "";
         boolean validForRspFile = true;
         if (serviceConfig.arguments != null) {
-            validForRspFile = Arrays.stream(serviceConfig.arguments).anyMatch(s -> s.contains(" "));
+            validForRspFile = Arrays.stream(serviceConfig.arguments).noneMatch(s -> s.contains(" "));
             serviceArguments = Arrays.stream(serviceConfig.arguments).map(s ->
                     s.contains(" ") ?
                             // This looks weird right?
@@ -322,27 +329,21 @@ public class PackagerArgsGenerator {
         return values.length == 1 && (values[0].equalsIgnoreCase("none"));
     }
 
-    private ArrayList<Option> getCommonXPackOptions(String targetDir) throws JetTaskFailureException {
+    ArrayList<Option> getCommonXPackOptions(String targetDir) throws JetTaskFailureException {
         ArrayList<Option> xpackOptions = getCommonXPackOptions();
         xpackOptions.add(new Option("-target", targetDir));
         return xpackOptions;
     }
 
-    private static ArrayList<String> optionsToArgs(ArrayList<Option> options) {
+    static ArrayList<String> optionsToArgs(ArrayList<Option> options, boolean notValidToRspOnly) {
         ArrayList<String> args = new ArrayList<>();
         for (Option option: options) {
-            args.add(option.option);
-            args.addAll(Arrays.stream(option.parameters).map(
-                    p -> Host.isWindows() && p.isEmpty()?escapeEmptyArgForWindows(p): p).collect(Collectors.toList()));
+            if (!notValidToRspOnly || !option.validForRspFile) {
+                args.add(option.option);
+                args.addAll(Arrays.stream(option.parameters).map(
+                        p -> Host.isWindows() && p.isEmpty()?escapeEmptyArgForWindows(p): p).collect(Collectors.toList()));
+            }
         }
         return args;
-    }
-
-    ArrayList<String> getExcelsiorInstallerXPackArgs(File target) throws JetTaskFailureException {
-        return optionsToArgs(getExcelsiorInstallerXPackOptions(target));
-    }
-
-    ArrayList<String> getCommonXPackArgs(String targetDir) throws JetTaskFailureException {
-        return optionsToArgs(getCommonXPackOptions(targetDir));
     }
 }
