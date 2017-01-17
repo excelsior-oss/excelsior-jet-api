@@ -213,6 +213,32 @@ public class PackagerArgsGenerator {
         return xpackOptions;
     }
 
+    private static boolean argsValidForRsp(String[] args) {
+        return (args == null) || Arrays.stream(args).noneMatch(arg -> arg.contains(" "));
+    }
+
+    private static String argsToString(String[] args) {
+        return args == null?
+               "":
+               Arrays.stream(args).map(arg ->
+                            arg.contains(" ") ?
+                                    Host.isWindows()?
+                                            // This looks weird right?
+                                            // In fact this combination of " and \ was found to be working to escape spaces
+                                            // within arguments by trial and error.
+                                            // In short, there are three levels of magic here.
+                                            // First, Java's ProcessImpl does a magic with escaping " inside arguments meeting Windows
+                                            // standards but it does it wrong. Then Windows itself does some magic with interpreting
+                                            // " and \. Finally xpack does some magic with interpreting " and \.
+                                            // This combination may not work on some Windows flavours and with some Java microversions,
+                                            // but it least it were tested with Windows 10 and Java 8 Update 101.
+                                            "\\\"\\\\\"\\\"" + arg + "\\\"\\\\\"\\\""
+                                    :
+                                            "\"" + arg + "\""
+                            :
+                                arg).collect(Collectors.joining(" "));
+    }
+
     ArrayList<Option> getExcelsiorInstallerXPackOptions(File target) throws JetTaskFailureException {
         ArrayList<Option> xpackOptions = getCommonXPackOptions();
 
@@ -239,7 +265,14 @@ public class PackagerArgsGenerator {
         }
 
         if (config.cleanupAfterUninstall) {
-            xpackOptions.add(new Option("cleanup-after-uninstall"));
+            xpackOptions.add(new Option("-cleanup-after-uninstall"));
+        }
+
+        if (!config.afterInstallRunnable.isEmpty()) {
+            xpackOptions.add(new Option("-after-install-runnable",
+                    argsValidForRsp(config.afterInstallRunnable.arguments),
+                    config.afterInstallRunnable.target,
+                    argsToString(config.afterInstallRunnable.arguments)));
         }
 
         if (config.compressionLevel != null) {
@@ -265,29 +298,10 @@ public class PackagerArgsGenerator {
             exeName = "bin/" + exeName;
         }
         WindowsServiceConfig serviceConfig = project.windowsServiceConfiguration();
-        String serviceArguments = "";
-        boolean validForRspFile = true;
-        if (serviceConfig.arguments != null) {
-            validForRspFile = Arrays.stream(serviceConfig.arguments).noneMatch(s -> s.contains(" "));
-            serviceArguments = Arrays.stream(serviceConfig.arguments).map(s ->
-                    s.contains(" ") ?
-                            // This looks weird right?
-                            // In fact this combination of " and \ was found to be working to escape spaces
-                            // within arguments by trial and error.
-                            // In short, there are three levels of magic here.
-                            // First, Java's ProcessImpl does a magic with escaping " inside arguments meeting Windows
-                            // standards but it does it wrong. Then Windows itself does some magic with interpreting
-                            // " and \. Finally xpack does some magic with interpreting " and \.
-                            // This combination may not work on some Windows flavours and with some Java microversions,
-                            // but it least it were tested with Windows 10 and Java 8 Update 101.
-                            "\\\"\\\\\"\\\"" + s + "\\\"\\\\\"\\\"" :
-                            s).
-                    collect(Collectors.joining(" "));
-        }
         xpackOptions.add(new Option("-service",
-                validForRspFile,
+                argsValidForRsp(serviceConfig.arguments),
                 exeName,
-                serviceArguments,
+                argsToString(serviceConfig.arguments),
                 serviceConfig.displayName,
                 serviceConfig.description
         ));

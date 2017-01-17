@@ -4,6 +4,7 @@ import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.tasks.PackagerArgsGenerator.Option;
 import com.excelsiorjet.api.tasks.config.DependencySettings;
+import com.excelsiorjet.api.tasks.config.ExcelsiorInstallerConfig;
 import com.excelsiorjet.api.tasks.config.PackageFile;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
 import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
@@ -244,5 +245,28 @@ public class PackagerArgsGeneratorTest {
         assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
         assertOptionsContain(xPackOptions, "-add-file", new File("test.file").getAbsolutePath(), "/");
         assertOptionsContain(xPackOptions, "-add-file", new File("test2.file").getAbsolutePath(), "test/location");
+    }
+
+    @Test
+    public void testExcelsiorInstaller() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        ExcelsiorInstallerConfig config = prj.excelsiorInstallerConfiguration();
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+
+        prj.excelsiorJetPackaging("excelsior-installer");
+        config.cleanupAfterUninstall = true;
+        config.compressionLevel = "high";
+        config.language = "french";
+        config.afterInstallRunnable.target = "runnable";
+        config.afterInstallRunnable.arguments = new String[]{"arg1", "arg2"};
+
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(new File("setup.exe"));
+
+        assertOptionsContain(xPackOptions, "-cleanup-after-uninstall");
+        assertOptionsContain(xPackOptions, "-compression-level", "high");
+        assertOptionsContain(xPackOptions, "-language", "french");
+        assertOptionsContain(xPackOptions, "-after-install-runnable", "runnable", "arg1 arg2");
     }
 }

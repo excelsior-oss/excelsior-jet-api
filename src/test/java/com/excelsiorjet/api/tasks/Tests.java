@@ -115,6 +115,7 @@ class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isDiskFootprintReductionSupported();
         Mockito.doReturn(true).when(excelsiorJet).isRuntimeSupported(RuntimeFlavorType.DESKTOP);
         Mockito.doReturn(true).when(excelsiorJet).isChangeRTLocationAvailable();
+        Mockito.doReturn(true).when(excelsiorJet).since11_3();
         return excelsiorJet;
     }
 
