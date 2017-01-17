@@ -71,6 +71,12 @@ public class PackagerArgsGenerator {
             this.parameters = parameters;
             this.validForRspFile = validForRspFile;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            Option option2 = (Option) obj;
+            return option.equals(option2.option) && Arrays.equals(parameters, option2.parameters);
+        }
     }
 
     public PackagerArgsGenerator(JetProject project, ExcelsiorJet excelsiorJet) {
@@ -78,7 +84,7 @@ public class PackagerArgsGenerator {
         this.excelsiorJet = excelsiorJet;
     }
 
-    public ArrayList<Option> getCommonXPackOptions() throws JetTaskFailureException {
+    ArrayList<Option> getCommonXPackOptions() throws JetTaskFailureException {
         ArrayList<Option> xpackOptions = new ArrayList<>();
 
         File source = null;
@@ -200,7 +206,7 @@ public class PackagerArgsGenerator {
         return xpackOptions;
     }
 
-    private ArrayList<Option> getExcelsiorInstallerXPackOptions(File target) throws JetTaskFailureException {
+    ArrayList<Option> getExcelsiorInstallerXPackOptions(File target) throws JetTaskFailureException {
         ArrayList<Option> xpackOptions = getCommonXPackOptions();
 
         boolean canInstallTomcatAsService = (project.appType() == ApplicationType.TOMCAT) &&
@@ -338,9 +344,5 @@ public class PackagerArgsGenerator {
 
     ArrayList<String> getCommonXPackArgs(String targetDir) throws JetTaskFailureException {
         return optionsToArgs(getCommonXPackOptions(targetDir));
-    }
-
-    ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
-        return optionsToArgs(getCommonXPackOptions());
     }
 }

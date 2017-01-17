@@ -2,6 +2,7 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.tasks.PackagerArgsGenerator.Option;
 import com.excelsiorjet.api.tasks.config.DependencySettings;
 import com.excelsiorjet.api.tasks.config.PackageFile;
 import com.excelsiorjet.api.tasks.config.ProjectDependency;
@@ -12,16 +13,32 @@ import org.mockito.Mockito;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import static com.excelsiorjet.api.tasks.Tests.*;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class PackagerArgsGeneratorTest {
 
     private String toPlatform(String path) {
         return path.replace('/', File.separatorChar);
+    }
+
+    private int assertOptionsContain(List<Option> options, String option, String... parameters) {
+        Option xpackOption = new Option(option, parameters);
+        int idx = options.indexOf(xpackOption);
+        if (idx < 0) {
+            Optional<Option> optCandidate = options.stream().filter(o -> o.option.equals(option)).findFirst();
+            if (!optCandidate.isPresent()) {
+                fail("Option " + option + " is not present");
+            } else {
+                //will fail with suitable message
+                assertArrayEquals(parameters, optCandidate.get().parameters);
+            }
+        }
+        return idx;
     }
 
     @Test
@@ -35,17 +52,13 @@ public class PackagerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
 
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int addExeIdx = xPackArgs.indexOf("-add-file");
-        assertTrue(addExeIdx >= 0);
-        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
-        assertEquals("/", xPackArgs.get(addExeIdx + 2));
-
-        int addLibIdx = xPackArgs.lastIndexOf("-add-file");
+        int addExeIdx =
+                assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
+        int addLibIdx =
+                assertOptionsContain(xPackOptions, "-add-file", toPlatform("lib/test.jar"), "/lib");
         assertTrue(addLibIdx > addExeIdx);
-        assertEquals(toPlatform("lib/test.jar"), xPackArgs.get(addLibIdx + 1));
-        assertEquals("/lib", xPackArgs.get(addLibIdx + 2));
     }
 
     @Test
@@ -57,17 +70,13 @@ public class PackagerArgsGeneratorTest {
         prj.processDependencies();
         ExcelsiorJet excelsiorJet = excelsiorJet();
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int addExeIdx = xPackArgs.indexOf("-add-file");
-        assertTrue(addExeIdx >= 0);
-        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
-        assertEquals("/", xPackArgs.get(addExeIdx + 2));
-
-        int addLibIdx = xPackArgs.lastIndexOf("-add-file");
+        int addExeIdx =
+                assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
+        int addLibIdx =
+                assertOptionsContain(xPackOptions, "-add-file", externalJarRel.toString(), "/lib");
         assertTrue(addLibIdx > addExeIdx);
-        assertEquals(externalJarRel.toString(), xPackArgs.get(addLibIdx + 1));
-        assertEquals("/lib", xPackArgs.get(addLibIdx + 2));
     }
 
     @Test
@@ -80,22 +89,15 @@ public class PackagerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
 
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int addExeIdx = xPackArgs.indexOf("-add-file");
-        assertTrue(addExeIdx >= 0);
-        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
-        assertEquals("/", xPackArgs.get(addExeIdx + 2));
-
-        int addLibIdx = xPackArgs.lastIndexOf("-add-file");
+        int addExeIdx =
+                assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
+        int addLibIdx =
+                assertOptionsContain(xPackOptions, "-add-file", toPlatform("extDep/test.jar"), "extDep");
         assertTrue(addLibIdx > addExeIdx);
-        assertEquals(toPlatform("extDep/test.jar"), xPackArgs.get(addLibIdx + 1));
-        assertEquals("extDep", xPackArgs.get(addLibIdx + 2));
-
-        assertEquals("-assign-resource", xPackArgs.get(addLibIdx + 3));
-        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(addLibIdx + 4));
-        assertEquals("test.jar", xPackArgs.get(addLibIdx + 5));
-        assertEquals(toPlatform("extDep/test.jar"), xPackArgs.get(addLibIdx + 6));
+        assertOptionsContain(xPackOptions, "-assign-resource", excelsiorJet.getTargetOS().mangleExeName("test"),
+                "test.jar", toPlatform("extDep/test.jar"));
     }
 
     @Test
@@ -108,17 +110,15 @@ public class PackagerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
 
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int addExeIdx = xPackArgs.indexOf("-add-file");
-        assertTrue(addExeIdx >= 0);
-        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
-        assertEquals("/", xPackArgs.get(addExeIdx + 2));
+        int addExeIdx =
+                assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
 
-        int disableResourceIdx = xPackArgs.lastIndexOf("-disable-resource");
+        int disableResourceIdx =
+                assertOptionsContain(xPackOptions, "-disable-resource",
+                        excelsiorJet.getTargetOS().mangleExeName("test"), "external.jar");
         assertTrue(disableResourceIdx > addExeIdx);
-        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(disableResourceIdx + 1));
-        assertEquals("external.jar", xPackArgs.get(disableResourceIdx + 2));
     }
 
     @Test
@@ -132,12 +132,9 @@ public class PackagerArgsGeneratorTest {
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
 
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int addExeIdx = xPackArgs.indexOf("-add-file");
-        assertTrue(addExeIdx >= 0);
-        assertEquals(excelsiorJet.getTargetOS().mangleDllName("test"), xPackArgs.get(addExeIdx + 1));
-        assertEquals("/", xPackArgs.get(addExeIdx + 2));
+        assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleDllName("test"), "/");
     }
 
     @Test
@@ -154,32 +151,20 @@ public class PackagerArgsGeneratorTest {
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
 
 
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getExcelsiorInstallerXPackArgs(new File("target.exe"));
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(new File("target.exe"));
 
         String exeName = excelsiorJet.getTargetOS().mangleExeName("test");
-        int addExeIdx = xPackArgs.indexOf("-add-file");
-        assertTrue(addExeIdx >= 0);
-        assertEquals(exeName, xPackArgs.get(addExeIdx + 1));
-        assertEquals("/", xPackArgs.get(addExeIdx + 2));
-
-        int serviceIdx = xPackArgs.lastIndexOf("-service");
+        int addExeIdx =
+                assertOptionsContain(xPackOptions, "-add-file", exeName, "/");
+        int serviceIdx =
+                assertOptionsContain(xPackOptions, "-service", exeName, "", "test", "test");
         assertTrue(serviceIdx > addExeIdx);
-        assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
-        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
-        assertEquals("test", xPackArgs.get(serviceIdx + 3));
-        assertEquals("test", xPackArgs.get(serviceIdx + 4));
-
-        int serviceStartupIdx = xPackArgs.lastIndexOf("-service-startup");
+        int serviceStartupIdx =
+                assertOptionsContain(xPackOptions, "-service-startup", exeName, "system", "auto", "start-after-install");
         assertTrue(serviceStartupIdx > serviceIdx);
-        assertEquals(exeName, xPackArgs.get(serviceStartupIdx + 1));
-        assertEquals("system", xPackArgs.get(serviceStartupIdx + 2));
-        assertEquals("auto", xPackArgs.get(serviceStartupIdx + 3));
-        assertEquals("start-after-install", xPackArgs.get(serviceStartupIdx + 4));
-
-        int dependenciesIdx = xPackArgs.lastIndexOf("-service-dependencies");
+        int dependenciesIdx =
+                assertOptionsContain(xPackOptions, "-service-dependencies", exeName, "dep1,dep 2");
         assertTrue(dependenciesIdx > serviceStartupIdx);
-        assertEquals(exeName, xPackArgs.get(dependenciesIdx + 1));
-        assertEquals("dep1,dep 2", xPackArgs.get(dependenciesIdx + 2));
     }
 
     @Test
@@ -194,22 +179,15 @@ public class PackagerArgsGeneratorTest {
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
 
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getExcelsiorInstallerXPackArgs(new File("target.exe"));
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(new File("target.exe"));
 
         String exeName = "bin/" + excelsiorJet.getTargetOS().mangleExeName("test");
-
-        int serviceIdx = xPackArgs.lastIndexOf("-service");
-        assertEquals(exeName, xPackArgs.get(serviceIdx + 1));
-        assertEquals("\"\"", xPackArgs.get(serviceIdx + 2));
-        assertEquals("Apache Tomcat", xPackArgs.get(serviceIdx + 3));
-        assertEquals("Apache Tomcat Server - http://tomcat.apache.org/", xPackArgs.get(serviceIdx + 4));
-
-        int serviceStartupIdx = xPackArgs.lastIndexOf("-service-startup");
+        int serviceIdx =
+                assertOptionsContain(xPackOptions,"-service", exeName, "", "Apache Tomcat",
+                        "Apache Tomcat Server - http://tomcat.apache.org/");
+        int serviceStartupIdx =
+                assertOptionsContain(xPackOptions,"-service-startup", exeName, "system", "auto", "start-after-install");
         assertTrue(serviceStartupIdx > serviceIdx);
-        assertEquals(exeName, xPackArgs.get(serviceStartupIdx + 1));
-        assertEquals("system", xPackArgs.get(serviceStartupIdx + 2));
-        assertEquals("auto", xPackArgs.get(serviceStartupIdx + 3));
-        assertEquals("start-after-install", xPackArgs.get(serviceStartupIdx + 4));
     }
 
     @Test
@@ -219,12 +197,9 @@ public class PackagerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int profileIdx = xPackArgs.indexOf("-profile");
-        assertTrue(profileIdx >= 0);
-        assertEquals("compact3", xPackArgs.get(profileIdx + 1));
-
+        assertOptionsContain(xPackOptions,"-profile", "compact3");
     }
 
     @Test
@@ -239,11 +214,9 @@ public class PackagerArgsGeneratorTest {
         Mockito.when(prj.testRunExecProfiles()).thenReturn(testRunExecProfiles);
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int profileIdx = xPackArgs.indexOf("-reduce-disk-footprint");
-        assertTrue(profileIdx >= 0);
-        assertEquals("high-memory", xPackArgs.get(profileIdx + 1));
+        assertOptionsContain(xPackOptions, "-reduce-disk-footprint", "high-memory");
     }
 
     @Test
@@ -253,12 +226,9 @@ public class PackagerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int profileIdx = xPackArgs.indexOf("-move-file");
-        assertTrue(profileIdx >= 0);
-        assertEquals("rt", xPackArgs.get(profileIdx + 1));
-        assertEquals("hidden/rt", xPackArgs.get(profileIdx + 2));
+        assertOptionsContain(xPackOptions,"-move-file", "rt", "hidden/rt");
     }
 
     @Test
@@ -269,21 +239,10 @@ public class PackagerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
-        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
 
-        int addExeIdx = xPackArgs.indexOf("-add-file");
-        assertTrue(addExeIdx >= 0);
-        assertEquals(excelsiorJet.getTargetOS().mangleExeName("test"), xPackArgs.get(addExeIdx + 1));
-        assertEquals("/", xPackArgs.get(addExeIdx + 2));
-
-        int pFileIdx = addExeIdx + 3;
-        assertEquals("-add-file", xPackArgs.get(pFileIdx));
-        assertEquals("test.file", new File(xPackArgs.get(pFileIdx + 1)).getName());
-        assertEquals("/", xPackArgs.get(pFileIdx + 2));
-
-        int pFile2Idx = pFileIdx + 3;
-        assertEquals("-add-file", xPackArgs.get(pFile2Idx));
-        assertEquals("test2.file", new File(xPackArgs.get(pFile2Idx + 1)).getName());
-        assertEquals("test/location", xPackArgs.get(pFile2Idx + 2));
+        assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
+        assertOptionsContain(xPackOptions, "-add-file", new File("test.file").getAbsolutePath(), "/");
+        assertOptionsContain(xPackOptions, "-add-file", new File("test2.file").getAbsolutePath(), "test/location");
     }
 }
