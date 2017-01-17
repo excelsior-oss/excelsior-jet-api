@@ -14,75 +14,65 @@ import static com.excelsiorjet.api.util.Txt.s;
 public class RuntimeConfig {
 
     /**
-     * Excelsior JET VM comes with multiple implementations of the runtime system,
+     * Excelsior JET Runtime flavor.
+     * <p>
+     * Excelsior JET comes with multiple implementations of the runtime system,
      * optimized for different hardware configurations and application types.
-     * It enables your application to effectively utilize the computing power of systems
-     * that support parallel execution (examples are multi-processor servers,
-     * multi-core chips and CPUs that support Hyper-Threading Technology), thereby improving performance.
-     *
-     * Available runtime kinds: {@code desktop}, {@code server}, {@code classic}
-     *
-     * <dl>
-     * <dt>desktop</dt>
-     * <dd> The Desktop Runtime is suitable for applications that typically run on conventional desktop
-     * and notebook computers. It is optimized for single-CPU systems, including those based on multi-core chips.
-     * This is the best choice for rich clients, visualization and engineering design tools, and other desktop applications.
-     * </dd>
-     * <dt>server</dt>
-     * <dd>The Server Runtime fits best for highly concurrent server applications.
-     * It provides out-of-the-box performance and scalability and takes full advantage of the computing power of
-     * multi-processor hardware. In particular, the Server Runtime includes the CoreBalance garbage collector
-     * that fully utilizes parallel hardware to reduce average and maximum pause time.
-     * Note that Excelsior JET, Enterprise Edition is the only retail version that includes the Server Runtime.
-     * </dd>
-     * <dt>classic</dt>
-     * <dd>The Classic Runtime is designed to use on low-end hardware which does not support parallel execution
-     * such as uniprocessor systems equipped with old CPU models of the x86 architecture.
-     * It is not recommended for use on HyperThread/multi-core CPU and multi-processor systems.
-     * Note that the Classic Runtime is the only option in the Standard Edition of Excelsior JET.
-     * </dd>
-     * </dl>
+     * For details, refer to the Excelsior JET User's Guide, Chapter "Application
+     * Considerations", section "Runtime Selection".
+     * </p>
+     * <p>
+     * Available runtime flavors: {@code desktop}, {@code server}, {@code classic}
+     * </p>
      */
     public String kind;
 
     /**
-     * By default, Excelsior JET places required Excelsior JET runtime files near to compiled executable
-     * to a folder with "rt" name.
-     * You may change its default location with this parameter.
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * Location of Excelsior JET runtime files in the installation package.
+     * By default, Excelsior JET places its runtime files required for the 
+     * generated executable to work in a folder named {@code "rt"} located next to that executable.
+     * You may change that default location with this parameter.
+     * <p>
+     * This functionality is only available in Excelsior JET 11.3 and above.
+     * </p>
      */
     public String location;
 
     /**
-     * Add optional JET Runtime components to the package.
+     * Optional JET Runtime components that have to be added to the package.
      * By default, only the {@code jce} component (Java Crypto Extension) is added.
      * You may pass a special value {@code all} to include all available optional components at once
      * or {@code none} to not include any of them.
+     * <p>
      * Available optional components:
      * {@code runtime_utilities}, {@code fonts}, {@code awt_natives}, {@code api_classes}, {@code jce},
      * {@code accessibility}, {@code javafx}, {@code javafx-webkit}, {@code nashorn}, {@code cldr}
+     * </p>
      */
     public String[] components;
 
     /**
-     * Add locales and charsets.
+     * Locales and charsets that have to be included in the package.
      * By default only {@code European} locales are added.
      * You may pass a special value {@code all} to include all available locales at once
      * or {@code none} to not include any additional locales.
+     * <p>
      * Available locales and charsets:
      *    {@code European}, {@code Indonesian}, {@code Malay}, {@code Hebrew}, {@code Arabic},
      *    {@code Chinese}, {@code Japanese}, {@code Korean}, {@code Thai}, {@code Vietnamese}, {@code Hindi},
      *    {@code Extended_Chinese}, {@code Extended_Japanese}, {@code Extended_Korean}, {@code Extended_Thai},
      *    {@code Extended_IBM}, {@code Extended_Macintosh}, {@code Latin_3}
+     * </p>
      */
     public String[] locales;
 
     /**
+     * Java SE API subset to be included in the package.
      * Java SE 8 defines three subsets of the standard Platform API called compact profiles.
      * Excelsior JET enables you to deploy your application with one of those subsets.
      * You may set this parameter to specify a particular profile.
      * Valid values are: {@code auto} (default),  {@code compact1},  {@code compact2},  {@code compact3}, {@code full}
-     *  <p>
+     * <p>
      * {@code auto} value (default) forces Excelsior JET to detect which parts of the Java SE Platform API
      * are referenced by the application and select the smallest compact profile that includes them all,
      * or the entire Platform API if there is no such profile.
@@ -92,9 +82,9 @@ public class RuntimeConfig {
     public String profile;
 
     /**
-     * (32-bit only)
-     * Reduce the disk footprint of the application by including the supposedly unused Java SE API
-     * classes in the resulting package in a compressed form.
+     * (32-bit only) Disk footprint reduction mode.
+     * Excelsior JET can reduce the disk footprint of the application by including the supposedly
+     * unused Java SE API classes in the resulting package in a compressed form.
      * Valid values are: {@code none},  {@code medium} (default),  {@code high-memory},  {@code high-disk}.
      * <p>
      * The feature is only available if {@link JetProject#globalOptimizer} is enabled.

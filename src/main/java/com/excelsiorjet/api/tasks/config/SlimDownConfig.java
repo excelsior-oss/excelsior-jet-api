@@ -43,21 +43,21 @@ public class SlimDownConfig {
      * </p>
      *
      * @see #detachedBaseURL
-     * @see JetProject#javaRuntimeSlimDown
+     * @see RuntimeConfig#slimDown
      */
     public String[] detachComponents;
 
     /**
      * Set the base url for the detached package. This parameter is mandatory.
      * 
-     * @see JetProject#javaRuntimeSlimDown
+     * @see RuntimeConfig#slimDown
      */
     public String detachedBaseURL;
 
     /**
      * Set the detached package name.
      * 
-     * @see JetProject#javaRuntimeSlimDown
+     * @see RuntimeConfig#slimDown
      */
     public String detachedPackage;
 
