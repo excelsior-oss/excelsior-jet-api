@@ -31,6 +31,7 @@ import com.excelsiorjet.api.tasks.config.enums.SetupLanguage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,6 +56,14 @@ public class ExcelsiorInstallerConfig {
         add(AUTO_DETECT_EULA_ENCODING);
     }};
 
+    public ExcelsiorInstallerConfig() {
+        //init sub objects to just not check them for null.
+        installationDirectory = new InstallationDirectory();
+        shortcuts = Collections.emptyList();
+        postInstallCheckboxes = Collections.emptyList();
+        fileAssociations = Collections.emptyList();
+        uninstallCallback = new PackageFile();
+    }
 
     /**
      * The license agreement file. Used for Excelsior Installer.
