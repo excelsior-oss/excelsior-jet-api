@@ -63,6 +63,7 @@ public class ExcelsiorInstallerConfig {
         postInstallCheckboxes = Collections.emptyList();
         fileAssociations = Collections.emptyList();
         uninstallCallback = new PackageFile();
+        afterInstallRunnable = new AfterInstallRunnable();
     }
 
     /**
@@ -126,6 +127,15 @@ public class ExcelsiorInstallerConfig {
      * The functionality is available for Excelsior JET 11.3 and above.
      */
     public Boolean cleanupAfterUninstall;
+
+    /**
+     * Excelsior Installer can optionally run one of the executable files included in the package
+     * upon successful installation. Use this parameter to specify the executable and its arguments.
+     *
+     * @see AfterInstallRunnable#target
+     * @see AfterInstallRunnable#arguments
+     */
+    public AfterInstallRunnable afterInstallRunnable;
 
     /**
      * Compression level used for files packaging into setup.
@@ -281,6 +291,8 @@ public class ExcelsiorInstallerConfig {
             String parameter = null;
             if (language != null) {
                 parameter = "language";
+            } else if (!afterInstallRunnable.isEmpty()) {
+                parameter = "afterInstallRunnable";
             } else if (compressionLevel != null) {
                 parameter = "compressionLevel";
             } else if (!installationDirectory.isEmpty()) {
@@ -319,6 +331,10 @@ public class ExcelsiorInstallerConfig {
 
         if (cleanupAfterUninstall == null) {
             cleanupAfterUninstall = false;
+        }
+
+        if (!afterInstallRunnable.isEmpty()) {
+            afterInstallRunnable.validate();
         }
 
         if ((compressionLevel != null) && (SetupCompressionLevel.fromString(compressionLevel) == null)) {
