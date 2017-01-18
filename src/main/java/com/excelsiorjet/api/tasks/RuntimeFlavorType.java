@@ -24,9 +24,9 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Runtime kinds enumeration.
+ * Runtime flavors enumeration.
  */
-public enum RuntimeKindType {
+public enum RuntimeFlavorType {
     CLASSIC,
     DESKTOP,
     SERVER;
@@ -35,12 +35,12 @@ public enum RuntimeKindType {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static RuntimeKindType fromString(String kind) {
-        if (kind == null) {
+    public static RuntimeFlavorType fromString(String flavor) {
+        if (flavor == null) {
             return null;
         }
         try {
-            return RuntimeKindType.valueOf(Utils.parameterToEnumConstantName(kind));
+            return RuntimeFlavorType.valueOf(Utils.parameterToEnumConstantName(flavor));
         } catch (Exception e) {
             return null;
         }

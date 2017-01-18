@@ -224,8 +224,8 @@ class CompilerArgsGenerator {
             compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
         }
 
-        if (project.runtimeConfiguration().kind() != null) {
-            compilerArgs.add("-jetrt=" + project.runtimeConfiguration().kind());
+        if (project.runtimeConfiguration().flavor() != null) {
+            compilerArgs.add("-jetrt=" + project.runtimeConfiguration().flavor());
         }
 
         switch (project.inlineExpansion()) {

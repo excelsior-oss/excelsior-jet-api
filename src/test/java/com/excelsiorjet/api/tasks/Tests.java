@@ -109,7 +109,7 @@ class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isCompactProfilesSupported();
         Mockito.doReturn(true).when(excelsiorJet).isGlobalOptimizerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isDiskFootprintReductionSupported();
-        Mockito.doReturn(true).when(excelsiorJet).isRuntimeSupported(RuntimeKindType.DESKTOP);
+        Mockito.doReturn(true).when(excelsiorJet).isRuntimeSupported(RuntimeFlavorType.DESKTOP);
         Mockito.doReturn(true).when(excelsiorJet).isChangeRTLocationAvailable();
         return excelsiorJet;
     }

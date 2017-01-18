@@ -270,7 +270,7 @@ public class CompilerArgsGeneratorTest {
     @Test
     public void testRuntimeKind() throws JetTaskFailureException {
         JetProject prj = testProject(ApplicationType.PLAIN);
-        prj.runtimeConfiguration().kind = "desktop";
+        prj.runtimeConfiguration().flavor = "desktop";
         prj.validate(excelsiorJet(), true);
 
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());

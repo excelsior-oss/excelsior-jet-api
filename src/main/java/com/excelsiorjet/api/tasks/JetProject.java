@@ -279,7 +279,7 @@ public class JetProject {
     /**
      * Runtime configuration parameters.
      *
-     * @see RuntimeConfig#kind
+     * @see RuntimeConfig#flavor
      * @see RuntimeConfig#profile
      * @see RuntimeConfig#components
      * @see RuntimeConfig#locales

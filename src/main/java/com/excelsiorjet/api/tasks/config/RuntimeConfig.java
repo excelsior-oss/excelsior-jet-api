@@ -25,7 +25,7 @@ public class RuntimeConfig {
      * Available runtime flavors: {@code desktop}, {@code server}, {@code classic}
      * </p>
      */
-    public String kind;
+    public String flavor;
 
     /**
      * Location of Excelsior JET runtime files in the installation package.
@@ -120,18 +120,18 @@ public class RuntimeConfig {
 
     public void fillDefaults(JetProject jetProject, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
 
-        if (kind != null) {
-            if (kind() == null) {
-                throw new JetTaskFailureException(s("JetApi.UnknownRuntimeKind.Failure", kind));
+        if (flavor != null) {
+            if (flavor() == null) {
+                throw new JetTaskFailureException(s("JetApi.UnknownRuntimeKind.Failure", flavor));
             }
-            if (!excelsiorJet.isRuntimeSupported(kind())) {
-                throw new JetTaskFailureException(s("JetApi.RuntimeKindNotSupported.Failure", kind));
+            if (!excelsiorJet.isRuntimeSupported(flavor())) {
+                throw new JetTaskFailureException(s("JetApi.RuntimeKindNotSupported.Failure", flavor));
             }
         }
 
         if (location != null) {
             if (!excelsiorJet.isChangeRTLocationAvailable()) {
-                throw new JetTaskFailureException(s("JetApi.RuntimeLocationNotAvailable.Failure", kind));
+                throw new JetTaskFailureException(s("JetApi.RuntimeLocationNotAvailable.Failure", flavor));
             }
         }
 
@@ -195,8 +195,8 @@ public class RuntimeConfig {
         return DiskFootprintReductionType.fromString(diskFootprintReduction);
     }
 
-    public RuntimeKindType kind() {
-        return RuntimeKindType.fromString(kind);
+    public RuntimeFlavorType flavor() {
+        return RuntimeFlavorType.fromString(flavor);
     }
 
 }
