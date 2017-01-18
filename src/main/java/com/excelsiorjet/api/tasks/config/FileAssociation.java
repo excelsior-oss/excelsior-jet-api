@@ -63,7 +63,7 @@ public class FileAssociation {
      * The location of an icon file that should be used for files with names ending in extension.
      * You may omit {@link PackageFile#path} parameter of the icon,
      * if {@link JetProject#packageFilesDir} already contains an icon at the specified {@link PackageFile#packagePath}
-     * parameter else the icon will be added to the package at the specified location.
+     * parameter else the icon will be added to the package to the specified {@link PackageFile#packagePath} folder.
      * If the icon is not set the default icon of the target executable will be used.
      */
     public PackageFile icon;
@@ -88,9 +88,7 @@ public class FileAssociation {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileAssociationTargetNull", extension));
         }
 
-        if ((icon.path != null) && !icon.path.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileAssociationIconDoesNotExist", icon.path, extension));
-        }
+        icon.validate("JetApi.ExcelsiorInstaller.FileAssociationIconDoesNotExist", extension);
 
         if (description == null) {
             description = "";

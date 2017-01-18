@@ -54,7 +54,8 @@ public class Shortcut {
      * The location of the shortcut icon.
      * You may omit {@link PackageFile#path} parameter of the icon,
      * if {@link JetProject#packageFilesDir} already contains an icon at the specified {@link PackageFile#packagePath}
-     * parameter else the icon will be added to the package at the specified location and used for the shortcut.
+     * parameter else the icon will be added to the package to the specified {@link PackageFile#packagePath} folder
+     * and used for the shortcut.
      * If the icon is not set for the shortcut the default icon will be used
      * (f.i. the icon associated with the executable target).
      */
@@ -92,9 +93,7 @@ public class Shortcut {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutTargetNull", name));
         }
 
-        if ((icon.path != null) && !icon.path.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist", icon.path, name));
-        }
+        icon.validate("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist");
 
         if (workingDirectory == null) {
             workingDirectory = "";

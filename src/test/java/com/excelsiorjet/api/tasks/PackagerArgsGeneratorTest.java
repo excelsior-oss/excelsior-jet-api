@@ -3,19 +3,13 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.tasks.PackagerArgsGenerator.Option;
-import com.excelsiorjet.api.tasks.config.DependencySettings;
-import com.excelsiorjet.api.tasks.config.ExcelsiorInstallerConfig;
-import com.excelsiorjet.api.tasks.config.PackageFile;
-import com.excelsiorjet.api.tasks.config.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.excelsiorjet.api.tasks.Tests.*;
 import static java.util.Collections.singletonList;
@@ -259,6 +253,18 @@ public class PackagerArgsGeneratorTest {
         config.language = "french";
         config.afterInstallRunnable.target = "runnable";
         config.afterInstallRunnable.arguments = new String[]{"arg1", "arg2"};
+        config.installationDirectory.path = "inst/dir/path";
+        config.installationDirectory.type = "user-home";
+        config.installationDirectory.fixed = true;
+        config.registryKey = "registry/key";
+        Shortcut shortcut = new Shortcut();
+        shortcut.location = "startup";
+        shortcut.target = "target";
+        shortcut.name = "shortcut";
+        shortcut.icon = new PackageFile(fileSpy("shortcut.ico"), null);
+        shortcut.workingDirectory = "working/directory";
+        shortcut.arguments = new String[]{"arg1", "arg2"};
+        config.shortcuts = Collections.singletonList(shortcut);
 
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
@@ -268,5 +274,11 @@ public class PackagerArgsGeneratorTest {
         assertOptionsContain(xPackOptions, "-compression-level", "high");
         assertOptionsContain(xPackOptions, "-language", "french");
         assertOptionsContain(xPackOptions, "-after-install-runnable", "runnable", "arg1 arg2");
+        assertOptionsContain(xPackOptions, "-installation-directory", "inst/dir/path");
+        assertOptionsContain(xPackOptions, "-installation-directory-type", "user-home");
+        assertOptionsContain(xPackOptions, "-installation-directory-fixed");
+        assertOptionsContain(xPackOptions, "-registry-key", "registry/key");
+        assertOptionsContain(xPackOptions, "-add-file", new File("shortcut.ico").getAbsolutePath(), "/");
+        assertOptionsContain(xPackOptions, "-shortcut", "startup", "target", "shortcut", "/shortcut.ico", "working/directory", "arg1 arg2");
     }
 }

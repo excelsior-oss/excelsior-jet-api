@@ -688,12 +688,7 @@ public class JetProject {
                 if (pFile.path == null) {
                     throw new JetTaskFailureException(s("JetApi.PathNotSetForPackageFile.Error"));
                 }
-                if (!pFile.path.exists()) {
-                    throw new JetTaskFailureException(s("JetApi.PackageFileDoesNotExist.Error", pFile.path.getAbsolutePath()));
-                }
-                if (pFile.packagePath == null) {
-                    pFile.packagePath = "/";
-                }
+                pFile.validate("JetApi.PackageFileDoesNotExist.Error");
             }
         }
 

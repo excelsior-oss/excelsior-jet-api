@@ -231,7 +231,7 @@ public class ExcelsiorInstallerConfig {
      * so you need to specify its location in the project.
      * You may omit {@link PackageFile#path} parameter of the uninstallCallback,
      * if {@link JetProject#packageFilesDir} already contains a library at the specified {@link PackageFile#packagePath}
-     * parameter else the library will be added to the package at the specified location.
+     * parameter else the library will be added to the package to the specified {@link PackageFile#packagePath} folder.
      * If the file {@code uninstall.dll/libuninstall.so} in {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      * </p>
@@ -372,9 +372,8 @@ public class ExcelsiorInstallerConfig {
             if (uninstall.exists()) {
                 uninstallCallback.path = uninstall;
             }
-        } else if ((uninstallCallback.path != null) && !uninstallCallback.path.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", uninstallCallback.path, "uninstallCallback"));
         }
+        uninstallCallback.validate("JetApi.ExcelsiorInstaller.FileDoesNotExist", "uninstallCallback");
 
         if (welcomeImage == null) {
             welcomeImage = new File(project.jetResourcesDir(), "welcomeImage.bmp");

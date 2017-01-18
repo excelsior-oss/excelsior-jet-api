@@ -23,10 +23,7 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.platform.Host;
-import com.excelsiorjet.api.tasks.config.ExcelsiorInstallerConfig;
-import com.excelsiorjet.api.tasks.config.PackageFile;
-import com.excelsiorjet.api.tasks.config.RuntimeConfig;
-import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
+import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import com.excelsiorjet.api.util.Utils;
 
@@ -277,6 +274,31 @@ public class PackagerArgsGenerator {
 
         if (config.compressionLevel != null) {
             xpackOptions.add(new Option("-compression-level", config.compressionLevel));
+        }
+
+        if (!config.installationDirectory.isEmpty()) {
+            if (!Utils.isEmpty(config.installationDirectory.path)) {
+                xpackOptions.add(new Option("-installation-directory", config.installationDirectory.path));
+            }
+            if (config.installationDirectory.type != null) {
+                xpackOptions.add(new Option("-installation-directory-type", config.installationDirectory.type));
+            }
+            if (config.installationDirectory.fixed) {
+                xpackOptions.add(new Option("-installation-directory-fixed"));
+            }
+        }
+
+        if (config.registryKey != null) {
+            xpackOptions.add(new Option("-registry-key", config.registryKey));
+        }
+
+        for (Shortcut shortcut: config.shortcuts) {
+            if (shortcut.icon.path != null) {
+                xpackOptions.add(new Option("-add-file", shortcut.icon.path.getAbsolutePath(), shortcut.icon.packagePath));
+            }
+            xpackOptions.add(new Option("-shortcut", argsValidForRsp(shortcut.arguments),
+                    shortcut.location, shortcut.target, shortcut.name, shortcut.icon.getLocationInPackage(),
+                    shortcut.workingDirectory, argsToString(shortcut.arguments)));
         }
 
         xpackOptions.add(new Option("-backend", "excelsior-installer"));

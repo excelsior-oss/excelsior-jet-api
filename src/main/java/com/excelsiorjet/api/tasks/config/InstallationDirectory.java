@@ -64,10 +64,10 @@ public class InstallationDirectory {
     /**
      * Prohibits changes of the installation directory, if set to {@code true}.
      */
-    public Boolean fixed;
+    public boolean fixed;
 
     public boolean isEmpty() {
-        return Stream.of(type, path, fixed).allMatch(Objects::isNull);
+        return Stream.of(type, path).allMatch(Objects::isNull) && !fixed;
     }
 
     void validate(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
@@ -84,12 +84,6 @@ public class InstallationDirectory {
                         }
                 }
             }
-        } else {
-            type = (excelsiorJet.getTargetOS().isWindows() ? InstallationDirectoryType.PROGRAM_FILES :
-                                                             InstallationDirectoryType.CURRENT_DIRECTORY).toString();
-        }
-        if (fixed == null) {
-            fixed = false;
         }
     }
 
