@@ -247,9 +247,9 @@ public class JetBuildTask {
                 logger.info(s("JetBuildTask.GetDir.Info", packageDir.getAbsolutePath()));
         }
 
-        if (project.javaRuntimeSlimDown() != null) {
-            logger.info(s("JetBuildTask.SlimDown.Info", new File(project.jetOutputDir(), project.javaRuntimeSlimDown().detachedPackage),
-                    project.javaRuntimeSlimDown().detachedBaseURL));
+        if (project.runtimeConfiguration().slimDown != null) {
+            logger.info(s("JetBuildTask.SlimDown.Info", new File(project.jetOutputDir(), project.runtimeConfiguration().slimDown.detachedPackage),
+                    project.runtimeConfiguration().slimDown.detachedBaseURL));
         }
     }
 

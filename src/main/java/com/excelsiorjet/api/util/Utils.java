@@ -118,6 +118,10 @@ public class Utils {
         return (s == null) || s.isEmpty();
     }
 
+    public static boolean isEmpty(String[] strings) {
+        return (strings == null) || (strings.length == 0);
+    }
+
     public static String randomAlphanumeric(int count) {
         char[] chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -259,4 +263,26 @@ public class Utils {
             lines.forEach(out::println);
         }
     }
+
+    public static String deriveFourDigitVersion(String version) {
+        String[] versions = version.split("\\.");
+        String[] finalVersions = new String[]{"0", "0", "0", "0"};
+        for (int i = 0; i < Math.min(versions.length, 4); ++i) {
+            try {
+                finalVersions[i] = Integer.decode(versions[i]).toString();
+            } catch (NumberFormatException e) {
+                int minusPos = versions[i].indexOf('-');
+                if (minusPos > 0) {
+                    String v = versions[i].substring(0, minusPos);
+                    try {
+                        finalVersions[i] = Integer.decode(v).toString();
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+            }
+        }
+        return String.join(".", (CharSequence[]) finalVersions);
+    }
+
+
 }

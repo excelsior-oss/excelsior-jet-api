@@ -27,6 +27,7 @@ import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.CpuArch;
 import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.platform.OS;
+import com.excelsiorjet.api.tasks.RuntimeFlavorType;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -234,10 +235,37 @@ public class ExcelsiorJet {
         return edition != JetEdition.STANDARD;
     }
 
+    public boolean isDiskFootprintReductionSupported() {
+        return since11_3() && isGlobalOptimizerSupported();
+    }
+
+    public boolean isWindowsVersionInfoSupported() {
+        return targetOS.isWindows() && (edition != JetEdition.STANDARD);
+    }
+
+    public boolean isRuntimeSupported(RuntimeFlavorType flavor) {
+        switch (flavor) {
+            case SERVER:
+                return (edition == JetEdition.ENTERPRISE) || (edition == JetEdition.EVALUATION) ||
+                        (since11_3() && ((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION)));
+            case DESKTOP:
+                return edition != JetEdition.STANDARD;
+            case CLASSIC:
+                return true;
+            default:
+                throw new AssertionError("Unknown runtime flavor:" + flavor);
+        }
+    }
+
+    public boolean isChangeRTLocationAvailable() {
+        return since11_3();
+    }
+
     /**
      * @return home directory of this Excelsior JET instance
      */
     public String getJetHome() {
         return jetHome.getJetHome();
     }
+
 }

@@ -22,7 +22,6 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.Log;
@@ -34,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
@@ -80,7 +78,7 @@ public class JetProject {
     /**
      * Project version. Required for Excelsior Installer.
      * Note: To specify a different (more precise) version number for the Windows executable version-information resource,
-     * use the {@link #winVIVersion} parameter.
+     * use the {@link WindowsVersionInfoConfig#version} parameter.
      */
     private String version;
 
@@ -217,17 +215,6 @@ public class JetProject {
     private String[] jvmArgs;
 
     /**
-     * (Windows) If set to {@code true}, a version-information resource will be added to the final executable.
-     *
-     * @see #vendor vendor
-     * @see #product product
-     * @see #winVIVersion winVIVersion
-     * @see #winVICopyright winVICopyright
-     * @see #winVIDescription winVIDescription
-     */
-    private boolean addWindowsVersionInfo;
-
-    /**
      * Application packaging mode. Permitted values are:
      * <dl>
      * <dt>zip</dt>
@@ -256,34 +243,27 @@ public class JetProject {
     private String product;
 
     /**
-     * (Windows) Version number string for the version-information resource.
-     * (Both {@code ProductVersion} and {@code FileVersion} resource strings are set to the same value.)
-     * Must have {@code v1.v2.v3.v4} format where {@code vi} is a number.
-     * If not set, {@code ${project.version}} is used. If the value does not meet the required format,
-     * it is coerced. For instance, "1.2.3-SNAPSHOT" becomes "1.2.3.0"
+     * The inception year of this project.
      *
-     * @see #version version
-     */
-    private String winVIVersion;
-
-    /**
-     * (Windows) Legal copyright notice string for the version-information resource.
-     * By default, {@code "Copyright © {$project.inceptionYear},[curYear] [vendor]"} is used.
-     */
-    private String winVICopyright;
-
-    /**
-     * Inception year of this project.
-     *
-     * Used to construct default value of {@link #winVICopyright}.
+     * Used to construct the default value of {@link WindowsVersionInfoConfig#copyright}.
      */
     private String inceptionYear;
 
     /**
-     * (Windows) File description string for the version-information resource.
-     * The value of {@link #product} is used by default.
+     * (Windows) If set to {@code true}, a version-information resource will be added to the final executable.
+     *
+     * @see WindowsVersionInfoConfig#company
+     * @see WindowsVersionInfoConfig#product
+     * @see WindowsVersionInfoConfig#version
+     * @see WindowsVersionInfoConfig#copyright
+     * @see WindowsVersionInfoConfig#description
      */
-    private String winVIDescription;
+    private boolean addWindowsVersionInfo;
+
+    /**
+     * Windows version-information resource description.
+     */
+    private WindowsVersionInfoConfig windowsVersionInfoConfiguration;
 
     /**
      * (32-bit only) If set to {@code true}, the Global Optimizer is enabled,
@@ -292,31 +272,21 @@ public class JetProject {
      * The Global Optimizer is enabled automatically when you enable Java Runtime Slim-Down.
      *
      * @see TestRunTask
-     * @see #javaRuntimeSlimDown
+     * @see RuntimeConfig#slimDown
      */
     private boolean globalOptimizer;
 
     /**
-     * (32-bit only) Java Runtime Slim-Down configuration parameters.
+     * Runtime configuration parameters.
      *
-     * @see SlimDownConfig#detachedBaseURL
-     * @see SlimDownConfig#detachComponents
-     * @see SlimDownConfig#detachedPackage
+     * @see RuntimeConfig#flavor
+     * @see RuntimeConfig#profile
+     * @see RuntimeConfig#components
+     * @see RuntimeConfig#locales
+     * @see RuntimeConfig#diskFootprintReduction
+     * @see RuntimeConfig#location
      */
-    private SlimDownConfig javaRuntimeSlimDown;
-
-    /**
-     * Java SE 8 defines three subsets of the standard Platform API called compact profiles.
-     * Excelsior JET enables you to deploy your application with one of those subsets.
-     * You may set this parameter to specify a particular profile.
-     * Valid values are: {@code auto} (default),  {@code compact1},  {@code compact2},  {@code compact3}, {@code full}
-     *  <p>
-     * {@code auto} value (default) forces Excelsior JET to detect which parts of the Java SE Platform API
-     * are referenced by the application and select the smallest compact profile that includes them all,
-     * or the entire Platform API if there is no such profile.
-     * </p>
-     */
-    private String profile;
+    private RuntimeConfig runtimeConfiguration;
 
     /**
      * Trial version configuration parameters.
@@ -460,29 +430,6 @@ public class JetProject {
      */
     private boolean hideConsole;
 
-    /**
-     * Add optional JET Runtime components to the package.
-     * By default, only the {@code jce} component (Java Crypto Extension) is added.
-     * You may pass a special value {@code all} to include all available optional components at once
-     * or {@code none} to not include any of them.
-     * Available optional components:
-     * {@code runtime_utilities}, {@code fonts}, {@code awt_natives}, {@code api_classes}, {@code jce},
-     * {@code accessibility}, {@code javafx}, {@code javafx-webkit}, {@code nashorn}, {@code cldr}
-     */
-    private String[] optRtFiles;
-
-    /**
-     * Add locales and charsets.
-     * By default only {@code European} locales are added.
-     * You may pass a special value {@code all} to include all available locales at once
-     * or {@code none} to not include any additional locales.
-     * Available locales and charsets:
-     *    {@code European}, {@code Indonesian}, {@code Malay}, {@code Hebrew}, {@code Arabic},
-     *    {@code Chinese}, {@code Japanese}, {@code Korean}, {@code Thai}, {@code Vietnamese}, {@code Hindi},
-     *    {@code Extended_Chinese}, {@code Extended_Japanese}, {@code Extended_Korean}, {@code Extended_Thai},
-     *    {@code Extended_IBM}, {@code Extended_Macintosh}, {@code Latin_3}
-     */
-    private String[] locales;
     /**
      * Additional compiler options and equations.
      * The commonly used compiler options and equations are mapped to the respective project parameters,
@@ -861,25 +808,12 @@ public class JetProject {
                     }
                 }
             }
-            if (excelsiorJet.isCompactProfilesSupported()) {
-                if (profile == null) {
-                    profile = CompactProfileType.AUTO.toString();
-                } else if (compactProfile() == null) {
-                    throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
-                }
-            } else if (profile != null) {
-                switch (compactProfile()) {
-                    case COMPACT1: case COMPACT2: case COMPACT3:
-                        throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
-                    case AUTO: case FULL:
-                        break;
-                    default:  throw new AssertionError("Unknown compact profile: " + compactProfile());
-                }
-            }
+
+            runtimeConfiguration.fillDefaults(this, excelsiorJet);
 
             checkTrialVersionConfig(excelsiorJet);
 
-            checkGlobalAndSlimDownParameters(excelsiorJet);
+            checkGlobal(excelsiorJet);
 
             checkExcelsiorInstallerConfig();
 
@@ -892,11 +826,15 @@ public class JetProject {
         }
     }
 
-    private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException {
+    private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+        if (!addWindowsVersionInfo && !windowsVersionInfoConfiguration.isEmpty()) {
+            throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure"));
+        }
+
         if (!excelsiorJet.getTargetOS().isWindows()) {
             addWindowsVersionInfo = false;
         }
-        if (addWindowsVersionInfo && (excelsiorJet.getEdition() == JetEdition.STANDARD)) {
+        if (addWindowsVersionInfo && !excelsiorJet.isWindowsVersionInfoSupported()) {
             logger.warn(s("JetApi.NoVersionInfoInStandard.Warning"));
             addWindowsVersionInfo = false;
         }
@@ -917,50 +855,15 @@ public class JetProject {
             }
         }
         if (addWindowsVersionInfo) {
-            if (winVIVersion == null) {
-                winVIVersion = version;
-            }
-
-            //Coerce winVIVersion to v1.v2.v3.v4 format.
-            String finalVersion = deriveFourDigitVersion(winVIVersion);
-            if (!winVIVersion.equals(finalVersion)) {
-                logger.warn(s("JetApi.NotCompatibleExeVersion.Warning", winVIVersion, finalVersion));
-                winVIVersion = finalVersion;
-            }
-
-            if (winVICopyright == null) {
-                String inceptionYear = this.inceptionYear;
-                String curYear = new SimpleDateFormat("yyyy").format(new Date());
-                String years = Utils.isEmpty(inceptionYear) ? curYear : inceptionYear + "," + curYear;
-                winVICopyright = "Copyright \\x00a9 " + years + " " + vendor;
-            }
-            if (winVIDescription == null) {
-                winVIDescription = product;
-            }
+            windowsVersionInfoConfiguration.fillDefaults(this);
         }
     }
 
-    private String deriveFourDigitVersion(String version) {
-        String[] versions = version.split("\\.");
-        String[] finalVersions = new String[]{"0", "0", "0", "0"};
-        for (int i = 0; i < Math.min(versions.length, 4); ++i) {
-            try {
-                finalVersions[i] = Integer.decode(versions[i]).toString();
-            } catch (NumberFormatException e) {
-                int minusPos = versions[i].indexOf('-');
-                if (minusPos > 0) {
-                    String v = versions[i].substring(0, minusPos);
-                    try {
-                        finalVersions[i] = Integer.decode(v).toString();
-                    } catch (NumberFormatException ignore) {
-                    }
-                }
-            }
-        }
-        return String.join(".", (CharSequence[]) finalVersions);
+    TestRunExecProfiles testRunExecProfiles() {
+        return new TestRunExecProfiles(execProfilesDir, execProfilesName);
     }
 
-    private void checkGlobalAndSlimDownParameters(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+    private void checkGlobal(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (globalOptimizer) {
             if (!excelsiorJet.isGlobalOptimizerSupported()) {
                 logger.warn(s("JetApi.NoGlobal.Warning"));
@@ -968,30 +871,8 @@ public class JetProject {
             }
         }
 
-        if ((javaRuntimeSlimDown != null) && !javaRuntimeSlimDown.isEnabled()) {
-            javaRuntimeSlimDown = null;
-        }
-
-        if (javaRuntimeSlimDown != null) {
-            if (!excelsiorJet.isSlimDownSupported()) {
-                logger.warn(s("JetApi.NoSlimDown.Warning"));
-                javaRuntimeSlimDown = null;
-            } else {
-                if (javaRuntimeSlimDown.detachedBaseURL == null) {
-                    throw new JetTaskFailureException(s("JetApi.DetachedBaseURLMandatory.Failure"));
-                }
-
-                if (javaRuntimeSlimDown.detachedPackage == null) {
-                    javaRuntimeSlimDown.detachedPackage = artifactName + ".pkl";
-                }
-
-                globalOptimizer = true;
-            }
-
-        }
-
         if (globalOptimizer) {
-            TestRunExecProfiles execProfiles = new TestRunExecProfiles(execProfilesDir, execProfilesName);
+            TestRunExecProfiles execProfiles = testRunExecProfiles();
             if (!execProfiles.getUsg().exists()) {
                 throw new JetTaskFailureException(s("JetApi.NoTestRun.Failure"));
             }
@@ -1035,10 +916,10 @@ public class JetProject {
 
     private void checkOSXBundleConfig() {
         if (excelsiorJetPackaging() == OSX_APP_BUNDLE) {
-            String fourDigitVersion = deriveFourDigitVersion(version);
+            String fourDigitVersion = Utils.deriveFourDigitVersion(version);
             osxBundleConfiguration.fillDefaults(this, outputName, product,
-                    deriveFourDigitVersion(version),
-                    deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
+                    Utils.deriveFourDigitVersion(version),
+                    Utils.deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
             if (!osxBundleConfiguration.icon.exists()) {
                 logger.warn(s("JetApi.NoIconForOSXAppBundle.Warning"));
             }
@@ -1160,34 +1041,25 @@ public class JetProject {
         return addWindowsVersionInfo;
     }
 
+    public String inceptionYear() {
+        return inceptionYear;
+    }
+
     PackagingType excelsiorJetPackaging() {
         return PackagingType.fromString(excelsiorJetPackaging);
     }
 
-    String winVIVersion() {
-        return winVIVersion;
+    WindowsVersionInfoConfig windowsVersionInfoConfiguration() {
+        return windowsVersionInfoConfiguration;
     }
 
-    String winVICopyright() {
-        return winVICopyright;
-    }
-
-    String winVIDescription() {
-        return winVIDescription;
-    }
-
-    boolean globalOptimizer() {
+    public boolean globalOptimizer() {
         return globalOptimizer;
     }
 
-    SlimDownConfig javaRuntimeSlimDown() {
-        return javaRuntimeSlimDown;
+    public RuntimeConfig runtimeConfiguration() {
+        return runtimeConfiguration;
     }
-
-    CompactProfileType compactProfile() {
-        return CompactProfileType.fromString(profile);
-    }
-
 
     TrialVersionConfig trialVersion() {
         return trialVersion;
@@ -1201,7 +1073,7 @@ public class JetProject {
         return windowsServiceConfiguration;
     }
 
-    String version() {
+    public String version() {
         return version;
     }
 
@@ -1253,10 +1125,6 @@ public class JetProject {
         return profileStartupTimeout;
     }
 
-    String[] optRtFiles() {
-        return optRtFiles;
-    }
-
     File jetOutputDir() {
         return jetOutputDir;
     }
@@ -1267,10 +1135,6 @@ public class JetProject {
 
     String[] compilerOptions() {
         return compilerOptions;
-    }
-
-    String[] locales() {
-        return locales;
     }
 
     public String[] runArgs() {
@@ -1354,13 +1218,8 @@ public class JetProject {
         return this;
     }
 
-    public JetProject winVIVersion(String winVIVersion) {
-        this.winVIVersion = winVIVersion;
-        return this;
-    }
-
-    public JetProject winVICopyright(String winVICopyright) {
-        this.winVICopyright = winVICopyright;
+    public JetProject windowsVersionInfoConfiguration(WindowsVersionInfoConfig windowsVersionInfoConfiguration) {
+        this.windowsVersionInfoConfiguration = windowsVersionInfoConfiguration;
         return this;
     }
 
@@ -1369,23 +1228,13 @@ public class JetProject {
         return this;
     }
 
-    public JetProject winVIDescription(String winVIDescription) {
-        this.winVIDescription = winVIDescription;
-        return this;
-    }
-
     public JetProject globalOptimizer(boolean globalOptimizer) {
         this.globalOptimizer = globalOptimizer;
         return this;
     }
 
-    public JetProject javaRuntimeSlimDown(SlimDownConfig javaRuntimeSlimDown) {
-        this.javaRuntimeSlimDown = javaRuntimeSlimDown;
-        return this;
-    }
-
-    public JetProject compactProfile(String profile) {
-        this.profile = profile;
+    public JetProject runtimeConfiguration(RuntimeConfig runtimeConfiguration) {
+        this.runtimeConfiguration = runtimeConfiguration;
         return this;
     }
 
@@ -1469,11 +1318,6 @@ public class JetProject {
         return this;
     }
 
-    public JetProject optRtFiles(String[] optRtFiles) {
-        this.optRtFiles = optRtFiles;
-        return this;
-    }
-
     public JetProject jetOutputDir(File jetOutputDir) {
         this.jetOutputDir = jetOutputDir;
         return this;
@@ -1486,11 +1330,6 @@ public class JetProject {
 
     public JetProject compilerOptions(String[] compilerOptions) {
         this.compilerOptions = compilerOptions;
-        return this;
-    }
-
-    public JetProject locales(String[] locales) {
-        this.locales = locales;
         return this;
     }
 

@@ -22,7 +22,9 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.tasks.config.RuntimeConfig;
 import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
+import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -51,6 +53,7 @@ public class PackagerArgsGenerator {
     public ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
         ArrayList<String> xpackArgs = new ArrayList<>();
 
+        File source = null;
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         switch (project.appType()) {
             case DYNAMIC_LIBRARY:
@@ -61,7 +64,8 @@ public class PackagerArgsGenerator {
             case WINDOWS_SERVICE:
                 if (project.packageFilesDir().exists()) {
                     xpackArgs.add("-source");
-                    xpackArgs.add(project.packageFilesDir().getAbsolutePath());
+                    source = project.packageFilesDir();
+                    xpackArgs.add(source.getAbsolutePath());
                 }
 
                 xpackArgs.addAll(Arrays.asList(
@@ -70,7 +74,8 @@ public class PackagerArgsGenerator {
                 break;
             case TOMCAT:
                 xpackArgs.add("-source");
-                xpackArgs.add(project.tomcatInBuildDir().getAbsolutePath());
+                source = project.tomcatInBuildDir();
+                xpackArgs.add(source.getAbsolutePath());
                 if (project.packageFilesDir().exists()) {
                     logger.warn(s("TestRunTask.PackageFilesIgnoredForTomcat.Warning"));
                 }
@@ -79,14 +84,35 @@ public class PackagerArgsGenerator {
                 throw new AssertionError("Unknown app type");
         }
 
-        if ((project.optRtFiles() != null) && (project.optRtFiles().length > 0)) {
-            if (checkNone(project.optRtFiles())) {
+        RuntimeConfig runtime = project.runtimeConfiguration();
+
+        if (runtime.location != null) {
+            String defaultRtLocation = "rt";
+            String rtLocation = defaultRtLocation;
+            if (source != null) {
+                if (new File(source, runtime.location).exists()) {
+                    throw new JetTaskFailureException(s("JetBuildTask.RuntimeLocationClash.Failure", runtime.location, source.getAbsolutePath()));
+                }
+                //check that user files does not contain a file with "rt" name;
+                int i = 0;
+                while (new File(source, rtLocation).exists()) {
+                    // if "rt" file exists in user files, xpack will try to assign "rt_i" for runtime,
+                    rtLocation = defaultRtLocation + '_' + i++;
+                }
+            }
+            if (!runtime.location.equals("rt")) {
+                xpackArgs.addAll(Arrays.asList("-move-file", rtLocation, runtime.location));
+            }
+        }
+
+        if (!Utils.isEmpty(runtime.components)) {
+            if (checkNone(runtime.components)) {
                 xpackArgs.add("-remove-opt-rt-files");
                 xpackArgs.add("all");
             } else {
                 xpackArgs.add("-add-opt-rt-files");
-                xpackArgs.add(String.join(",", project.optRtFiles()));
-                if (Arrays.stream(project.optRtFiles()).noneMatch(s -> (s.equalsIgnoreCase("jce") || s.equalsIgnoreCase("all")))) {
+                xpackArgs.add(String.join(",", runtime.components));
+                if (Arrays.stream(runtime.components).noneMatch(s -> (s.equalsIgnoreCase("jce") || s.equalsIgnoreCase("all")))) {
                     xpackArgs.add("-remove-opt-rt-files");
                     //jce is included by default, so if it is not in the list remove it
                     xpackArgs.add("jce");
@@ -94,14 +120,14 @@ public class PackagerArgsGenerator {
             }
         }
 
-        if ((project.locales() != null) && (project.locales().length > 0)) {
-            if (checkNone(project.locales())) {
+        if (!Utils.isEmpty(runtime.locales)) {
+            if (checkNone(runtime.locales)) {
                 xpackArgs.add("-remove-locales");
                 xpackArgs.add("all");
             } else {
                 xpackArgs.add("-add-locales");
-                xpackArgs.add(String.join(",", project.locales()));
-                if (Arrays.stream(project.locales()).noneMatch(s -> (s.equalsIgnoreCase("european") || s.equalsIgnoreCase("all")))) {
+                xpackArgs.add(String.join(",", runtime.locales));
+                if (Arrays.stream(runtime.locales).noneMatch(s -> (s.equalsIgnoreCase("european") || s.equalsIgnoreCase("all")))) {
                     xpackArgs.add("-remove-locales");
                     //european is included by default, so if it is not in the list remove it
                     xpackArgs.add("european");
@@ -110,19 +136,24 @@ public class PackagerArgsGenerator {
         }
 
 
-        if (project.javaRuntimeSlimDown() != null) {
+        if (runtime.slimDown != null) {
             xpackArgs.addAll(Arrays.asList(
-                    "-detached-base-url", project.javaRuntimeSlimDown().detachedBaseURL,
+                    "-detached-base-url", runtime.slimDown.detachedBaseURL,
                     "-detach-components",
-                    (project.javaRuntimeSlimDown().detachComponents != null && project.javaRuntimeSlimDown().detachComponents.length > 0) ?
-                            String.join(",", project.javaRuntimeSlimDown().detachComponents) : "auto",
-                    "-detached-package", new File(project.jetOutputDir(), project.javaRuntimeSlimDown().detachedPackage).getAbsolutePath()
+                    (runtime.slimDown.detachComponents != null && runtime.slimDown.detachComponents.length > 0) ?
+                            String.join(",", runtime.slimDown.detachComponents) : "auto",
+                    "-detached-package", new File(project.jetOutputDir(), runtime.slimDown.detachedPackage).getAbsolutePath()
             ));
         }
 
         if (excelsiorJet.isCompactProfilesSupported()) {
             xpackArgs.add("-profile");
-            xpackArgs.add(project.compactProfile().toString());
+            xpackArgs.add(runtime.compactProfile().toString());
+        }
+
+        if (runtime.diskFootprintReduction() != null) {
+            xpackArgs.add("-reduce-disk-footprint");
+            xpackArgs.add(runtime.diskFootprintReduction().toString());
         }
 
         if (project.appType() != ApplicationType.TOMCAT) {

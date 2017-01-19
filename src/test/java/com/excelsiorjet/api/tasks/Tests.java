@@ -4,9 +4,7 @@ import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.OS;
-import com.excelsiorjet.api.tasks.config.ExcelsiorInstallerConfig;
-import com.excelsiorjet.api.tasks.config.TomcatConfig;
-import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
+import com.excelsiorjet.api.tasks.config.*;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -70,7 +68,8 @@ class Tests {
                 packageFilesDir(projectDir.resolve("src").resolve("jetresources").resolve("packageFiles").toFile()).
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).
-                compactProfile("auto").
+                windowsVersionInfoConfiguration(new WindowsVersionInfoConfig()).
+                runtimeConfiguration(new RuntimeConfig()).
                 outputName("test").
                 excelsiorJetPackaging("none");
         switch (appType) {
@@ -94,6 +93,8 @@ class Tests {
             default:
                 throw new AssertionError("Unknown app type");
         }
+        //some tests disable validation where this default is set. TODO: refactor it
+        project.runtimeConfiguration().profile = "auto";
         return project;
     }
 
@@ -106,6 +107,10 @@ class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isExcelsiorInstallerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isWindowsServicesInExcelsiorInstallerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isCompactProfilesSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isGlobalOptimizerSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isDiskFootprintReductionSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isRuntimeSupported(RuntimeFlavorType.DESKTOP);
+        Mockito.doReturn(true).when(excelsiorJet).isChangeRTLocationAvailable();
         return excelsiorJet;
     }
 
