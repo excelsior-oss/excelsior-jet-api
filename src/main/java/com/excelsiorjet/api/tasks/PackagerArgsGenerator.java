@@ -288,52 +288,68 @@ public class PackagerArgsGenerator {
             }
         }
 
-        if (config.registryKey != null) {
-            xpackOptions.add(new Option("-registry-key", config.registryKey));
-        }
+        if (excelsiorJet.getTargetOS().isWindows()) {
+            //handle windows only parameters
 
-        for (Shortcut shortcut: config.shortcuts) {
-            if (shortcut.icon.path != null) {
-                xpackOptions.add(new Option("-add-file", shortcut.icon.path.getAbsolutePath(), shortcut.icon.packagePath));
+            if (config.registryKey != null) {
+                xpackOptions.add(new Option("-registry-key", config.registryKey));
             }
-            xpackOptions.add(new Option("-shortcut", argsValidForRsp(shortcut.arguments),
-                    shortcut.location, shortcut.target, shortcut.name, shortcut.icon.getLocationInPackage(),
-                    shortcut.workingDirectory, argsToString(shortcut.arguments)));
-        }
 
-        if (config.noDefaultPostInstallActions) {
-            xpackOptions.add(new Option("-no-default-post-install-actions"));
-        }
-
-        for (PostInstallCheckbox postInstallCheckbox: config.postInstallCheckboxes) {
-            switch (postInstallCheckbox.type()) {
-                case RUN:
-                    xpackOptions.add(new Option("-post-install-checkbox-run",
-                            argsValidForRsp(postInstallCheckbox.arguments),
-                            postInstallCheckbox.target, postInstallCheckbox.workingDirectory,
-                            argsToString(postInstallCheckbox.arguments),
-                            postInstallCheckbox.checkedArg()));
-                    break;
-                case OPEN:
-                    xpackOptions.add(new Option("-post-install-checkbox-open",
-                            postInstallCheckbox.target, postInstallCheckbox.checkedArg()));
-                    break;
-                case RESTART:
-                    xpackOptions.add(new Option("-post-install-checkbox-restart", postInstallCheckbox.checkedArg()));
-                    break;
-                default:
-                    throw new AssertionError("Unknown PostInstallCheckBox type: " + postInstallCheckbox.type);
+            for (Shortcut shortcut: config.shortcuts) {
+                if (shortcut.icon.path != null) {
+                    xpackOptions.add(new Option("-add-file", shortcut.icon.path.getAbsolutePath(), shortcut.icon.packagePath));
+                }
+                xpackOptions.add(new Option("-shortcut", argsValidForRsp(shortcut.arguments),
+                        shortcut.location, shortcut.target, shortcut.name, shortcut.icon.getLocationInPackage(),
+                        shortcut.workingDirectory, argsToString(shortcut.arguments)));
             }
-        }
 
-        for (FileAssociation fileAssociation: config.fileAssociations) {
-            if (fileAssociation.icon.path != null) {
-                xpackOptions.add(new Option("-add-file", fileAssociation.icon.path.getAbsolutePath(), fileAssociation.icon.packagePath));
+            if (config.noDefaultPostInstallActions) {
+                xpackOptions.add(new Option("-no-default-post-install-actions"));
             }
-            xpackOptions.add(new Option("-file-association", argsValidForRsp(fileAssociation.arguments),
-                    fileAssociation.extension, fileAssociation.target, fileAssociation.description,
-                    fileAssociation.targetDescription,fileAssociation.icon.getLocationInPackage(),
-                    argsToString(fileAssociation.arguments), fileAssociation.checked? "checked" : "unchecked"));
+
+            for (PostInstallCheckbox postInstallCheckbox: config.postInstallCheckboxes) {
+                switch (postInstallCheckbox.type()) {
+                    case RUN:
+                        xpackOptions.add(new Option("-post-install-checkbox-run",
+                                argsValidForRsp(postInstallCheckbox.arguments),
+                                postInstallCheckbox.target, postInstallCheckbox.workingDirectory,
+                                argsToString(postInstallCheckbox.arguments),
+                                postInstallCheckbox.checkedArg()));
+                        break;
+                    case OPEN:
+                        xpackOptions.add(new Option("-post-install-checkbox-open",
+                                postInstallCheckbox.target, postInstallCheckbox.checkedArg()));
+                        break;
+                    case RESTART:
+                        xpackOptions.add(new Option("-post-install-checkbox-restart", postInstallCheckbox.checkedArg()));
+                        break;
+                    default:
+                        throw new AssertionError("Unknown PostInstallCheckBox type: " + postInstallCheckbox.type);
+                }
+            }
+
+            for (FileAssociation fileAssociation: config.fileAssociations) {
+                if (fileAssociation.icon.path != null) {
+                    xpackOptions.add(new Option("-add-file", fileAssociation.icon.path.getAbsolutePath(), fileAssociation.icon.packagePath));
+                }
+                xpackOptions.add(new Option("-file-association", argsValidForRsp(fileAssociation.arguments),
+                        fileAssociation.extension, fileAssociation.target, fileAssociation.description,
+                        fileAssociation.targetDescription,fileAssociation.icon.getLocationInPackage(),
+                        argsToString(fileAssociation.arguments), fileAssociation.checked? "checked" : "unchecked"));
+            }
+
+            if (config.welcomeImage.exists()) {
+                xpackOptions.add(new Option("-welcome-image", config.welcomeImage.getAbsolutePath()));
+            }
+
+            if (config.installerImage.exists()) {
+                xpackOptions.add(new Option("-installer-image", config.installerImage.getAbsolutePath()));
+            }
+
+            if (config.uninstallerImage.exists()) {
+                xpackOptions.add(new Option("-uninstaller-image", config.uninstallerImage.getAbsolutePath()));
+            }
         }
 
         if (config.installCallback.exists()) {
@@ -346,18 +362,6 @@ public class PackagerArgsGenerator {
                         config.uninstallCallback.path.getAbsolutePath(), config.uninstallCallback.packagePath));
             }
             xpackOptions.add(new Option("-uninstall-callback", config.uninstallCallback.getLocationInPackage()));
-        }
-
-        if (config.welcomeImage.exists()) {
-            xpackOptions.add(new Option("-welcome-image", config.welcomeImage.getAbsolutePath()));
-        }
-
-        if (config.installerImage.exists()) {
-            xpackOptions.add(new Option("-installer-image", config.installerImage.getAbsolutePath()));
-        }
-
-        if (config.uninstallerImage.exists()) {
-            xpackOptions.add(new Option("-uninstaller-image", config.uninstallerImage.getAbsolutePath()));
         }
 
         if ((project.appType() == ApplicationType.TOMCAT) && project.tomcatConfiguration().allowUserToChangeTomcatPort) {
