@@ -320,4 +320,21 @@ public class PackagerArgsGeneratorTest {
         assertOptionsContain(xPackOptions, "-installer-image", new File("installer.image").getAbsolutePath());
         assertOptionsContain(xPackOptions, "-uninstaller-image", new File("uninstaller.image").getAbsolutePath());
     }
+
+    @Test
+    public void testTomcatPort() throws Exception {
+        File testJarSpy = mavenDepSpy("test.jar");
+        ProjectDependency dep = DependencyBuilder.testProjectDependency(testJarSpy).asProjectDependency();
+        JetProject prj = testProject(ApplicationType.TOMCAT).
+                excelsiorJetPackaging("excelsior-installer").
+                projectDependencies(singletonList(dep)).
+                dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.tomcatConfiguration().allowUserToChangeTomcatPort = true;
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+
+        ArrayList<Option> xPackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(new File("target.exe"));
+        assertOptionsContain(xPackOptions, "-allow-user-to-change-tomcat-port");
+    }
 }

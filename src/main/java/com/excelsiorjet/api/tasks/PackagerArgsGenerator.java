@@ -360,6 +360,10 @@ public class PackagerArgsGenerator {
             xpackOptions.add(new Option("-uninstaller-image", config.uninstallerImage.getAbsolutePath()));
         }
 
+        if ((project.appType() == ApplicationType.TOMCAT) && project.tomcatConfiguration().allowUserToChangeTomcatPort) {
+            xpackOptions.add(new Option("-allow-user-to-change-tomcat-port"));
+        }
+
         xpackOptions.add(new Option("-backend", "excelsior-installer"));
         xpackOptions.add(new Option("-company", project.vendor()));
         xpackOptions.add(new Option("-product", project.product()));
