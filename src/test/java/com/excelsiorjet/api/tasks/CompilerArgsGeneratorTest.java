@@ -266,4 +266,14 @@ public class CompilerArgsGeneratorTest {
         );
         assertTrue(compilerArgsGenerator.projectFileContent().contains(expectedPrjWinServiceSettings));
     }
+
+    @Test
+    public void testRuntimeKind() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        prj.runtimeConfiguration().flavor = "desktop";
+        prj.validate(excelsiorJet(), true);
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        assertTrue(compilerArgsGenerator.projectFileContent().contains("-jetrt=desktop"));
+    }
 }

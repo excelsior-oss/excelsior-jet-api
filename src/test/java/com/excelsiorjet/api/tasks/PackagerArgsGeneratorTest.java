@@ -211,7 +211,8 @@ public class PackagerArgsGeneratorTest {
 
     @Test
     public void testCompactProfile() throws JetTaskFailureException {
-        JetProject prj = testProject(ApplicationType.PLAIN).compactProfile("compact3");
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        prj.runtimeConfiguration().profile = "compact3";
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
@@ -225,7 +226,8 @@ public class PackagerArgsGeneratorTest {
 
     @Test
     public void testDiskFootprintReduction() throws JetTaskFailureException {
-        JetProject prj = testProject(ApplicationType.PLAIN).globalOptimizer(true).diskFootprintReduction("high-memory");
+        JetProject prj = testProject(ApplicationType.PLAIN).globalOptimizer(true);
+        prj.runtimeConfiguration().diskFootprintReduction = "high-memory";
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.execProfilesDir(prj.jetResourcesDir()).execProfilesName("test");
         TestRunExecProfiles testRunExecProfiles = Mockito.mock(TestRunExecProfiles.class);
@@ -239,5 +241,20 @@ public class PackagerArgsGeneratorTest {
         int profileIdx = xPackArgs.indexOf("-reduce-disk-footprint");
         assertTrue(profileIdx >= 0);
         assertEquals("high-memory", xPackArgs.get(profileIdx + 1));
+    }
+
+    @Test
+    public void testRtLocation() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        prj.runtimeConfiguration().location = "hidden/rt";
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        prj.validate(excelsiorJet, true);
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+        ArrayList<String> xPackArgs = packagerArgsGenerator.getCommonXPackArgs();
+
+        int profileIdx = xPackArgs.indexOf("-move-file");
+        assertTrue(profileIdx >= 0);
+        assertEquals("rt", xPackArgs.get(profileIdx + 1));
+        assertEquals("hidden/rt", xPackArgs.get(profileIdx + 2));
     }
 }
