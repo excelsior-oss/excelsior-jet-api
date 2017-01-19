@@ -265,6 +265,33 @@ public class PackagerArgsGeneratorTest {
         shortcut.workingDirectory = "working/directory";
         shortcut.arguments = new String[]{"arg1", "arg2"};
         config.shortcuts = Collections.singletonList(shortcut);
+        config.noDefaultPostInstallActions = true;
+        PostInstallCheckbox runCheckbox = new PostInstallCheckbox();
+        runCheckbox.type = "run";
+        runCheckbox.target = "runTarget";
+        runCheckbox.workingDirectory = "run/directory";
+        runCheckbox.arguments = new String[0];
+        PostInstallCheckbox openCheckbox = new PostInstallCheckbox();
+        openCheckbox.type = "open";
+        openCheckbox.target = "openTarget";
+        PostInstallCheckbox restartCheckbox = new PostInstallCheckbox();
+        restartCheckbox.type = "restart";
+        restartCheckbox.checked = false;
+        config.postInstallCheckboxes = Arrays.asList(runCheckbox, openCheckbox, restartCheckbox);
+        FileAssociation fileAssociation = new FileAssociation();
+        fileAssociation.extension = "ext";
+        fileAssociation.target = "faTarget";
+        fileAssociation.description = "assoc description";
+        fileAssociation.targetDescription = "target description";
+        fileAssociation.icon = new PackageFile(fileSpy("fileassoc.ico"), "icons");
+        fileAssociation.arguments = new String[]{"arg"};
+        fileAssociation.checked = false;
+        config.fileAssociations = Collections.singletonList(fileAssociation);
+        config.installCallback = fileSpy("install.callback");
+        config.uninstallCallback = new PackageFile(null, "uninstall.callback");
+        config.welcomeImage = fileSpy("welcome.image");
+        config.installerImage = fileSpy("installer.image");
+        config.uninstallerImage = fileSpy("uninstaller.image");
 
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
@@ -280,5 +307,17 @@ public class PackagerArgsGeneratorTest {
         assertOptionsContain(xPackOptions, "-registry-key", "registry/key");
         assertOptionsContain(xPackOptions, "-add-file", new File("shortcut.ico").getAbsolutePath(), "/");
         assertOptionsContain(xPackOptions, "-shortcut", "startup", "target", "shortcut", "/shortcut.ico", "working/directory", "arg1 arg2");
+        assertOptionsContain(xPackOptions, "-no-default-post-install-actions");
+        assertOptionsContain(xPackOptions, "-post-install-checkbox-run", "runTarget", "run/directory", "", "checked");
+        assertOptionsContain(xPackOptions, "-post-install-checkbox-open", "openTarget", "checked");
+        assertOptionsContain(xPackOptions, "-post-install-checkbox-restart", "unchecked");
+        assertOptionsContain(xPackOptions, "-add-file", new File("fileassoc.ico").getAbsolutePath(), "icons");
+        assertOptionsContain(xPackOptions, "-file-association", "ext", "faTarget", "assoc description",
+                "target description", "icons/fileassoc.ico", "arg", "unchecked");
+        assertOptionsContain(xPackOptions, "-install-callback", new File("install.callback").getAbsolutePath());
+        assertOptionsContain(xPackOptions, "-uninstall-callback", "uninstall.callback");
+        assertOptionsContain(xPackOptions, "-welcome-image", new File("welcome.image").getAbsolutePath());
+        assertOptionsContain(xPackOptions, "-installer-image", new File("installer.image").getAbsolutePath());
+        assertOptionsContain(xPackOptions, "-uninstaller-image", new File("uninstaller.image").getAbsolutePath());
     }
 }

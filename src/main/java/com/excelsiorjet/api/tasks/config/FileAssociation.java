@@ -76,8 +76,9 @@ public class FileAssociation {
     /**
      * Initial state of the respective checkbox "Associate *.extension files with target-desc"
      * in the Excelsior Installer wizard.
+     * Default value is {@code true}.
      */
-    public boolean checked;
+    public boolean checked = true;
 
     void validate() throws JetTaskFailureException {
         if (extension == null) {

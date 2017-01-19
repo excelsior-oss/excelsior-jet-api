@@ -42,7 +42,7 @@ public class PostInstallCheckbox {
 
     /**
      * Whether the checkbox should be checked by default.
-     * Default value is {@code true}
+     * Default value is {@code true}.
      */
     public boolean checked = true;
 
@@ -67,6 +67,10 @@ public class PostInstallCheckbox {
 
     public PostInstallActionType type() {
         return PostInstallActionType.fromString(type);
+    }
+
+    public String checkedArg() {
+        return checked? "checked" : "unchecked";
     }
 
     void validate() throws JetTaskFailureException {
