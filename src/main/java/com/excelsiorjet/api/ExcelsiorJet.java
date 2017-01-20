@@ -207,6 +207,10 @@ public class ExcelsiorJet {
         return !getTargetOS().isOSX() && !((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION));
     }
 
+    public boolean isAdvancedExcelsiorInstallerFeaturesSupported() {
+        return isExcelsiorInstallerSupported() && since11_3() && (edition != JetEdition.STANDARD);
+    }
+
     public boolean isStartupAcceleratorSupported() {
         return !getTargetOS().isOSX() && !isCrossCompilation() && (edition != JetEdition.STANDARD);
     }

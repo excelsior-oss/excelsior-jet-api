@@ -339,15 +339,15 @@ public class PackagerArgsGenerator {
                         argsToString(fileAssociation.arguments), fileAssociation.checked? "checked" : "unchecked"));
             }
 
-            if (config.welcomeImage.exists()) {
+            if (Utils.exists(config.welcomeImage)) {
                 xpackOptions.add(new Option("-welcome-image", config.welcomeImage.getAbsolutePath()));
             }
 
-            if (config.installerImage.exists()) {
+            if (Utils.exists(config.installerImage)) {
                 xpackOptions.add(new Option("-installer-image", config.installerImage.getAbsolutePath()));
             }
 
-            if (config.uninstallerImage.exists()) {
+            if (Utils.exists(config.uninstallerImage)) {
                 xpackOptions.add(new Option("-uninstaller-image", config.uninstallerImage.getAbsolutePath()));
             }
         }

@@ -21,6 +21,7 @@
 */
 package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.tasks.config.enums.ShortcutLocationType;
@@ -76,7 +77,7 @@ public class Shortcut {
         return ShortcutLocationType.fromString(location);
     }
 
-    void validate() throws JetTaskFailureException {
+    void validate(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         if (name == null) {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutNameNull"));
         }
@@ -93,7 +94,11 @@ public class Shortcut {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutTargetNull", name));
         }
 
-        icon.validate("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist");
+        if (!icon.isEmpty() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutIconNotSupported", name));
+        } else {
+            icon.validate("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist");
+        }
 
         if (workingDirectory == null) {
             workingDirectory = "";

@@ -269,6 +269,18 @@ public class ExcelsiorInstallerConfig {
      */
     public File uninstallerImage;
 
+    private File checkBrandingParameter(ExcelsiorJet excelsiorJet, File parValue, String parName, File defaultValue) throws JetTaskFailureException {
+        if ((parValue != null) && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedParameter", parName));
+        }
+        if (parValue == null) {
+            return excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()? defaultValue : null;
+        } else if (!parValue.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", parValue.getAbsolutePath(), parName));
+        }
+        return parValue;
+    }
+
     public void fillDefaults(JetProject project, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         //check eula settings
         if (!VALID_EULA_ENCODING_VALUES.contains(eulaEncoding)) {
@@ -337,8 +349,14 @@ public class ExcelsiorInstallerConfig {
             afterInstallRunnable.validate();
         }
 
-        if ((compressionLevel != null) && (SetupCompressionLevel.fromString(compressionLevel) == null)) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownCompressionLevel", compressionLevel));
+        if (compressionLevel != null) {
+            SetupCompressionLevel compression = SetupCompressionLevel.fromString(compressionLevel);
+            if (compression == null) {
+                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownCompressionLevel", compressionLevel));
+            }
+            if ((compression != SetupCompressionLevel.FAST) && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedCompressionLevel", compressionLevel));
+            }
         }
 
         if (!installationDirectory.isEmpty()) {
@@ -346,19 +364,27 @@ public class ExcelsiorInstallerConfig {
         }
 
         for (Shortcut shortcut: shortcuts) {
-            shortcut.validate();
+            shortcut.validate(excelsiorJet);
         }
 
         if (noDefaultPostInstallActions == null) {
             noDefaultPostInstallActions = false;
         }
 
-        for (PostInstallCheckbox postInstallCheckbox: postInstallCheckboxes) {
-            postInstallCheckbox.validate();
+        if (!postInstallCheckboxes.isEmpty() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedParameter", "postInstallCheckboxes"));
+        } else {
+            for (PostInstallCheckbox postInstallCheckbox: postInstallCheckboxes) {
+                postInstallCheckbox.validate();
+            }
         }
 
-        for (FileAssociation fileAssociation: fileAssociations) {
-            fileAssociation.validate();
+        if (!fileAssociations.isEmpty() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedParameter", "fileAssociations"));
+        } else {
+            for (FileAssociation fileAssociation: fileAssociations) {
+                fileAssociation.validate();
+            }
         }
 
         if (installCallback == null) {
@@ -375,23 +401,12 @@ public class ExcelsiorInstallerConfig {
         }
         uninstallCallback.validate("JetApi.ExcelsiorInstaller.FileDoesNotExist", "uninstallCallback");
 
-        if (welcomeImage == null) {
-            welcomeImage = new File(project.jetResourcesDir(), "welcomeImage.bmp");
-        } else if (!welcomeImage.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", welcomeImage, "welcomeImage"));
-        }
-
-        if (installerImage == null) {
-            installerImage = new File(project.jetResourcesDir(), "installerImage.bmp");
-        } else if (!installerImage.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", installerImage, "installerImage"));
-        }
-
-        if (uninstallerImage == null) {
-            uninstallerImage = new File(project.jetResourcesDir(), "uninstallerImage.bmp");
-        } else if (!uninstallerImage.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", uninstallerImage, "uninstallerImage"));
-        }
+        welcomeImage = checkBrandingParameter(excelsiorJet, welcomeImage, "welcomeImage",
+                new File(project.jetResourcesDir(), "welcomeImage.bmp"));
+        installerImage = checkBrandingParameter(excelsiorJet, installerImage, "installerImage",
+            new File(project.jetResourcesDir(), "installerImage.bmp"));
+        uninstallerImage = checkBrandingParameter(excelsiorJet, uninstallerImage, "uninstallerImage",
+            new File(project.jetResourcesDir(), "uninstallerImage.bmp"));
     }
 
     public String eulaFlag() throws JetTaskFailureException {
