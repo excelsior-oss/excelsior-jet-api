@@ -127,5 +127,9 @@ public class TomcatConfig {
         if (new File(webApps, warDeployName).exists() || new File(webApps, explodedWar).exists()) {
             throw new JetTaskFailureException(s("JetApi.WarAlreadyDeployedIntoTomcat.Failure", explodedWar, tomcatHome));
         }
+
+        if (hideConfig && allowUserToChangeTomcatPort) {
+            throw new JetTaskFailureException(s("JetApi.CantChangePortWhenHideConfig.Failure"));
+        }
     }
 }
