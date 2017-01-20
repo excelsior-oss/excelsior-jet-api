@@ -41,7 +41,7 @@ public class InstallationDirectory {
     /**
      * Installation directory type. Valid values are:
      * {@code program-files} (default on Windows, Windows only), {@code system-drive} (Windows Only), {@code absolute-path},
-     * {@code current-directory} (default on Linux), {@code user-home}.
+     * {@code current-directory} (default on Linux), {@code user-home} (Linux only).
      * <p>
      * Specifies whether the default installation directory pathname is relative to the Program Files folder,
      * is relative to the root of the system drive, is an absolute path, is relative to the curent directory, or
@@ -80,8 +80,16 @@ public class InstallationDirectory {
                     case PROGRAM_FILES:
                     case SYSTEM_DRIVE:
                         if (!excelsiorJet.getTargetOS().isWindows()) {
-                            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.OnlyWindowsInstallationDirectoryType", type));
+                            throw new JetTaskFailureException(
+                                    s("JetApi.ExcelsiorInstaller.SpecificOSInstallationDirectoryType", type, "Windows"));
                         }
+                        break;
+                    case USER_HOME:
+                        if (!excelsiorJet.getTargetOS().isLinux()) {
+                            throw new JetTaskFailureException(
+                                    s("JetApi.ExcelsiorInstaller.SpecificOSInstallationDirectoryType", type, "Linux"));
+                        }
+                        break;
                 }
             }
         }

@@ -254,7 +254,7 @@ public class PackagerArgsGeneratorTest {
         config.afterInstallRunnable.target = "runnable";
         config.afterInstallRunnable.arguments = new String[]{"arg1", "arg2"};
         config.installationDirectory.path = "inst/dir/path";
-        config.installationDirectory.type = "user-home";
+        config.installationDirectory.type = "absolute-path";
         config.installationDirectory.fixed = true;
         config.registryKey = "registry/key";
         Shortcut shortcut = new Shortcut();
@@ -302,7 +302,7 @@ public class PackagerArgsGeneratorTest {
         assertOptionsContain(xPackOptions, "-language", "french");
         assertOptionsContain(xPackOptions, "-after-install-runnable", "runnable", "arg1 arg2");
         assertOptionsContain(xPackOptions, "-installation-directory", "inst/dir/path");
-        assertOptionsContain(xPackOptions, "-installation-directory-type", "user-home");
+        assertOptionsContain(xPackOptions, "-installation-directory-type", "absolute-path");
         assertOptionsContain(xPackOptions, "-installation-directory-fixed");
         assertOptionsContain(xPackOptions, "-registry-key", "registry/key");
         assertOptionsContain(xPackOptions, "-add-file", new File("shortcut.ico").getAbsolutePath(), "/");
