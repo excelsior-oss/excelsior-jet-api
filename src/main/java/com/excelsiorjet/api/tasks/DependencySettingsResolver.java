@@ -37,10 +37,12 @@ import java.util.stream.Stream;
  */
 class DependencySettingsResolver {
 
+    private final OptimizationPreset optimizationPreset;
     private final String projectGroupId;
     private final List<DependencySettings> dependencySettingsList;
 
-    DependencySettingsResolver(String projectGroupId, List<DependencySettings> dependencySettingsList) {
+    DependencySettingsResolver(OptimizationPreset optimizationPreset, String projectGroupId, List<DependencySettings> dependencySettingsList) {
+        this.optimizationPreset = optimizationPreset;
         this.projectGroupId = projectGroupId;
         this.dependencySettingsList = dependencySettingsList;
     }
@@ -61,20 +63,11 @@ class DependencySettingsResolver {
         if (resolvedSettings.isLibrary == null) {
             resolvedSettings.isLibrary = !projectGroupId.equals(projectDependency.groupId);
         }
-        if (resolvedSettings.isLibrary) {
-            if (resolvedSettings.protect == null) {
-                resolvedSettings.protect = ClasspathEntry.ProtectionType.NOT_REQUIRED.userValue;
-            }
-            if (resolvedSettings.optimize == null) {
-                resolvedSettings.optimize = ClasspathEntry.OptimizationType.AUTO_DETECT.userValue;
-            }
-        } else {
-            if (resolvedSettings.protect == null) {
-                resolvedSettings.protect = ClasspathEntry.ProtectionType.ALL.userValue;
-            }
-            if (resolvedSettings.optimize == null) {
-                resolvedSettings.optimize = ClasspathEntry.OptimizationType.ALL.userValue;
-            }
+        if (resolvedSettings.protect == null) {
+            resolvedSettings.protect = optimizationPreset.getDefaultProtectionType(resolvedSettings.isLibrary).userValue;
+        }
+        if (resolvedSettings.optimize == null) {
+            resolvedSettings.optimize = optimizationPreset.getDefaultOptimizationType(resolvedSettings.isLibrary).userValue;
         }
         return new ClasspathEntry(resolvedSettings, projectDependency.isMainArtifact);
     }
