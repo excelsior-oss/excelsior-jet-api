@@ -204,6 +204,7 @@ public class JetBuildTaskTest {
     static void mockUtilsClass() throws Exception {
         PowerMockito.mockStatic(Utils.class, invocationOnMock -> {
             if (invocationOnMock.getMethod().getName().equals("parameterToEnumConstantName") ||
+                    invocationOnMock.getMethod().getName().equals("enumConstantNameToParameter") ||
                     invocationOnMock.getMethod().getName().equals("idStr") ||
                     invocationOnMock.getMethod().getName().equals("getCanonicalPath"))
             {

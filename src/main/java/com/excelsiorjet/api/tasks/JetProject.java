@@ -170,21 +170,6 @@ public class JetProject {
     private TomcatConfig tomcatConfiguration;
 
     /**
-     * List of managed (i.e. Maven or Gradle) dependencies specified by the user of an API client.
-     */
-    private List<ProjectDependency> projectDependencies;
-
-    /**
-     * List of {@code projectDependencies} settings and not managed dependencies specified by the user of an API client.
-     */
-    private List<DependencySettings> dependencies;
-
-    /**
-     * Internal representation of project dependencies calculated from {@code projectDependencies} and {@code dependencies}
-     */
-    private List<ClasspathEntry> classpathEntries;
-
-    /**
      * The target location for application execution profiles gathered during Test Run.
      * It is recommended to commit the collected profiles (.usg, .startup) to VCS to enable the {@code {@link JetBuildTask}}
      * to re-use them during subsequent builds without performing a Test Run.
@@ -266,15 +251,69 @@ public class JetProject {
     private WindowsVersionInfoConfig windowsVersionInfoConfiguration;
 
     /**
+     * Optimization presets define the default optimization mode for application dependencies.
+     * There are two optimization presets available: {@code typical} and {@code smart}.
+     *
+     * <dl>
+     * <dt>{@code typical} (default)</dt>
+     * <dd>
+     * Compile all classes from all dependencies to optimized native code.
+     * </dd>
+     * <dt>{@code smart}</dt>
+     * <dd>
+     * Use heuristics to determine which of the project dependencies are libraries and
+     * compile them selectively, leaving the supposedly unused classes in bytecode form.
+     * </dd>
+     * </dl>
+     * <p>
+     * For details, refer to the Excelsior JET User's Guide, Chapter "JET Control Panel",
+     * section "Step 3: Selecing a compilation mode / Classpath Grid / Selective Optimization".
+     * </p>
+     * <p>
+     * <strong>Note:</strong> Unlike the identically named preset of the JET Control Panal,
+     * selecting the {@code smart} preset does NOT automatically enable the Global Optimizer.
+     * </p>
+     *
+     * @see #dependencies
+     * @see DependencySettings
+     * @see #globalOptimizer
+     */
+    private String optimizationPreset;
+
+
+    /**
      * (32-bit only) If set to {@code true}, the Global Optimizer is enabled,
      * providing higher performance and lower memory usage for the compiled application.
-     * Performing a Test Run is mandatory when the Global Optimizer is enabled.
-     * The Global Optimizer is enabled automatically when you enable Java Runtime Slim-Down.
      *
+     * <p>
+     * The Global Optimizer detects the Java Platform API classes that your application actually uses,
+     * and compiles them together with your application classes into a single executable.
+     * The remaining classes are kept in the bytecode form. For details, refer to the Chapter
+     * "Global Optimizer" in the Excelsior JET User's Guide.
+     * </p>
+     * <p>
+     * <strong>Note:</strong> Performing a Test Run is mandatory when the Global Optimizer is enabled.
+     * The Global Optimizer is enabled automatically when you enable Java Runtime Slim-Down.
+     * </p>
      * @see TestRunTask
      * @see RuntimeConfig#slimDown
      */
     private boolean globalOptimizer;
+
+    /**
+     * List of managed (i.e. Maven or Gradle) dependencies specified by the user of an API client.
+     */
+    private List<ProjectDependency> projectDependencies;
+
+    /**
+     * List of {@code projectDependencies} settings and not managed dependencies specified by the user of an API client.
+     */
+    private List<DependencySettings> dependencies;
+
+    /**
+     * Internal representation of project dependencies calculated from {@code projectDependencies} and {@code dependencies}
+     */
+    private List<ClasspathEntry> classpathEntries;
 
     /**
      * Runtime configuration parameters.
@@ -635,6 +674,12 @@ public class JetProject {
     }
 
     void processDependencies() throws JetTaskFailureException {
+        if (optimizationPreset == null) {
+            optimizationPreset = OptimizationPreset.TYPICAL.toString();
+        } else if (optimizationPreset() == null) {
+            throw new JetTaskFailureException(s("JetApi.UnknownOptimizationPreset.Failure", optimizationPreset));
+        }
+
         for (DependencySettings dependency : dependencies) {
             if (dependency.path == null && dependency.groupId == null && dependency.artifactId == null) {
                 throw new JetTaskFailureException(s("JetApi.DependencyIdRequired"));
@@ -696,7 +741,7 @@ public class JetProject {
             }
         }
 
-        DependencySettingsResolver dependencySettingsResolver = new DependencySettingsResolver(groupId, dependenciesSettings);
+        DependencySettingsResolver dependencySettingsResolver = new DependencySettingsResolver(optimizationPreset(), groupId, dependenciesSettings);
         classpathEntries = new ArrayList<>();
         switch (appType()) {
             case PLAIN:
@@ -1053,6 +1098,10 @@ public class JetProject {
         return windowsVersionInfoConfiguration;
     }
 
+    OptimizationPreset optimizationPreset() {
+        return OptimizationPreset.fromString(optimizationPreset);
+    }
+
     public boolean globalOptimizer() {
         return globalOptimizer;
     }
@@ -1225,6 +1274,11 @@ public class JetProject {
 
     public JetProject inceptionYear(String inceptionYear) {
         this.inceptionYear = inceptionYear;
+        return this;
+    }
+
+    public JetProject optimizationPreset(String optimizationPreset) {
+        this.optimizationPreset = optimizationPreset;
         return this;
     }
 
