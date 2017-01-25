@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * (Windows) Excelsior Installer shortcut location enumeration.
+ * (Windows) Excelsior Installer shortcut locations enumeration.
  */
 public enum ShortcutLocationType {
     PROGRAM_FOLDER,

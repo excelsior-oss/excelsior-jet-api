@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Inline expansion type.
+ * Inline expansion types enumeration.
  */
 public enum InlineExpansionType {
     VERY_AGGRESSIVE,

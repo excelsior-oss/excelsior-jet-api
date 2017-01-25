@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Excelsior JET Packaging types.
+ * Excelsior JET packaging types enumeration.
  */
 public enum PackagingType {
     NONE,

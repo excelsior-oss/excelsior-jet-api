@@ -28,7 +28,7 @@ import com.excelsiorjet.api.util.Utils;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * (Winodws) Post install checkbox description.
+ * (Windows) Post install checkbox description.
  *
  * @author Nikita Lipsky
  */
@@ -48,20 +48,20 @@ public class PostInstallCheckbox {
 
     /**
      * Location of the post install checkbox action target within the package.
-     * Not valid for {@code restart} {@link #type}.
+     * Not valid for the {@code restart} {@link #type}.
      */
     public String target;
 
     /**
-     * Pathname of the working directory of the  target within the package.
-     * If it is not set, the the directory containing target will be used.
-     * Valid for {@code run} type only.
+     * Pathname of the working directory of the target within the package.
+     * If not set, the directory containing target will be used.
+     * Valid for the {@code run} type only.
      */
     public String workingDirectory;
 
     /**
-     * Command line arguments for the target.
-     * Valid for {@code run} type only.
+     * Command-line arguments for the target.
+     * Valid for the {@code run} type only.
      */
     public String[] arguments;
 

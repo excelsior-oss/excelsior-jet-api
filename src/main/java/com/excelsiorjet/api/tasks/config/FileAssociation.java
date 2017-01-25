@@ -27,19 +27,19 @@ import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * (Winodws) File association description.
+ * (Windows) File association description.
  *
  * @author Nikita Lipsky
  */
 public class FileAssociation {
 
     /**
-     * File name extension without the leading dot, such as {@code myscript}.
+     * File name extension <em>without</em> the leading dot, e.g. {@code myscript}.
      */
     public String extension;
 
     /**
-     * Description of the file type.
+     * File type description.
      * <p>
      * The operating system will display it in some dialogs, such as File Properties.
      * For example, the description of .mp3 files is "MP3 Format Sound".
@@ -48,7 +48,7 @@ public class FileAssociation {
     public String description;
 
     /**
-     * Location within the package of the executable program being associated with extension.
+     * Location within the package of the executable program that has to be associated with this extension.
      */
     public String target;
 
@@ -60,16 +60,16 @@ public class FileAssociation {
     public String targetDescription;
 
     /**
-     * The location of an icon file that should be used for files with names ending in extension.
+     * The location of an icon file that should be used for files with names ending in {@code extension}.
      * You may omit {@link PackageFile#path} parameter of the icon,
      * if {@link JetProject#packageFilesDir} already contains an icon at the specified {@link PackageFile#packagePath}
-     * parameter else the icon will be added to the package to the specified {@link PackageFile#packagePath} folder.
-     * If the icon is not set the default icon of the target executable will be used.
+     * parameter, otherwise the icon will be added to the specified {@link PackageFile#packagePath} folder of the package.
+     * If the icon is not set, the default icon of the target executable will be used.
      */
     public PackageFile icon;
 
     /**
-     * Command line arguments for the target.
+     * Command-line arguments for the target.
      */
     public String[] arguments;
 

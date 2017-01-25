@@ -28,19 +28,19 @@ import com.excelsiorjet.api.util.Utils;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * After install runnable description.
+ * After-install runnable description.
  *
  * @author Nikita Lipsky
  */
 public class AfterInstallRunnable {
 
     /**
-     * Location of the after install runnable within the package.
+     * Location of the after-install runnable within the package.
      */
     public String target;
 
     /**
-     * Command line arguments for the target.
+     * Command-line arguments for {@code target}.
      */
     public String[] arguments;
 

@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * (Windows) Excelsior Installer post install actions enumeration.
+ * (Windows) Excelsior Installer post-install actions enumeration.
  */
 public enum PostInstallActionType {
     RUN,

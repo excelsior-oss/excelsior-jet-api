@@ -42,11 +42,11 @@ public class InstallationDirectory {
      * Installation directory type. Valid values are:
      * {@code program-files} (default on Windows, Windows only),
      * {@code system-drive} (Windows Only, default for Tomcat web applications),
-     * {@code absolute-path},  {@code current-directory} (default on Linux), {@code user-home} (Linux only).
+     * {@code current-directory} (default on Linux), {@code user-home} (Linux only), and {@code absolute-path}.
      * <p>
      * Specifies whether the default installation directory pathname is relative to the Program Files folder,
-     * is relative to the root of the system drive, is an absolute path, is relative to the curent directory, or
-     * is relative to the user home directory respectively.
+     * the root of the system drive, the current directory, the user home directory, or is an absolute path,
+     * respectively.
      * </p>
      */
     public String type;
@@ -57,7 +57,7 @@ public class InstallationDirectory {
      * The full or partial pathname (depending on {@link #type}) of the desired installation directory.
      * If this parameter is not explicitly specified, its value is derived from the values of {@link JetProject#vendor},
      * {@link JetProject#product} and {@link JetProject#version} parameters as follows:
-     * {@code company-name\product-name[ product-version]}
+     * "{@code company-name\product-name[ product-version]"}
      * </p>
      */
     public String path;

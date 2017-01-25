@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Setup language enumeration.
+ * Setup languages enumeration.
  */
 public enum SetupLanguage {
     AUTODETECT,
