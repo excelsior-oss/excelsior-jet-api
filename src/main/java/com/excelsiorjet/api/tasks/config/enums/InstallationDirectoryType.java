@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Excelsior Installer installation directory type enumeration.
+ * Excelsior Installer installation directory types enumeration.
  */
 public enum InstallationDirectoryType {
     PROGRAM_FILES,

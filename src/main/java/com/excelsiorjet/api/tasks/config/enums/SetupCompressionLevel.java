@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Excelsior Installer compression level enumeration.
+ * Excelsior Installer compression levels enumeration.
  */
 public enum SetupCompressionLevel {
     FAST,

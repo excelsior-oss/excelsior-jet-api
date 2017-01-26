@@ -48,7 +48,7 @@ public class PackagerArgsGenerator {
     /**
      * xpack option representation.
      * It may be passed to xpack as separate arguments in the form of "option [parameters]" and
-     * as a line in xpack response file unless {@code validForRspFile} is false.
+     * as a line in an xpack response file, unless {@code validForRspFile} is false.
      */
     public static class Option {
         String option;
@@ -56,7 +56,7 @@ public class PackagerArgsGenerator {
 
         // Unfortunately some xpack options may contain a parameter that is list of arguments such as
         // "arg1 arg2 arg3". However if an argument has a space inside, there is no way to express such an argument
-        // in xpack response file in JET 11.3 and it should be passed to xpack directly. See JET-9035 for details.
+        // in an xpack response file in JET 11.3 and it should be passed to xpack directly. See JET-9035 for details.
         boolean validForRspFile;
 
         Option(String option, String... parameters) {

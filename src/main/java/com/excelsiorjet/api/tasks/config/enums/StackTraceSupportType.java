@@ -24,7 +24,7 @@ package com.excelsiorjet.api.tasks.config.enums;
 import com.excelsiorjet.api.util.Utils;
 
 /**
- * Stacktrace support types.
+ * Stacktrace support types enumeration.
  */
 public enum StackTraceSupportType {
     MINIMAL,

@@ -103,7 +103,7 @@ public class ExcelsiorInstallerConfig {
     public File installerSplash;
 
     /**
-     * Resulting setup language.
+     * Forced setup language.
      * <p>
      * Excelsior Installer can display its screens in multiple languages.
      * By default, it selects the most appropriate language based on the locale settings of the target system.
@@ -111,7 +111,7 @@ public class ExcelsiorInstallerConfig {
      *  {@code autodetect} (default), {@code english}, {@code french}, {@code german}, {@code japanese}, {@code russian},
      *  {@code polish}, {@code spanish}, {@code italian}, {@code brazilian}.
      * </p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      */
     public String language;
 
@@ -124,7 +124,7 @@ public class ExcelsiorInstallerConfig {
      * installed and/or third-party applications, the uninstaller will leave them in place and report to the user that
      * it was unable to remove the installation directory due to their presence.
      * </p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      */
     public Boolean cleanupAfterUninstall;
 
@@ -138,18 +138,19 @@ public class ExcelsiorInstallerConfig {
     public AfterInstallRunnable afterInstallRunnable;
 
     /**
-     * Compression level used for files packaging into setup.
+     * Packaged files compression level.
      * <p>
-     * Excelsior Installer support three compression levels: {@code fast}, {@code medium} (default) and {@code high} (slow).
+     * Excelsior Installer supports three compression levels: {@code fast}, {@code medium} (default),
+     * and {@code high} (slow).
      * </p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      */
     public String compressionLevel;
 
     /**
      * Installation directory configuration.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      *
      * @see InstallationDirectory#type
@@ -163,43 +164,47 @@ public class ExcelsiorInstallerConfig {
      * <p>
      * During installation, Excelsior Installer creates a registry key to store information
      * required for the installation of update packages.
-     * The key is located either in the HKEY_LOCAL_MACHINE/SOFTWARE/ or the HKEY_CURRENT_USER/SOFTWARE/ subtree,
+     * The key is located either in the {@code HKEY_LOCAL_MACHINE/SOFTWARE/}
+     * or the {@code HKEY_CURRENT_USER/SOFTWARE/} subtree,
      * depending on whether Common or Personal installation type gets selected during installation.
      * By default, the rest of the full name of the key is derived from the values of {@link JetProject#vendor},
      * {@link JetProject#product} and {@link JetProject#version} parameters:
-     * {@code company-name/product-name/product-version}
+     * {@code company-name/product-name/product-version}. Use this parameter to override that default.
      * </p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      */
     public String registryKey;
 
     /**
-     * (Windows) Shortcuts descriptions which the resulting installer will create at specified locations.
+     * (Windows) Descriptions of shortcuts that the resulting installer will create.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      * @see Shortcut
      */
     public List<Shortcut> shortcuts;
 
     /**
+     * Default post-install action suppress flag.
+     * <p>
      * Upon successful installation, Excelsior Installer can optionally display to the user a list of checkboxes
      * enabling various post-install actions, such as launching the installed application,
      * viewing the readme file, restarting the system, and so on.
      * The default is to add a launch action for each JET-compiled executable in the package with the text
      * "Start executable-name".
      * If you do not want to add the default action, set this paramter to {@code false}.
+     * </p>
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      * @see #postInstallCheckboxes
      */
     public Boolean noDefaultPostInstallActions;
 
     /**
-     * Post install actions descriptions.
+     * Post-install actions descriptions.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      * @see #noDefaultPostInstallActions
      */
@@ -208,7 +213,7 @@ public class ExcelsiorInstallerConfig {
     /**
      * File associations descriptions.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      * @see FileAssociation
      */
@@ -216,10 +221,10 @@ public class ExcelsiorInstallerConfig {
 
     /**
      * Install callback dynamic library.
-     * If not set, and the file {@code install.dll/libinstall.so} in {@link JetProject#jetResourcesDir} folder exists,
+     * If not set, and the file {@code install.dll/libinstall.so} in the {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      */
     public File installCallback;
@@ -231,40 +236,41 @@ public class ExcelsiorInstallerConfig {
      * so you need to specify its location in the project.
      * You may omit {@link PackageFile#path} parameter of the uninstallCallback,
      * if {@link JetProject#packageFilesDir} already contains a library at the specified {@link PackageFile#packagePath}
-     * parameter else the library will be added to the package to the specified {@link PackageFile#packagePath} folder.
-     * If the file {@code uninstall.dll/libuninstall.so} in {@link JetProject#jetResourcesDir} folder exists,
+     * parameter, otherwise the library will be added to the package to the specified {@link PackageFile#packagePath} folder.
+     * If the file {@code uninstall.dll/libuninstall.so} in the {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      * </p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      */
     public PackageFile uninstallCallback;
 
     /**
      * (Windows) Image to display on the first screen of the installation wizard. Recommended size: 177*314px.
-     * If not set, and the file {@code welcomeImage.bmp} in {@link JetProject#jetResourcesDir} folder exists,
+     * If not set, and the file {@code welcomeImage.bmp} in the {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      */
     public File welcomeImage;
 
     /**
-     * (Windows) Image to display in the upper-right corner on subsequent screens. Recommended size: 109*59px.
-     * If not set, and the file {@code installerImage.bmp} in {@link JetProject#jetResourcesDir} folder exists,
+     * (Windows) Image to display in the upper-right corner on the second and subsequent screens of the
+     * installation wizard. Recommended size: 109*59px.
+     * If not set, and the file {@code installerImage.bmp} in the {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      */
     public File installerImage;
 
     /**
      * (Windows) Image to display on the first screen of the uninstall wizard. Recommended size: 177*314px.
-     * If not set, and the file {@code uninstallerImage.bmp} in {@link JetProject#jetResourcesDir} folder exists,
+     * If not set, and the file {@code uninstallerImage.bmp} in the {@link JetProject#jetResourcesDir} folder exists,
      * that file is used by convention.
      * <p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      */
     public File uninstallerImage;

@@ -29,7 +29,7 @@ import com.excelsiorjet.api.tasks.config.enums.ShortcutLocationType;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * (Winodws) Shortcut description.
+ * (Windows) Shortcut description.
  *
  * @author Nikita Lipsky
  */
@@ -37,7 +37,7 @@ public class Shortcut {
 
     /**
      * Shortcut location.
-     * Valid values are {@code program-folder}, {@code desktop}, {@code start-menu} or {@code startup}.
+     * Valid values are {@code program-folder}, {@code desktop}, {@code start-menu}, and {@code startup}.
      */
     public String location;
 
@@ -47,29 +47,30 @@ public class Shortcut {
     public String target;
 
     /**
-     * Name of the shortcut. By default, short name of the target is used.
+     * Name of the shortcut. By default, the short name of the target is used.
      */
     public String name;
 
     /**
-     * The location of the shortcut icon.
+     * location of the shortcut icon.
      * You may omit {@link PackageFile#path} parameter of the icon,
      * if {@link JetProject#packageFilesDir} already contains an icon at the specified {@link PackageFile#packagePath}
-     * parameter else the icon will be added to the package to the specified {@link PackageFile#packagePath} folder
+     * parameter, othwerwise the icon will be added to the the specified {@link PackageFile#packagePath} folder of the package
      * and used for the shortcut.
-     * If the icon is not set for the shortcut the default icon will be used
-     * (f.i. the icon associated with the executable target).
+     * (If no icon is set for the shortcut and its {@code target} is a binary executable 
+     * that has an icon, that icon will be used, otherwise the system default icon for 
+     * the target file type will be used.)
      */
     public PackageFile icon;
 
     /**
      * Pathname of the working directory of the shortcut target within the package.
-     * If it is not set, the the directory containing target will be used.
+     * If not set, the directory containing the target will be used.
      */
     public String workingDirectory;
 
     /**
-     * Command line arguments for the target.
+     * Command-line arguments for the target.
      */
     public String[] arguments;
 

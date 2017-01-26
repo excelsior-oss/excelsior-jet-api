@@ -28,7 +28,7 @@ import java.io.File;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * Description of a file within resulting package.
+ * Description of a file within the resulting package.
  *
  * @author Nikita Lipsky
  */
@@ -41,7 +41,7 @@ public class PackageFile {
 
     /**
      * Location of the file in the resulting package.
-     * If it is no set, the file will be added to the root installation directory.
+     * If not set, the file will be added to the root installation directory.
      */
     public String packagePath;
 
@@ -53,7 +53,7 @@ public class PackageFile {
     }
 
     /**
-     * @return location of this file in the package including file name or empty string if the file {@link #isEmpty()}}
+     * @return location of this file in the package including file name, or empty string if the file {@link #isEmpty()}}
      */
     public String getLocationInPackage() {
         if (isEmpty()) {
