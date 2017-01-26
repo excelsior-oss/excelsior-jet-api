@@ -52,7 +52,7 @@ public class Shortcut {
     public String name;
 
     /**
-     * location of the shortcut icon.
+     * Location of the shortcut icon.
      * You may omit {@link PackageFile#path} parameter of the icon,
      * if {@link JetProject#packageFilesDir} already contains an icon at the specified {@link PackageFile#packagePath}
      * parameter, othwerwise the icon will be added to the the specified {@link PackageFile#packagePath} folder of the package
