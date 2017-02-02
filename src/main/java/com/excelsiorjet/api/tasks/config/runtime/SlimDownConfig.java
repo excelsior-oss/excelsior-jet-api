@@ -19,9 +19,9 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.runtime;
 
-import com.excelsiorjet.api.tasks.JetProject;
+import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
 
 /**
  * Configuration parameters of Java Runtime Slim-Down feature.

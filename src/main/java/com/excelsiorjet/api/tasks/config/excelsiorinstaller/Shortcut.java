@@ -19,12 +19,12 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.enums.ShortcutLocationType;
+import com.excelsiorjet.api.tasks.config.PackageFile;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
@@ -83,12 +83,10 @@ public class Shortcut {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutNameNull"));
         }
 
-        if ((location != null) && (location() == null)) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownShortcutLocationType", name, location));
-        }
-
         if (location == null) {
             location = ShortcutLocationType.PROGRAM_FOLDER.toString();
+        } else {
+            ShortcutLocationType.validate(location, name);
         }
 
         if (target == null) {
@@ -98,7 +96,7 @@ public class Shortcut {
         if (!icon.isEmpty() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutIconNotSupported", name));
         } else {
-            icon.validate("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist");
+            icon.validate("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist", name);
         }
 
         if (workingDirectory == null) {

@@ -21,9 +21,9 @@
 */
 package com.excelsiorjet.api.tasks;
 
-import com.excelsiorjet.api.tasks.config.DependencySettings;
-import com.excelsiorjet.api.tasks.config.ProjectDependency;
-import com.excelsiorjet.api.tasks.config.enums.OptimizationPreset;
+import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
+import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.dependencies.OptimizationPreset;
 
 import java.util.List;
 import java.util.TreeSet;

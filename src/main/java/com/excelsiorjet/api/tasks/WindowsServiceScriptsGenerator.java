@@ -22,7 +22,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.tasks.config.WindowsServiceConfig.LogOnType;
+import com.excelsiorjet.api.tasks.config.windowsservice.LogOnType;
 import com.excelsiorjet.api.util.Utils;
 
 import java.util.ArrayList;

@@ -19,28 +19,40 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.compiler;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Stacktrace support types enumeration.
+ * Inline expansion types enumeration.
  */
-public enum StackTraceSupportType {
-    MINIMAL,
-    FULL,
-    NONE;
+public enum InlineExpansionType {
+    VERY_AGGRESSIVE,
+    AGGRESSIVE, //default
+    MEDIUM,
+    LOW,
+    TINY_METHODS_ONLY;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static StackTraceSupportType fromString(String stackTraceSupport) {
+    public static InlineExpansionType validate(String inlineExpansion) throws JetTaskFailureException {
         try {
-            return StackTraceSupportType.valueOf(Utils.parameterToEnumConstantName(stackTraceSupport));
+            return InlineExpansionType.valueOf(Utils.parameterToEnumConstantName(inlineExpansion));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownInlineExpansionValue.Failure", inlineExpansion));
         }
     }
 
+    public static InlineExpansionType fromString(String inlineExpansion) {
+        try {
+            return validate(inlineExpansion);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("inlineExpansion should be valid here", e);
+        }
+    }
 }

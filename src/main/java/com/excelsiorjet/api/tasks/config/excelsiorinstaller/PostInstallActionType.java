@@ -19,38 +19,38 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.enums.PostInstallActionType;
 import com.excelsiorjet.api.util.Utils;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * After-install runnable description.
- *
- * @author Nikita Lipsky
+ * (Windows) Excelsior Installer post-install actions enumeration.
  */
-public class AfterInstallRunnable {
+public enum PostInstallActionType {
+    RUN,
+    OPEN,
+    RESTART;
 
-    /**
-     * Location of the after-install runnable within the package.
-     */
-    public String target;
-
-    /**
-     * Command-line arguments for {@code target}.
-     */
-    public String[] arguments;
-
-    public boolean isEmpty() {
-        return (target == null) && Utils.isEmpty(arguments);
+    public String toString() {
+        return Utils.enumConstantNameToParameter(name());
     }
 
-    void validate() throws JetTaskFailureException {
-        if (target == null) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.AfterInstallRunnableTargetNull"));
+    public static PostInstallActionType validate(String postInstallAction) throws JetTaskFailureException {
+        try {
+            return PostInstallActionType.valueOf(Utils.parameterToEnumConstantName(postInstallAction));
+        } catch (Exception e) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownPostInstallActionType", postInstallAction));
+        }
+    }
+
+    public static PostInstallActionType fromString(String postInstallAction) {
+        try {
+            return validate(postInstallAction);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("postInstallAction should be valid here", e);
         }
     }
 

@@ -19,34 +19,38 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Excelsior Installer installation directory types enumeration.
+ * After-install runnable description.
+ *
+ * @author Nikita Lipsky
  */
-public enum InstallationDirectoryType {
-    PROGRAM_FILES,
-    SYSTEM_DRIVE,
-    ABSOLUTE_PATH,
-    CURRENT_DIRECTORY,
-    USER_HOME;
+public class AfterInstallRunnable {
 
-    public String toString() {
-        return Utils.enumConstantNameToParameter(name());
+    /**
+     * Location of the after-install runnable within the package.
+     */
+    public String target;
+
+    /**
+     * Command-line arguments for {@code target}.
+     */
+    public String[] arguments;
+
+    public boolean isEmpty() {
+        return (target == null) && Utils.isEmpty(arguments);
     }
 
-    public static InstallationDirectoryType fromString(String type) {
-        if (type == null) {
-            return null;
-        }
-        try {
-            return InstallationDirectoryType.valueOf(Utils.parameterToEnumConstantName(type));
-        } catch (Exception e) {
-            return null;
+    void validate() throws JetTaskFailureException {
+        if (target == null) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.AfterInstallRunnableTargetNull"));
         }
     }
-
 
 }

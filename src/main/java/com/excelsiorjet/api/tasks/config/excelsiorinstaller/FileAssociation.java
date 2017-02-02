@@ -19,10 +19,12 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import com.excelsiorjet.api.tasks.config.PackageFile;
+import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
 
 import static com.excelsiorjet.api.util.Txt.s;
 

@@ -19,9 +19,12 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
+
+import static com.excelsiorjet.api.util.Txt.s;
 
 /**
  * Excelsior JET packaging types enumeration.
@@ -37,11 +40,19 @@ public enum PackagingType {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static PackagingType fromString(String packaging) {
+    public static PackagingType validate(String packaging) throws JetTaskFailureException {
         try {
             return PackagingType.valueOf(Utils.parameterToEnumConstantName(packaging));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownPackagingMode.Failure", packaging));
+        }
+    }
+
+    public static PackagingType fromString(String packaging) {
+        try {
+            return validate(packaging);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("excelsiorJetPackaging should be valid here", e);
         }
     }
 

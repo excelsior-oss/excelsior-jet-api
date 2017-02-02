@@ -19,9 +19,8 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.dependencies;
 
-import com.excelsiorjet.api.tasks.config.enums.OptimizationPreset;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;

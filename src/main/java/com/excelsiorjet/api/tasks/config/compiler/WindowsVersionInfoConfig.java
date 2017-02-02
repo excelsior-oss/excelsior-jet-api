@@ -19,7 +19,7 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.compiler;
 
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.util.Utils;

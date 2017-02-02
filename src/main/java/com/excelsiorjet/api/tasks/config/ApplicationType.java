@@ -19,31 +19,48 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Java SE 8 compact profiles enumeration.
+ * Supported application types enumeration.
  */
-public enum CompactProfileType {
-    AUTO, // special value that means that Excelsior JET should choose minimal required profile for the application itself
-    COMPACT1,
-    COMPACT2,
-    COMPACT3,
-    FULL;
+public enum ApplicationType {
+
+    /**
+     * Plain Java application, that runs standalone.
+     */
+    PLAIN,
+
+    /**
+     * Servlet-based Java application, that runs within Tomcat servlet container.
+     */
+    TOMCAT,
+
+    /**
+     * Dynamic library callable from a non-Java environment.
+     */
+    DYNAMIC_LIBRARY,
+
+    /**
+     * Windows service (Windows only).
+     */
+    WINDOWS_SERVICE
+    ;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static CompactProfileType fromString(String profile) {
+    public static ApplicationType validate(String appType) throws JetTaskFailureException {
         try {
-            return CompactProfileType.valueOf(Utils.parameterToEnumConstantName(profile));
+            return ApplicationType.valueOf(Utils.parameterToEnumConstantName(appType));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownAppType.Failure", appType));
         }
     }
-
-
 }

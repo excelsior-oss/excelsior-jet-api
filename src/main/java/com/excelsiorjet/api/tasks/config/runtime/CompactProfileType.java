@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,33 +19,32 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.runtime;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * (Windows) Excelsior Installer shortcut locations enumeration.
+ * Java SE 8 compact profiles enumeration.
  */
-public enum ShortcutLocationType {
-    PROGRAM_FOLDER,
-    DESKTOP,
-    START_MENU,
-    STARTUP;
+public enum CompactProfileType {
+    AUTO, // special value that means that Excelsior JET should choose minimal required profile for the application itself
+    COMPACT1,
+    COMPACT2,
+    COMPACT3,
+    FULL;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static ShortcutLocationType fromString(String location) {
-        if (location == null) {
-            return null;
-        }
+    public static CompactProfileType validate(String profile) throws JetTaskFailureException {
         try {
-            return ShortcutLocationType.valueOf(Utils.parameterToEnumConstantName(location));
+            return CompactProfileType.valueOf(Utils.parameterToEnumConstantName(profile));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
         }
     }
-
-
 }

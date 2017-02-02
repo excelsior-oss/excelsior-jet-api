@@ -5,8 +5,12 @@ import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.OS;
 import com.excelsiorjet.api.tasks.config.*;
-import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
-import com.excelsiorjet.api.tasks.config.enums.RuntimeFlavorType;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
+import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
+import com.excelsiorjet.api.tasks.config.runtime.RuntimeFlavorType;
+import com.excelsiorjet.api.tasks.config.excelsiorinstaller.ExcelsiorInstallerConfig;
+import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -75,6 +79,7 @@ class Tests {
                 windowsVersionInfoConfiguration(new WindowsVersionInfoConfig()).
                 runtimeConfiguration(new RuntimeConfig()).
                 outputName("test").
+                stackTraceSupport("minimal").
                 excelsiorJetPackaging("none");
         switch (appType) {
             case PLAIN:

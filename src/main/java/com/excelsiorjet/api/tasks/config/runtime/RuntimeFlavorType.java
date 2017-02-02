@@ -19,9 +19,12 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.runtime;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
+
+import static com.excelsiorjet.api.util.Txt.s;
 
 /**
  * Runtime flavors enumeration.
@@ -35,16 +38,11 @@ public enum RuntimeFlavorType {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static RuntimeFlavorType fromString(String flavor) {
-        if (flavor == null) {
-            return null;
-        }
+    public static RuntimeFlavorType validate(String flavor) throws JetTaskFailureException {
         try {
             return RuntimeFlavorType.valueOf(Utils.parameterToEnumConstantName(flavor));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownRuntimeKind.Failure", flavor));
         }
     }
-
-
 }

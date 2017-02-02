@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,33 +19,32 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Disk footprint reduction modes enumeration.
+ * Excelsior Installer installation directory types enumeration.
  */
-public enum DiskFootprintReductionType {
-    NONE,
-    MEDIUM,
-    HIGH_DISK,
-    HIGH_MEMORY;
+public enum InstallationDirectoryType {
+    PROGRAM_FILES,
+    SYSTEM_DRIVE,
+    ABSOLUTE_PATH,
+    CURRENT_DIRECTORY,
+    USER_HOME;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static DiskFootprintReductionType fromString(String profile) {
-        if (profile == null) {
-            return null;
-        }
+    public static InstallationDirectoryType validate(String type) throws JetTaskFailureException {
         try {
-            return DiskFootprintReductionType.valueOf(Utils.parameterToEnumConstantName(profile));
+            return InstallationDirectoryType.valueOf(Utils.parameterToEnumConstantName(type));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownInstallationDirectoryType", type));
         }
     }
-
-
 }

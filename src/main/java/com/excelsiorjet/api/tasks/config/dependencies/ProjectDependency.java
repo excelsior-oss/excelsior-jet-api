@@ -20,7 +20,7 @@
  *
  */
 
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.dependencies;
 
 import com.excelsiorjet.api.util.Utils;
 

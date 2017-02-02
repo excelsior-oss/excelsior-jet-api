@@ -19,11 +19,14 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.dependencies;
 
 import com.excelsiorjet.api.tasks.ClasspathEntry.OptimizationType;
 import com.excelsiorjet.api.tasks.ClasspathEntry.ProtectionType;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
+
+import static com.excelsiorjet.api.util.Txt.s;
 
 /**
  * Optimization presets enumeration.
@@ -36,11 +39,19 @@ public enum OptimizationPreset {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static OptimizationPreset fromString(String preset) {
+    public static OptimizationPreset validate(String optimizationPreset) throws JetTaskFailureException {
         try {
-            return OptimizationPreset.valueOf(Utils.parameterToEnumConstantName(preset));
+            return OptimizationPreset.valueOf(Utils.parameterToEnumConstantName(optimizationPreset));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownOptimizationPreset.Failure", optimizationPreset));
+        }
+    }
+
+    public static OptimizationPreset fromString(String optimizationPreset) {
+        try {
+            return validate(optimizationPreset);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("optimizationPreset should be valid here", e);
         }
     }
 

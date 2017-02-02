@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,32 +19,38 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.compiler;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Excelsior Installer compression levels enumeration.
+ * Stacktrace support types enumeration.
  */
-public enum SetupCompressionLevel {
-    FAST,
-    MEDIUM,
-    HIGH;
+public enum StackTraceSupportType {
+    MINIMAL,
+    FULL,
+    NONE;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static SetupCompressionLevel fromString(String compressionLevel) {
-        if (compressionLevel == null) {
-            return null;
-        }
+    public static StackTraceSupportType validate(String stackTraceSupport) throws JetTaskFailureException {
         try {
-            return SetupCompressionLevel.valueOf(Utils.parameterToEnumConstantName(compressionLevel));
+            return StackTraceSupportType.valueOf(Utils.parameterToEnumConstantName(stackTraceSupport));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownStackTraceSupportValue.Failure", stackTraceSupport));
         }
     }
 
-
+    public static StackTraceSupportType fromString(String stackTraceSupport){
+        try {
+            return validate(stackTraceSupport);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("stackTraceSupport should be valid here");
+        }
+    }
 }

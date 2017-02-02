@@ -19,47 +19,31 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.runtime;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Supported application types enumeration.
+ * Disk footprint reduction modes enumeration.
  */
-public enum ApplicationType {
-
-    /**
-     * Plain Java application, that runs standalone.
-     */
-    PLAIN,
-
-    /**
-     * Servlet-based Java application, that runs within Tomcat servlet container.
-     */
-    TOMCAT,
-
-    /**
-     * Dynamic library callable from a non-Java environment.
-     */
-    DYNAMIC_LIBRARY,
-
-    /**
-     * Windows service (Windows only).
-     */
-    WINDOWS_SERVICE
-    ;
+public enum DiskFootprintReductionType {
+    NONE,
+    MEDIUM,
+    HIGH_DISK,
+    HIGH_MEMORY;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static ApplicationType fromString(String appType) {
+    public static DiskFootprintReductionType validate(String profile) throws JetTaskFailureException {
         try {
-            return ApplicationType.valueOf(Utils.parameterToEnumConstantName(appType));
+            return DiskFootprintReductionType.valueOf(Utils.parameterToEnumConstantName(profile));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownDiskFootprintReductionType.Failure", profile));
         }
     }
-
-
 }

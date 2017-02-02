@@ -19,13 +19,10 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.runtime;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.*;
-import com.excelsiorjet.api.tasks.config.enums.CompactProfileType;
-import com.excelsiorjet.api.tasks.config.enums.DiskFootprintReductionType;
-import com.excelsiorjet.api.tasks.config.enums.RuntimeFlavorType;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -145,10 +142,8 @@ public class RuntimeConfig {
     public void fillDefaults(JetProject jetProject, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
 
         if (flavor != null) {
-            if (flavor() == null) {
-                throw new JetTaskFailureException(s("JetApi.UnknownRuntimeKind.Failure", flavor));
-            }
-            if (!excelsiorJet.isRuntimeSupported(flavor())) {
+            RuntimeFlavorType flavorType = RuntimeFlavorType.validate(flavor);
+            if (!excelsiorJet.isRuntimeSupported(flavorType)) {
                 throw new JetTaskFailureException(s("JetApi.RuntimeKindNotSupported.Failure", flavor));
             }
         }
@@ -161,19 +156,19 @@ public class RuntimeConfig {
 
         if (profile == null) {
             profile = CompactProfileType.AUTO.toString();
-        }
-        if (compactProfile() == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
-        }
-        if (!excelsiorJet.isCompactProfilesSupported()) {
-            switch (compactProfile()) {
-                case COMPACT1: case COMPACT2: case COMPACT3:
-                    throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
-                case AUTO: case FULL:
-                    break;
-                default:  throw new AssertionError("Unknown compact profile: " + compactProfile());
+        } else {
+            CompactProfileType compactProfile = CompactProfileType.validate(profile);
+            if (!excelsiorJet.isCompactProfilesSupported()) {
+                switch (compactProfile) {
+                    case COMPACT1: case COMPACT2: case COMPACT3:
+                        throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
+                    case AUTO: case FULL:
+                        break;
+                    default:  throw new AssertionError("Unknown compact profile: " + compactProfile);
+                }
             }
         }
+
         if ((slimDown != null) && !slimDown.isEnabled()) {
             slimDown = null;
         }
@@ -197,9 +192,7 @@ public class RuntimeConfig {
         }
 
         if (diskFootprintReduction != null) {
-            if (diskFootprintReduction() == null) {
-                throw new JetTaskFailureException(s("JetApi.UnknownDiskFootprintReductionType.Failure", profile));
-            }
+            DiskFootprintReductionType.validate(diskFootprintReduction);
             if (!excelsiorJet.isDiskFootprintReductionSupported()) {
                 logger.warn(s("JetApi.NoDiskFootprintReduction.Warning"));
                 diskFootprintReduction = null;
@@ -210,17 +203,4 @@ public class RuntimeConfig {
         }
 
     }
-
-    public CompactProfileType compactProfile() {
-        return CompactProfileType.fromString(profile);
-    }
-
-    public DiskFootprintReductionType diskFootprintReduction() {
-        return DiskFootprintReductionType.fromString(diskFootprintReduction);
-    }
-
-    public RuntimeFlavorType flavor() {
-        return RuntimeFlavorType.fromString(flavor);
-    }
-
 }

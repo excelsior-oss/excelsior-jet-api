@@ -19,30 +19,39 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * (Windows) Excelsior Installer post-install actions enumeration.
+ * (Windows) Excelsior Installer shortcut locations enumeration.
  */
-public enum PostInstallActionType {
-    RUN,
-    OPEN,
-    RESTART;
+public enum ShortcutLocationType {
+    PROGRAM_FOLDER,
+    DESKTOP,
+    START_MENU,
+    STARTUP;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static PostInstallActionType fromString(String postInstallAction) {
-        if (postInstallAction == null) {
-            return null;
-        }
+    public static ShortcutLocationType validate(String location, String shortcutName) throws JetTaskFailureException {
         try {
-            return PostInstallActionType.valueOf(Utils.parameterToEnumConstantName(postInstallAction));
+            return ShortcutLocationType.valueOf(Utils.parameterToEnumConstantName(location));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownShortcutLocationType", shortcutName, location));
+        }
+    }
+
+    public static ShortcutLocationType fromString(String location) {
+        try {
+            return validate(location, "");
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("shortcutLocation should be valid here", e);
         }
     }
 }

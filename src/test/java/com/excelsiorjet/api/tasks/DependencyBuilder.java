@@ -1,7 +1,7 @@
 package com.excelsiorjet.api.tasks;
 
-import com.excelsiorjet.api.tasks.config.DependencySettings;
-import com.excelsiorjet.api.tasks.config.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
+import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
 
 import java.io.File;
 

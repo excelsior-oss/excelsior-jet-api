@@ -19,12 +19,12 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.enums.InstallationDirectoryType;
+import com.excelsiorjet.api.tasks.config.compiler.InlineExpansionType;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -73,25 +73,20 @@ public class InstallationDirectory {
 
     void validate(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         if (type != null) {
-            InstallationDirectoryType dirType = InstallationDirectoryType.fromString(type);
-            if (dirType == null) {
-                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownInstallationDirectoryType", type));
-            } else {
-                switch (dirType) {
-                    case PROGRAM_FILES:
-                    case SYSTEM_DRIVE:
-                        if (!excelsiorJet.getTargetOS().isWindows()) {
-                            throw new JetTaskFailureException(
-                                    s("JetApi.ExcelsiorInstaller.SpecificOSInstallationDirectoryType", type, "Windows"));
-                        }
-                        break;
-                    case USER_HOME:
-                        if (!excelsiorJet.getTargetOS().isLinux()) {
-                            throw new JetTaskFailureException(
-                                    s("JetApi.ExcelsiorInstaller.SpecificOSInstallationDirectoryType", type, "Linux"));
-                        }
-                        break;
-                }
+            switch (InstallationDirectoryType.validate(type)) {
+                case PROGRAM_FILES:
+                case SYSTEM_DRIVE:
+                    if (!excelsiorJet.getTargetOS().isWindows()) {
+                        throw new JetTaskFailureException(
+                                s("JetApi.ExcelsiorInstaller.SpecificOSInstallationDirectoryType", type, "Windows"));
+                    }
+                    break;
+                case USER_HOME:
+                    if (!excelsiorJet.getTargetOS().isLinux()) {
+                        throw new JetTaskFailureException(
+                                s("JetApi.ExcelsiorInstaller.SpecificOSInstallationDirectoryType", type, "Linux"));
+                    }
+                    break;
             }
         }
     }

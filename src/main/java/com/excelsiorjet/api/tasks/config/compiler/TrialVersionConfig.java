@@ -19,7 +19,7 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.compiler;
 
 /**
  * Configuration parameters of Trial Version generation feature.

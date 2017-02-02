@@ -19,12 +19,12 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.windowsservice;
 
-import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.enums.PackagingType;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
+import com.excelsiorjet.api.tasks.config.PackagingType;
 import com.excelsiorjet.api.util.Utils;
 
 import static com.excelsiorjet.api.util.Txt.s;
@@ -37,55 +37,6 @@ import static com.excelsiorjet.api.util.Txt.s;
  * @author Nikita Lipsky
  */
 public class WindowsServiceConfig {
-
-    public enum LogOnType {
-        LOCAL_SYSTEM_ACCOUNT,
-        USER_ACCOUNT;
-
-        public String toString() {
-            return Utils.enumConstantNameToParameter(name());
-        }
-
-        public static LogOnType fromString(String logOnType) {
-            try {
-                return LogOnType.valueOf(Utils.parameterToEnumConstantName(logOnType));
-            } catch (Exception e) {
-                return null;
-            }
-        }
-    }
-
-    public enum StartupType {
-        AUTOMATIC("auto"),
-        MANUAL("manual"),
-        DISABLED("disabled");
-
-        private String xpackValue;
-
-        StartupType(String xpackValue) {
-            this.xpackValue = xpackValue;
-        }
-
-        public String toString() {
-            return Utils.enumConstantNameToParameter(name());
-        }
-
-        public static StartupType fromString(String startupType) {
-            try {
-                return StartupType.valueOf(Utils.parameterToEnumConstantName(startupType));
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        public String toISrvCmdFlag() {
-            return "-" + xpackValue;
-        }
-
-        public String toXPackValue() {
-            return xpackValue;
-        }
-    }
 
     /**
      * The system name of the service.
@@ -181,13 +132,13 @@ public class WindowsServiceConfig {
 
         if (logOnType == null) {
             logOnType = LogOnType.LOCAL_SYSTEM_ACCOUNT.toString();
-        } else if (LogOnType.fromString(logOnType) == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownLogOnType.Failure", logOnType));
+        } else {
+            LogOnType.validate(logOnType);
         }
         if (startupType == null) {
             startupType = StartupType.AUTOMATIC.toString();
-        } else if (StartupType.fromString(startupType) == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownStartupType.Failure", startupType));
+        } else {
+            StartupType.validate(startupType);
         }
 
         if (allowDesktopInteraction && (LogOnType.fromString(logOnType) != LogOnType.LOCAL_SYSTEM_ACCOUNT)) {

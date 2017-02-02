@@ -19,22 +19,17 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.enums.InstallationDirectoryType;
-import com.excelsiorjet.api.tasks.config.enums.SetupCompressionLevel;
-import com.excelsiorjet.api.tasks.config.enums.SetupLanguage;
+import com.excelsiorjet.api.tasks.config.PackageFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.excelsiorjet.api.util.EncodingDetector.detectEncoding;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -55,16 +50,6 @@ public class ExcelsiorInstallerConfig {
         add(StandardCharsets.UTF_16LE.name());
         add(AUTO_DETECT_EULA_ENCODING);
     }};
-
-    public ExcelsiorInstallerConfig() {
-        //init sub objects to just not check them for null.
-        installationDirectory = new InstallationDirectory();
-        shortcuts = Collections.emptyList();
-        postInstallCheckboxes = Collections.emptyList();
-        fileAssociations = Collections.emptyList();
-        uninstallCallback = new PackageFile();
-        afterInstallRunnable = new AfterInstallRunnable();
-    }
 
     /**
      * The license agreement file. Used for Excelsior Installer.
@@ -126,7 +111,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * This functionality is available in Excelsior JET 11.3 and above.
      */
-    public Boolean cleanupAfterUninstall;
+    public boolean cleanupAfterUninstall;
 
     /**
      * Excelsior Installer can optionally run one of the executable files included in the package
@@ -135,7 +120,7 @@ public class ExcelsiorInstallerConfig {
      * @see AfterInstallRunnable#target
      * @see AfterInstallRunnable#arguments
      */
-    public AfterInstallRunnable afterInstallRunnable;
+    public AfterInstallRunnable afterInstallRunnable = new AfterInstallRunnable();
 
     /**
      * Packaged files compression level.
@@ -157,7 +142,7 @@ public class ExcelsiorInstallerConfig {
      * @see InstallationDirectory#path
      * @see InstallationDirectory#fixed
      */
-    public InstallationDirectory installationDirectory;
+    public InstallationDirectory installationDirectory = new InstallationDirectory();
 
     /**
      * (Windows) Registry key for installation.
@@ -182,7 +167,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * @see Shortcut
      */
-    public List<Shortcut> shortcuts;
+    public List<Shortcut> shortcuts = Collections.emptyList();
 
     /**
      * Default post-install action suppress flag.
@@ -192,14 +177,14 @@ public class ExcelsiorInstallerConfig {
      * viewing the readme file, restarting the system, and so on.
      * The default is to add a launch action for each JET-compiled executable in the package with the text
      * "Start executable-name".
-     * If you do not want to add the default action, set this paramter to {@code false}.
+     * If you do not want to add the default action, set this parameter to {@code true}.
      * </p>
      * <p>
      * This functionality is available in Excelsior JET 11.3 and above.
      * </p>
      * @see #postInstallCheckboxes
      */
-    public Boolean noDefaultPostInstallActions;
+    public boolean noDefaultPostInstallActions;
 
     /**
      * Post-install actions descriptions.
@@ -208,7 +193,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * @see #noDefaultPostInstallActions
      */
-    public List<PostInstallCheckbox> postInstallCheckboxes;
+    public List<PostInstallCheckbox> postInstallCheckboxes = Collections.emptyList();
 
     /**
      * File associations descriptions.
@@ -217,7 +202,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * @see FileAssociation
      */
-    public List<FileAssociation> fileAssociations;
+    public List<FileAssociation> fileAssociations = Collections.emptyList();
 
     /**
      * Install callback dynamic library.
@@ -242,7 +227,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * This functionality is available in Excelsior JET 11.3 and above.
      */
-    public PackageFile uninstallCallback;
+    public PackageFile uninstallCallback = new PackageFile();
 
     /**
      * (Windows) Image to display on the first screen of the installation wizard. Recommended size: 177*314px.
@@ -275,18 +260,6 @@ public class ExcelsiorInstallerConfig {
      */
     public File uninstallerImage;
 
-    private File checkBrandingParameter(ExcelsiorJet excelsiorJet, File parValue, String parName, File defaultValue) throws JetTaskFailureException {
-        if ((parValue != null) && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedParameter", parName));
-        }
-        if (parValue == null) {
-            return excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()? defaultValue : null;
-        } else if (!parValue.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", parValue.getAbsolutePath(), parName));
-        }
-        return parValue;
-    }
-
     public void fillDefaults(JetProject project, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         //check eula settings
         if (!VALID_EULA_ENCODING_VALUES.contains(eulaEncoding)) {
@@ -306,49 +279,11 @@ public class ExcelsiorInstallerConfig {
         }
 
         if (!excelsiorJet.since11_3()) {
-            String parameter = null;
-            if (language != null) {
-                parameter = "language";
-            } else if (!afterInstallRunnable.isEmpty()) {
-                parameter = "afterInstallRunnable";
-            } else if (compressionLevel != null) {
-                parameter = "compressionLevel";
-            } else if (!installationDirectory.isEmpty()) {
-                parameter = "installationDirectory";
-            } else if (!shortcuts.isEmpty()) {
-                parameter = "shortcuts";
-            } else if (cleanupAfterUninstall != null) {
-                parameter = "cleanupAfterUninstall";
-            } else if (registryKey != null) {
-                parameter = "registryKey";
-            } else if (noDefaultPostInstallActions != null) {
-                parameter = "noDefaultPostInstallActions";
-            } else if (!postInstallCheckboxes.isEmpty()) {
-                parameter = "postInstallCheckboxes";
-            } else if (!fileAssociations.isEmpty()) {
-                parameter = "fileAssociations";
-            } else if (installCallback != null) {
-                parameter = "installCallback";
-            } else if (!uninstallCallback.isEmpty()) {
-                parameter = "uninstallCallback";
-            } else if (welcomeImage != null) {
-                parameter = "welcomeImage";
-            } else if (installerImage != null) {
-                parameter = "installerImage";
-            } else if (uninstallerImage != null) {
-                parameter = "uninstallerImage";
-            }
-            if (parameter != null) {
-                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.Since11_3Parameter", parameter));
-            }
+            check11_3ParametersNotSet();
         }
 
-        if ((language != null) && (SetupLanguage.fromString(language) == null)) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedLanguage", language));
-        }
-
-        if (cleanupAfterUninstall == null) {
-            cleanupAfterUninstall = false;
+        if (language != null) {
+            SetupLanguage.validate(language);
         }
 
         if (!afterInstallRunnable.isEmpty()) {
@@ -356,10 +291,7 @@ public class ExcelsiorInstallerConfig {
         }
 
         if (compressionLevel != null) {
-            SetupCompressionLevel compression = SetupCompressionLevel.fromString(compressionLevel);
-            if (compression == null) {
-                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownCompressionLevel", compressionLevel));
-            }
+            SetupCompressionLevel compression = SetupCompressionLevel.validate(compressionLevel);
             if ((compression != SetupCompressionLevel.FAST) && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
                 throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedCompressionLevel", compressionLevel));
             }
@@ -371,10 +303,6 @@ public class ExcelsiorInstallerConfig {
 
         for (Shortcut shortcut: shortcuts) {
             shortcut.validate(excelsiorJet);
-        }
-
-        if (noDefaultPostInstallActions == null) {
-            noDefaultPostInstallActions = false;
         }
 
         if (!postInstallCheckboxes.isEmpty() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
@@ -415,6 +343,72 @@ public class ExcelsiorInstallerConfig {
             new File(project.jetResourcesDir(), "uninstallerImage.bmp"));
     }
 
+    private void check11_3ParametersNotSet() throws JetTaskFailureException {
+        ArrayList<String> parameters = new ArrayList<>();
+        if (language != null) {
+            parameters.add("language");
+        }
+        if (!afterInstallRunnable.isEmpty()) {
+           parameters.add("afterInstallRunnable");
+        }
+        if (compressionLevel != null) {
+            parameters.add("compressionLevel");
+        }
+        if (!installationDirectory.isEmpty()) {
+            parameters.add("installationDirectory");
+        }
+        if (!shortcuts.isEmpty()) {
+            parameters.add("shortcuts");
+        }
+        if (cleanupAfterUninstall) {
+            parameters.add("cleanupAfterUninstall");
+        }
+        if (registryKey != null) {
+            parameters.add("registryKey");
+        }
+        if (noDefaultPostInstallActions) {
+            parameters.add("noDefaultPostInstallActions");
+        }
+        if (!postInstallCheckboxes.isEmpty()) {
+            parameters.add("postInstallCheckboxes");
+        }
+        if (!fileAssociations.isEmpty()) {
+            parameters.add("fileAssociations");
+        }
+        if (installCallback != null) {
+            parameters.add("installCallback");
+        }
+        if (!uninstallCallback.isEmpty()) {
+            parameters.add("uninstallCallback");
+        }
+        if (welcomeImage != null) {
+            parameters.add("welcomeImage");
+        }
+        if (installerImage != null) {
+            parameters.add("installerImage");
+        }
+        if (uninstallerImage != null) {
+            parameters.add("uninstallerImage");
+        }
+        if (parameters.size() == 1) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.Since11_3Parameter", parameters.get(0)));
+        } else if (parameters.size() > 1) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.Since11_3Parameters", String.join(",", parameters)));
+        }
+    }
+
+    private File checkBrandingParameter(ExcelsiorJet excelsiorJet, File parValue, String parName, File defaultValue) throws JetTaskFailureException {
+        if ((parValue != null) && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedParameter", parName));
+        }
+        if (parValue == null) {
+            return excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()? defaultValue : null;
+        } else if (!parValue.exists()) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", parValue.getAbsolutePath(), parName));
+        }
+        return parValue;
+    }
+
     public String eulaFlag() throws JetTaskFailureException {
         String actualEncoding;
         try {
@@ -437,6 +431,4 @@ public class ExcelsiorInstallerConfig {
             throw new JetTaskFailureException(s("JetApi.Package.Eula.UnsupportedEncoding", eulaEncoding));
         }
     }
-
-
 }

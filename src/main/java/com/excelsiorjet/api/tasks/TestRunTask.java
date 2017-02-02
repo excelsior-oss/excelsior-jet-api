@@ -25,7 +25,7 @@ import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.tasks.config.PackageFile;
-import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -150,15 +150,13 @@ public class TestRunTask {
                     Utils.copyQuietly(project.packageFilesDir().toPath(), buildDir.toPath());
                 }
 
-                if (project.packageFiles().size() > 0) {
-                    for (PackageFile pFile: project.packageFiles()) {
-                        Path packagePath = buildDir.toPath().resolve(pFile.packagePath);
-                        packagePath.toFile().mkdirs();
-                        if (pFile.path.isDirectory()) {
-                            Utils.copyDirectory(pFile.path.toPath(), packagePath.resolve(pFile.path.getName()));
-                        } else {
-                            Utils.copyFile(pFile.path.toPath(), packagePath.resolve(pFile.path.getName()));
-                        }
+                for (PackageFile pFile : project.packageFiles()) {
+                    Path packagePath = buildDir.toPath().resolve(pFile.packagePath);
+                    packagePath.toFile().mkdirs();
+                    if (pFile.path.isDirectory()) {
+                        Utils.copyDirectory(pFile.path.toPath(), packagePath.resolve(pFile.path.getName()));
+                    } else {
+                        Utils.copyFile(pFile.path.toPath(), packagePath.resolve(pFile.path.getName()));
                     }
                 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,29 +19,37 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config.enums;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Inline expansion types enumeration.
+ * Setup languages enumeration.
  */
-public enum InlineExpansionType {
-    VERY_AGGRESSIVE,
-    AGGRESSIVE, //default
-    MEDIUM,
-    LOW,
-    TINY_METHODS_ONLY;
+public enum SetupLanguage {
+    AUTODETECT,
+    ENGLISH,
+    FRENCH,
+    GERMAN,
+    JAPANESE,
+    RUSSIAN,
+    POLISH,
+    SPANISH,
+    ITALIAN,
+    BRAZILIAN;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static InlineExpansionType fromString(String inlineExpansion) {
+    public static SetupLanguage validate(String language) throws JetTaskFailureException {
         try {
-            return InlineExpansionType.valueOf(Utils.parameterToEnumConstantName(inlineExpansion));
+            return SetupLanguage.valueOf(Utils.parameterToEnumConstantName(language));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedLanguage", language));
         }
     }
 }

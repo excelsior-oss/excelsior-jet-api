@@ -26,7 +26,16 @@ import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.tasks.config.*;
-import com.excelsiorjet.api.tasks.config.enums.*;
+import com.excelsiorjet.api.tasks.config.compiler.InlineExpansionType;
+import com.excelsiorjet.api.tasks.config.compiler.StackTraceSupportType;
+import com.excelsiorjet.api.tasks.config.compiler.TrialVersionConfig;
+import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
+import com.excelsiorjet.api.tasks.config.dependencies.OptimizationPreset;
+import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.excelsiorinstaller.ExcelsiorInstallerConfig;
+import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
+import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
@@ -37,7 +46,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import static com.excelsiorjet.api.log.Log.logger;
-import static com.excelsiorjet.api.tasks.config.enums.PackagingType.*;
+import static com.excelsiorjet.api.tasks.config.PackagingType.*;
 import static com.excelsiorjet.api.util.Txt.s;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -626,7 +635,7 @@ public class JetProject {
         }
 
         //check packaging type
-        switch (excelsiorJetPackaging()) {
+        switch (PackagingType.validate(excelsiorJetPackaging)) {
             case ZIP:
             case NONE:
                 break;
@@ -654,7 +663,7 @@ public class JetProject {
                 break;
 
             default:
-                throw new JetTaskFailureException(s("JetApi.UnknownPackagingMode.Failure", excelsiorJetPackaging));
+                throw new AssertionError("Unknown packaging type: " + excelsiorJetPackaging);
         }
 
         if ((appType == ApplicationType.WINDOWS_SERVICE) && (excelsiorJetPackaging() == EXCELSIOR_INSTALLER) &&
@@ -702,8 +711,8 @@ public class JetProject {
     void processDependencies() throws JetTaskFailureException {
         if (optimizationPreset == null) {
             optimizationPreset = OptimizationPreset.TYPICAL.toString();
-        } else if (optimizationPreset() == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownOptimizationPreset.Failure", optimizationPreset));
+        } else {
+            OptimizationPreset.validate(optimizationPreset);
         }
 
         for (DependencySettings dependency : dependencies) {
@@ -843,14 +852,14 @@ public class JetProject {
 
         if (stackTraceSupport == null) {
             stackTraceSupport = StackTraceSupportType.MINIMAL.toString();
-        } else if (stackTraceSupport() == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownStackTraceSupportValue.Failure", stackTraceSupport));
+        } else {
+            StackTraceSupportType.validate(stackTraceSupport);
         }
 
         if (inlineExpansion == null) {
             inlineExpansion = InlineExpansionType.AGGRESSIVE.toString();
-        } else if (inlineExpansion() == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownInlineExpansionValue.Failure", inlineExpansion));
+        } else {
+            InlineExpansionType.validate(inlineExpansion);
         }
 
         // check version info
@@ -1436,11 +1445,7 @@ public class JetProject {
     }
 
     public static ApplicationType checkAndGetAppType(String appType) throws JetTaskFailureException {
-        ApplicationType applicationType = ApplicationType.fromString(appType);
-        if (applicationType == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownAppType.Failure", appType));
-        }
-        return applicationType;
+        return ApplicationType.validate(appType);
     }
 
     Path toPathRelativeToJetBuildDir(ClasspathEntry classpathEntry) {

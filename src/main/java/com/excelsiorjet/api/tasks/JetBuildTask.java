@@ -24,15 +24,13 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
-import com.excelsiorjet.api.tasks.PackagerArgsGenerator.Option;
-import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
-import com.excelsiorjet.api.tasks.config.enums.PackagingType;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
+import com.excelsiorjet.api.tasks.config.PackagingType;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -91,10 +89,10 @@ public class JetBuildTask {
                 (project.appType() != ApplicationType.WINDOWS_SERVICE);
     }
 
-    private ArrayList<String> getXPackArgs(ArrayList<Option> xpackOptions, File rspFile) throws JetTaskFailureException {
+    private ArrayList<String> getXPackArgs(ArrayList<XPackOption> xpackOptions, File rspFile) throws JetTaskFailureException {
         if (excelsiorJet.since11_3()) {
             try {
-                Utils.linesToFile(xpackOptions.stream().map(Option::toRspFileLine).collect(Collectors.toList()), rspFile);
+                Utils.linesToFile(PackagerArgsGenerator.getArgFileContent(xpackOptions), rspFile);
             } catch (FileNotFoundException e) {
                 throw new JetTaskFailureException("Cannot create file " + rspFile, e);
             }
@@ -109,7 +107,7 @@ public class JetBuildTask {
 
     private ArrayList<String> getCommonXPackArgs(String targetDir, File buildDir, String suffix) throws JetTaskFailureException {
         File rspFile = new File(buildDir, project.outputName() + suffix + ".xpack");
-        ArrayList<Option> xpackOptions = packagerArgsGenerator.getCommonXPackOptions(targetDir);
+        ArrayList<XPackOption> xpackOptions = packagerArgsGenerator.getCommonXPackOptions(targetDir);
         return getXPackArgs(xpackOptions, rspFile);
     }
 
@@ -151,7 +149,7 @@ public class JetBuildTask {
 
     private ArrayList<String> getExcelsiorInstallerXPackArgs(File target, File buildDir) throws JetTaskFailureException {
         File rspFile = new File(buildDir, project.outputName() + ".EI.xpack");
-        ArrayList<Option> xpackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(target);
+        ArrayList<XPackOption> xpackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(target);
         return getXPackArgs(xpackOptions, rspFile);
     }
 

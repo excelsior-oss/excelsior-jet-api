@@ -1,8 +1,8 @@
 package com.excelsiorjet.api.tasks;
 
-import com.excelsiorjet.api.tasks.config.DependencySettings;
-import com.excelsiorjet.api.tasks.config.ProjectDependency;
-import com.excelsiorjet.api.tasks.config.enums.ApplicationType;
+import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
+import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 import org.junit.Test;

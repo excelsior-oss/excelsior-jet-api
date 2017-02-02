@@ -19,10 +19,9 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.enums.PostInstallActionType;
 import com.excelsiorjet.api.util.Utils;
 
 import static com.excelsiorjet.api.util.Txt.s;
@@ -74,16 +73,16 @@ public class PostInstallCheckbox {
     }
 
     void validate() throws JetTaskFailureException {
-        if ((type != null) && (type() == null)) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownPostInstallActionType", type));
-        }
-
         if (type == null) {
             type = PostInstallActionType.RUN.toString();
+        } else {
+            PostInstallActionType.validate(type);
         }
 
         if ((type() != PostInstallActionType.RESTART) && (target == null)) {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.PostInstallActionTargetNull"));
+        } else if (type() == PostInstallActionType.RESTART && (target != null)) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.PostInstallActionTargetNotNullForRestart"));
         }
 
         if (type() != PostInstallActionType.RUN) {
@@ -95,5 +94,4 @@ public class PostInstallCheckbox {
             }
         }
     }
-
 }

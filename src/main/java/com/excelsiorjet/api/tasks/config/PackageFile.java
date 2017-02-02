@@ -52,6 +52,11 @@ public class PackageFile {
     public PackageFile() {
     }
 
+    public PackageFile(File path, String packagePath) {
+        this.path = path;
+        this.packagePath = packagePath;
+    }
+
     /**
      * @return location of this file in the package including file name, or empty string if the file {@link #isEmpty()}}
      */
@@ -59,21 +64,17 @@ public class PackageFile {
         if (isEmpty()) {
             return "";
         } else if (path != null) {
+            assert packagePath != null: "validate() must be called before";
             return packagePath.endsWith("/") ? packagePath + path.getName() : packagePath + "/" + path.getName();
         } else {
             return packagePath;
         }
     }
 
-    public PackageFile(File path, String packagePath) {
-        this.path = path;
-        this.packagePath = packagePath;
-    }
-
     public void validate(String notExistErrorKey, String errorParam) throws JetTaskFailureException {
         if (isEmpty())
             return;
-        if ((path!=null) && !path.exists()) {
+        if ((path != null) && !path.exists()) {
             throw new JetTaskFailureException(s(notExistErrorKey, path.getAbsolutePath(), errorParam));
         }
         if (packagePath == null) {
