@@ -19,7 +19,7 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.packagefile;
 
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 
@@ -35,6 +35,11 @@ import static com.excelsiorjet.api.util.Txt.s;
 public class PackageFile {
 
     /**
+     * Package file type. Valid values are: {@code auto} (default), {@code file}, {@code folder}.
+     */
+    public String type = PackageFileType.AUTO.toString();
+
+    /**
      * Path to the file on the host system.
      */
     public File path;
@@ -45,16 +50,31 @@ public class PackageFile {
      */
     public String packagePath;
 
-    public boolean isEmpty() {
-        return (path == null) && (packagePath == null);
+    public PackageFile() {
     }
 
-    public PackageFile() {
+    public PackageFile(PackageFileType type) {
+        this.type = type.toString();
+    }
+
+    public PackageFile(PackageFileType type, File path) {
+        this.type = type.toString();
+        this.path = path;
+    }
+
+    public PackageFile(PackageFileType type, File path, String packagePath) {
+        this.type = type.toString();
+        this.path = path;
+        this.packagePath = packagePath;
     }
 
     public PackageFile(File path, String packagePath) {
         this.path = path;
         this.packagePath = packagePath;
+    }
+
+    public boolean isEmpty() {
+        return (path == null) && (packagePath == null);
     }
 
     /**
@@ -74,9 +94,30 @@ public class PackageFile {
     public void validate(String notExistErrorKey, String errorParam) throws JetTaskFailureException {
         if (isEmpty())
             return;
-        if ((path != null) && !path.exists()) {
-            throw new JetTaskFailureException(s(notExistErrorKey, path.getAbsolutePath(), errorParam));
+
+        if (path != null) {
+            if (!path.exists()) {
+                throw new JetTaskFailureException(s(notExistErrorKey, path.getAbsolutePath(), errorParam));
+            }
+            switch (PackageFileType.validate(type)) {
+                case FILE:
+                    if (!path.isFile()) {
+                        throw new JetTaskFailureException(s("JetApi.PackageFileNotFile.Error", path.getAbsolutePath()));
+                    }
+                    break;
+                case FOLDER:
+                    if (!path.isDirectory()) {
+                        throw new JetTaskFailureException(s("JetApi.PackageFileNotFolder.Error", path.getAbsolutePath()));
+                    }
+                    break;
+                case AUTO:
+                    break;
+                default:
+                    throw new AssertionError("Unknown file type: " + type);
+            }
+
         }
+
         if (packagePath == null) {
             packagePath = "/";
         }

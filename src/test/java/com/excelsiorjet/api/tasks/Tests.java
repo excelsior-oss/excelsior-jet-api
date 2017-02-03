@@ -20,8 +20,10 @@ import java.util.Collections;
 import java.util.ResourceBundle;
 
 import static java.util.Collections.emptyList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-class Tests {
+public class Tests {
 
     static final Path testBaseDir = Paths.get(System.getProperty("java.io.tmpdir"), "excelsior-jet-api-test");
     private static final Path mavenLocalDir = testBaseDir.resolve(".m2");
@@ -33,7 +35,7 @@ class Tests {
     static final Path externalJarRel = Paths.get("lib", "external.jar");
     static final Path externalJarAbs = projectDir.resolve(externalJarRel);
 
-    static File dirSpy(String path) {
+    public static File dirSpy(String path) {
         File spy = Mockito.spy(new File(path));
         Mockito.when(spy.isFile()).thenReturn(false);
         Mockito.when(spy.isDirectory()).thenReturn(true);
@@ -45,7 +47,7 @@ class Tests {
         return dirSpy(path.toString());
     }
 
-    static File fileSpy(String path) {
+    public static File fileSpy(String path) {
         File spy = Mockito.spy(new File(path));
         Mockito.when(spy.isFile()).thenReturn(true);
         Mockito.when(spy.isDirectory()).thenReturn(false);
@@ -123,6 +125,27 @@ class Tests {
         Mockito.doReturn(true).when(excelsiorJet).since11_3();
         Mockito.doReturn(true).when(excelsiorJet).isAdvancedExcelsiorInstallerFeaturesSupported();
         return excelsiorJet;
+    }
+
+    public interface Validation {
+        void validate() throws JetTaskFailureException;
+    }
+
+    public static void assertNotThrows(Validation body) {
+        try {
+            body.validate();
+        } catch (JetTaskFailureException e) {
+            fail("should be valid");
+        }
+    }
+
+    public static void assertThrows(Validation body, String message) {
+        try {
+            body.validate();
+            fail("should not be valid");
+        } catch (JetTaskFailureException e) {
+            assertEquals(message, e.getMessage());
+        }
     }
 
 }

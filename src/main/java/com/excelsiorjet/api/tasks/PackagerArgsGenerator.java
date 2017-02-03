@@ -23,12 +23,12 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.platform.Host;
-import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
 import com.excelsiorjet.api.tasks.config.excelsiorinstaller.ExcelsiorInstallerConfig;
 import com.excelsiorjet.api.tasks.config.excelsiorinstaller.FileAssociation;
 import com.excelsiorjet.api.tasks.config.excelsiorinstaller.PostInstallCheckbox;
 import com.excelsiorjet.api.tasks.config.excelsiorinstaller.Shortcut;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
 import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
 import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
 import com.excelsiorjet.api.util.Utils;

@@ -24,7 +24,8 @@ package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.PackageFile;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFileType;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
@@ -96,6 +97,8 @@ public class Shortcut {
         if (!icon.isEmpty() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutIconNotSupported", name));
         } else {
+            icon.type = PackageFileType.FILE.toString(); //check that icon is file. Maven creates sub objects
+                                                        // from scratch so we need to set type explicitly.
             icon.validate("JetApi.ExcelsiorInstaller.ShortcutIconDoesNotExist", name);
         }
 

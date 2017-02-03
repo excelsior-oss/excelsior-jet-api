@@ -24,7 +24,8 @@ package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.PackageFile;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFileType;
 
 import java.io.File;
 import java.io.IOException;
@@ -227,7 +228,7 @@ public class ExcelsiorInstallerConfig {
      * </p>
      * This functionality is available in Excelsior JET 11.3 and above.
      */
-    public PackageFile uninstallCallback = new PackageFile();
+    public PackageFile uninstallCallback = new PackageFile(PackageFileType.FILE);
 
     /**
      * (Windows) Image to display on the first screen of the installation wizard. Recommended size: 177*314px.
@@ -333,6 +334,7 @@ public class ExcelsiorInstallerConfig {
                 uninstallCallback.path = uninstall;
             }
         }
+        uninstallCallback.type = PackageFileType.FILE.toString();
         uninstallCallback.validate("JetApi.ExcelsiorInstaller.FileDoesNotExist", "uninstallCallback");
 
         welcomeImage = checkBrandingParameter(excelsiorJet, welcomeImage, "welcomeImage",

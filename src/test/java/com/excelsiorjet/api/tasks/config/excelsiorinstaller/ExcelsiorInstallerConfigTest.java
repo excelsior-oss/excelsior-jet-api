@@ -3,17 +3,16 @@ package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.platform.OS;
 import com.excelsiorjet.api.tasks.JetProject;
-import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.PackageFile;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
 import java.util.Collections;
 
+import static com.excelsiorjet.api.tasks.Tests.assertNotThrows;
+import static com.excelsiorjet.api.tasks.Tests.assertThrows;
 import static com.excelsiorjet.api.util.Txt.s;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class ExcelsiorInstallerConfigTest {
 
@@ -33,27 +32,6 @@ public class ExcelsiorInstallerConfigTest {
         File file = Mockito.spy(new File(name));
         Mockito.doReturn(false).when(file).exists();
         return file;
-    }
-
-    interface Validation {
-        void validate() throws JetTaskFailureException;
-    }
-
-    private void assertNotThrows(Validation body) {
-        try {
-            body.validate();
-        } catch (JetTaskFailureException e) {
-            fail("should be valid");
-        }
-    }
-
-    private void assertThrows(Validation body, String message) {
-        try {
-            body.validate();
-            fail("should not be valid");
-        } catch (JetTaskFailureException e) {
-            assertEquals(message, e.getMessage());
-        }
     }
 
     @Test

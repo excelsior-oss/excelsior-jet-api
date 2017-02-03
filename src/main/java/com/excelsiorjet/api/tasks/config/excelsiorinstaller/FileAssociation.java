@@ -23,8 +23,9 @@ package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
-import com.excelsiorjet.api.tasks.config.PackageFile;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
 import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFileType;
 
 import static com.excelsiorjet.api.util.Txt.s;
 
@@ -91,6 +92,7 @@ public class FileAssociation {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileAssociationTargetNull", extension));
         }
 
+        icon.type = PackageFileType.FILE.toString();
         icon.validate("JetApi.ExcelsiorInstaller.FileAssociationIconDoesNotExist", extension);
 
         if (description == null) {

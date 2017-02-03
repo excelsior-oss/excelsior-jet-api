@@ -2,7 +2,6 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
-import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
 import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
@@ -10,6 +9,8 @@ import com.excelsiorjet.api.tasks.config.excelsiorinstaller.ExcelsiorInstallerCo
 import com.excelsiorjet.api.tasks.config.excelsiorinstaller.FileAssociation;
 import com.excelsiorjet.api.tasks.config.excelsiorinstaller.PostInstallCheckbox;
 import com.excelsiorjet.api.tasks.config.excelsiorinstaller.Shortcut;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFileType;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -266,7 +267,7 @@ public class PackagerArgsGeneratorTest {
         shortcut.location = "startup";
         shortcut.target = "target";
         shortcut.name = "shortcut";
-        shortcut.icon = new PackageFile(fileSpy("shortcut.ico"), null);
+        shortcut.icon = new PackageFile(PackageFileType.FILE, fileSpy("shortcut.ico"));
         shortcut.workingDirectory = "working/directory";
         shortcut.arguments = new String[]{"arg1", "arg2"};
         config.shortcuts = Collections.singletonList(shortcut);
@@ -288,7 +289,7 @@ public class PackagerArgsGeneratorTest {
         fileAssociation.target = "faTarget";
         fileAssociation.description = "assoc description";
         fileAssociation.targetDescription = "target description";
-        fileAssociation.icon = new PackageFile(fileSpy("fileassoc.ico"), "icons");
+        fileAssociation.icon = new PackageFile(PackageFileType.FILE, fileSpy("fileassoc.ico"), "icons");
         fileAssociation.arguments = new String[]{"arg"};
         fileAssociation.checked = false;
         config.fileAssociations = Collections.singletonList(fileAssociation);
