@@ -61,7 +61,7 @@ public class SlimDownConfig {
      */
     public String detachedPackage;
 
-    public boolean isEnabled() {
+    public boolean isDefined() {
         return ((detachComponents != null) && (detachComponents.length > 0) || (detachedBaseURL != null) ||
                 (detachedPackage != null));
     }

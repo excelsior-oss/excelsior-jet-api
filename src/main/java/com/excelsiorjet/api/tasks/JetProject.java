@@ -627,9 +627,7 @@ public class JetProject {
             jetBuildDir = new File(jetOutputDir, BUILD_DIR);
         }
 
-        if (packageFilesDir == null) {
-            packageFilesDir = new File(jetResourcesDir, PACKAGE_FILES_DIR);
-        }
+        packageFilesDir = checkFileWithDefault(packageFilesDir, PACKAGE_FILES_DIR, "packageFilesDir");
 
         if (excelsiorJetPackaging == null) {
             excelsiorJetPackaging = ZIP.toString();
@@ -686,7 +684,7 @@ public class JetProject {
             execProfilesName = projectName;
         }
 
-        if (packageFilesDir().exists() && appType == ApplicationType.TOMCAT) {
+        if ((packageFilesDir() != null) && appType == ApplicationType.TOMCAT) {
             throw new JetTaskFailureException(s("JetApi.PackageFilesForTomcat.Error", "packageFilesDir"));
         }
 
@@ -839,13 +837,9 @@ public class JetProject {
 
     private void validateForBuild(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
 
-        if (icon == null) {
-            icon = new File(jetResourcesDir, "icon.ico");
-        }
+        icon = checkFileWithDefault(icon, "icon.ico", "icon");
 
-        if (splash == null) {
-            splash = new File(jetResourcesDir, "splash.png");
-        }
+        splash = checkFileWithDefault(splash, "splash.png", "splash");
 
         if (outputName == null) {
             outputName = projectName;
@@ -907,6 +901,11 @@ public class JetProject {
         }
     }
 
+    public File checkFileWithDefault(File file, String defaultFileName, String notExistParam) throws JetTaskFailureException {
+        return Utils.checkFileWithDefault(file, new File(jetResourcesDir, defaultFileName),
+                "JetApi.FileDoesNotExist.Error", notExistParam);
+    }
+
     private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
         if (!addWindowsVersionInfo && !windowsVersionInfoConfiguration.isEmpty()) {
             throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure"));
@@ -961,7 +960,7 @@ public class JetProject {
     }
 
     private void checkTrialVersionConfig(ExcelsiorJet excelsiorJet) throws JetTaskFailureException, JetHomeException {
-        if ((trialVersion != null) && trialVersion.isEnabled()) {
+        if ((trialVersion != null) && trialVersion.isDefined()) {
             if ((trialVersion.expireInDays >= 0) && (trialVersion.expireDate != null)) {
                 throw new JetTaskFailureException(s("JetApi.AmbiguousExpireSetting.Failure"));
             }
@@ -995,13 +994,13 @@ public class JetProject {
         }
     }
 
-    private void checkOSXBundleConfig() {
+    private void checkOSXBundleConfig() throws JetTaskFailureException {
         if (excelsiorJetPackaging() == OSX_APP_BUNDLE) {
             String fourDigitVersion = Utils.deriveFourDigitVersion(version);
             osxBundleConfiguration.fillDefaults(this, outputName, product,
                     Utils.deriveFourDigitVersion(version),
                     Utils.deriveFourDigitVersion(fourDigitVersion.substring(0, fourDigitVersion.lastIndexOf('.'))));
-            if (!osxBundleConfiguration.icon.exists()) {
+            if (osxBundleConfiguration.icon == null) {
                 logger.warn(s("JetApi.NoIconForOSXAppBundle.Warning"));
             }
         }

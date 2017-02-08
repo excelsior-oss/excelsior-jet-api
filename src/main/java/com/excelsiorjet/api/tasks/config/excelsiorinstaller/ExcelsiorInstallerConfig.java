@@ -26,6 +26,7 @@ import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
 import com.excelsiorjet.api.tasks.config.packagefile.PackageFileType;
+import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -267,17 +268,10 @@ public class ExcelsiorInstallerConfig {
             throw new JetTaskFailureException(s("JetApi.Package.Eula.UnsupportedEncoding", eulaEncoding));
         }
 
-        if (eula == null) {
-            eula = new File(project.jetResourcesDir(), "eula.txt");
-        } else if (!eula.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", eula, "eula"));
-        }
+        eula = checkFileWithDefault(eula, new File(project.jetResourcesDir(), "eula.txt"), "eula");
 
-        if (installerSplash == null) {
-            installerSplash = new File(project.jetResourcesDir(), "installerSplash.bmp");
-        } else if (!installerSplash.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", installerSplash, "installerSplash"));
-        }
+        installerSplash = checkFileWithDefault(installerSplash,
+                new File(project.jetResourcesDir(), "installerSplash.bmp"), "installerSplash");
 
         if (!excelsiorJet.since11_3()) {
             check11_3ParametersNotSet();
@@ -287,7 +281,7 @@ public class ExcelsiorInstallerConfig {
             SetupLanguage.validate(language);
         }
 
-        if (!afterInstallRunnable.isEmpty()) {
+        if (afterInstallRunnable.isDefined()) {
             afterInstallRunnable.validate();
         }
 
@@ -298,7 +292,7 @@ public class ExcelsiorInstallerConfig {
             }
         }
 
-        if (!installationDirectory.isEmpty()) {
+        if (installationDirectory.isDefined()) {
             installationDirectory.validate(excelsiorJet);
         }
 
@@ -322,13 +316,10 @@ public class ExcelsiorInstallerConfig {
             }
         }
 
-        if (installCallback == null) {
-            installCallback = new File(project.jetResourcesDir(), excelsiorJet.getTargetOS().mangleDllName("install"));
-        } else if (!installCallback.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", installCallback, "installCallback"));
-        }
+        installCallback = checkFileWithDefault(installCallback,
+                new File(project.jetResourcesDir(), excelsiorJet.getTargetOS().mangleDllName("install")), "installCallback");
 
-        if (uninstallCallback.isEmpty()) {
+        if (!uninstallCallback.isDefined()) {
             File uninstall = new File(project.jetResourcesDir(), excelsiorJet.getTargetOS().mangleDllName("uninstall"));
             if (uninstall.exists()) {
                 uninstallCallback.path = uninstall;
@@ -350,13 +341,13 @@ public class ExcelsiorInstallerConfig {
         if (language != null) {
             parameters.add("language");
         }
-        if (!afterInstallRunnable.isEmpty()) {
+        if (afterInstallRunnable.isDefined()) {
            parameters.add("afterInstallRunnable");
         }
         if (compressionLevel != null) {
             parameters.add("compressionLevel");
         }
-        if (!installationDirectory.isEmpty()) {
+        if (installationDirectory.isDefined()) {
             parameters.add("installationDirectory");
         }
         if (!shortcuts.isEmpty()) {
@@ -380,7 +371,7 @@ public class ExcelsiorInstallerConfig {
         if (installCallback != null) {
             parameters.add("installCallback");
         }
-        if (!uninstallCallback.isEmpty()) {
+        if (uninstallCallback.isDefined()) {
             parameters.add("uninstallCallback");
         }
         if (welcomeImage != null) {
@@ -399,16 +390,19 @@ public class ExcelsiorInstallerConfig {
         }
     }
 
+    private static File checkFileWithDefault(File file, File defaultFile, String notExistParam) throws JetTaskFailureException {
+        return Utils.checkFileWithDefault(file, defaultFile, "JetApi.ExcelsiorInstaller.FileDoesNotExist", notExistParam);
+    }
+
     private File checkBrandingParameter(ExcelsiorJet excelsiorJet, File parValue, String parName, File defaultValue) throws JetTaskFailureException {
-        if ((parValue != null) && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedParameter", parName));
+        if (!excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+            if (parValue != null) {
+                throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedParameter", parName));
+            } else {
+                return null;
+            }
         }
-        if (parValue == null) {
-            return excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()? defaultValue : null;
-        } else if (!parValue.exists()) {
-            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.FileDoesNotExist", parValue.getAbsolutePath(), parName));
-        }
-        return parValue;
+        return checkFileWithDefault(parValue, defaultValue, parName);
     }
 
     public String eulaFlag() throws JetTaskFailureException {

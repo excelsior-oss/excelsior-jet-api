@@ -43,8 +43,8 @@ public class AfterInstallRunnable {
      */
     public String[] arguments;
 
-    public boolean isEmpty() {
-        return (target == null) && Utils.isEmpty(arguments);
+    public boolean isDefined() {
+        return (target != null) || !Utils.isEmpty(arguments);
     }
 
     void validate() throws JetTaskFailureException {

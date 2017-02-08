@@ -67,8 +67,8 @@ public class InstallationDirectory {
      */
     public boolean fixed;
 
-    public boolean isEmpty() {
-        return Stream.of(type, path).allMatch(Objects::isNull) && !fixed;
+    public boolean isDefined() {
+        return Stream.of(type, path).anyMatch(Objects::nonNull) || fixed;
     }
 
     void validate(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {

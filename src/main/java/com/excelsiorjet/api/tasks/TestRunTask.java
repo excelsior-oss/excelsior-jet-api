@@ -145,7 +145,7 @@ public class TestRunTask {
             case WINDOWS_SERVICE:
             case DYNAMIC_LIBRARY:
                 List<ClasspathEntry> dependencies = project.copyClasspathEntries();
-                if (project.packageFilesDir().exists()) {
+                if (project.packageFilesDir() != null) {
                     //application may access custom package files at runtime. So copy them as well.
                     Utils.copyQuietly(project.packageFilesDir().toPath(), buildDir.toPath());
                 }

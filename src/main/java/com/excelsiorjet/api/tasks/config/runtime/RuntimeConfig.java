@@ -169,7 +169,7 @@ public class RuntimeConfig {
             }
         }
 
-        if ((slimDown != null) && !slimDown.isEnabled()) {
+        if ((slimDown != null) && !slimDown.isDefined()) {
             slimDown = null;
         }
 

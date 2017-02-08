@@ -24,10 +24,7 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
-import com.excelsiorjet.api.tasks.config.excelsiorinstaller.ExcelsiorInstallerConfig;
-import com.excelsiorjet.api.tasks.config.excelsiorinstaller.FileAssociation;
-import com.excelsiorjet.api.tasks.config.excelsiorinstaller.PostInstallCheckbox;
-import com.excelsiorjet.api.tasks.config.excelsiorinstaller.Shortcut;
+import com.excelsiorjet.api.tasks.config.excelsiorinstaller.*;
 import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
 import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
 import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
@@ -69,7 +66,7 @@ public class PackagerArgsGenerator {
                 //fall through
             case PLAIN:
             case WINDOWS_SERVICE:
-                if (project.packageFilesDir().exists()) {
+                if (project.packageFilesDir() != null) {
                     source = project.packageFilesDir();
                     xpackOptions.add(new XPackOption("-source", source.getAbsolutePath()));
                 }
@@ -217,10 +214,10 @@ public class PackagerArgsGenerator {
         }
 
         ExcelsiorInstallerConfig config = project.excelsiorInstallerConfiguration();
-        if (config.eula.exists()) {
+        if (config.eula != null) {
             xpackOptions.add(new XPackOption(config.eulaFlag(), config.eula.getAbsolutePath()));
         }
-        if (excelsiorJet.getTargetOS().isWindows() && config.installerSplash.exists()) {
+        if (excelsiorJet.getTargetOS().isWindows() && (config.installerSplash != null)) {
             xpackOptions.add(new XPackOption("-splash", config.installerSplash.getAbsolutePath()));
         }
 
@@ -232,7 +229,7 @@ public class PackagerArgsGenerator {
             xpackOptions.add(new XPackOption("-cleanup-after-uninstall"));
         }
 
-        if (!config.afterInstallRunnable.isEmpty()) {
+        if (config.afterInstallRunnable.isDefined()) {
             xpackOptions.add(new XPackOption("-after-install-runnable",
                     argsValidForRsp(config.afterInstallRunnable.arguments),
                     config.afterInstallRunnable.target,
@@ -243,7 +240,7 @@ public class PackagerArgsGenerator {
             xpackOptions.add(new XPackOption("-compression-level", config.compressionLevel));
         }
 
-        if (!config.installationDirectory.isEmpty()) {
+        if (config.installationDirectory.isDefined()) {
             if (!Utils.isEmpty(config.installationDirectory.path)) {
                 xpackOptions.add(new XPackOption("-installation-directory", config.installationDirectory.path));
             }
@@ -260,11 +257,11 @@ public class PackagerArgsGenerator {
             xpackOptions.addAll(getWindowsOnlyExcelsiorInstallerOptions(config));
         }
 
-        if (config.installCallback.exists()) {
+        if (config.installCallback != null) {
             xpackOptions.add(new XPackOption("-install-callback", config.installCallback.getAbsolutePath()));
         }
 
-        if (!config.uninstallCallback.isEmpty()) {
+        if (config.uninstallCallback.isDefined()) {
             if (config.uninstallCallback.path != null) {
                 xpackOptions.add(new XPackOption("-add-file",
                         config.uninstallCallback.path.getAbsolutePath(), config.uninstallCallback.packagePath));
@@ -334,15 +331,15 @@ public class PackagerArgsGenerator {
                     argsToString(fileAssociation.arguments), fileAssociation.checked? "checked" : "unchecked"));
         }
 
-        if (Utils.exists(config.welcomeImage)) {
+        if (config.welcomeImage != null) {
             xpackOptions.add(new XPackOption("-welcome-image", config.welcomeImage.getAbsolutePath()));
         }
 
-        if (Utils.exists(config.installerImage)) {
+        if (config.installerImage != null) {
             xpackOptions.add(new XPackOption("-installer-image", config.installerImage.getAbsolutePath()));
         }
 
-        if (Utils.exists(config.uninstallerImage)) {
+        if (config.uninstallerImage != null) {
             xpackOptions.add(new XPackOption("-uninstaller-image", config.uninstallerImage.getAbsolutePath()));
         }
         return xpackOptions;

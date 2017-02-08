@@ -49,7 +49,7 @@ public class TrialVersionConfig {
      */
     public String expireMessage;
 
-    public boolean isEnabled() {
+    public boolean isDefined() {
         return (expireInDays >=0) || (expireDate != null);
     }
 

@@ -66,15 +66,12 @@ public class Tests {
     static JetProject testProject(ApplicationType appType) throws JetTaskFailureException {
         JetProject.configureEnvironment(new StdOutLog(), ResourceBundle.getBundle("Strings"));
         JetProject project = new JetProject("test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
-                splash(new File("splash")).
-                icon(new File("icon")).
                 inlineExpansion("tiny-methods-only").
                 runArgs(new String[0]).
                 projectDependencies(emptyList()).
                 dependencies(emptyList()).
                 mainClass("HelloWorld").
                 jetBuildDir(jetBuildDir.toFile()).
-                packageFilesDir(projectDir.resolve("src").resolve("jetresources").resolve("packageFiles").toFile()).
                 packageFiles(Collections.emptyList()).
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).

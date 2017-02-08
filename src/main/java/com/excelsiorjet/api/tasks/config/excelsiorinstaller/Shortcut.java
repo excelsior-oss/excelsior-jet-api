@@ -94,7 +94,7 @@ public class Shortcut {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutTargetNull", name));
         }
 
-        if (!icon.isEmpty() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
+        if (icon.isDefined() && !excelsiorJet.isAdvancedExcelsiorInstallerFeaturesSupported()) {
             throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.ShortcutIconNotSupported", name));
         } else {
             icon.type = PackageFileType.FILE.toString(); //check that icon is file. Maven creates sub objects

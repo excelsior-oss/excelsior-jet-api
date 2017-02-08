@@ -116,7 +116,7 @@ class CompilerArgsGenerator {
         ArrayList<String> modules = new ArrayList<>();
 
         if (excelsiorJet.getTargetOS().isWindows()) {
-            if (project.icon().isFile()) {
+            if (project.icon() != null) {
                 modules.add(toJetPrjFormat(project.icon()));
             }
         }
@@ -136,7 +136,7 @@ class CompilerArgsGenerator {
             case PLAIN:
                 compilerArgs.add("-main=" + project.mainClass());
 
-                if (project.splash().isFile()) {
+                if (project.splash() != null) {
                     compilerArgs.add("-splash=" + project.splash().getAbsolutePath());
                 } else {
                     compilerArgs.add("-splashgetfrommanifest+");

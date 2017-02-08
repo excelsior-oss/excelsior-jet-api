@@ -73,15 +73,15 @@ public class PackageFile {
         this.packagePath = packagePath;
     }
 
-    public boolean isEmpty() {
-        return (path == null) && (packagePath == null);
+    public boolean isDefined() {
+        return (path != null) || (packagePath != null);
     }
 
     /**
-     * @return location of this file in the package including file name, or empty string if the file {@link #isEmpty()}}
+     * @return location of this file in the package including file name, or empty string if the file is not {@link #isDefined()}}
      */
     public String getLocationInPackage() {
-        if (isEmpty()) {
+        if (!isDefined()) {
             return "";
         } else if (path != null) {
             assert packagePath != null: "validate() must be called before";
@@ -92,7 +92,7 @@ public class PackageFile {
     }
 
     public void validate(String notExistErrorKey, String errorParam) throws JetTaskFailureException {
-        if (isEmpty())
+        if (!isDefined())
             return;
 
         if (path != null) {

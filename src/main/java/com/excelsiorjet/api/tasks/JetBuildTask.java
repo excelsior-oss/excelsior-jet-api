@@ -201,7 +201,7 @@ public class JetBuildTask {
                             "  <string>" + project.osxBundleConfiguration().version + "</string>\n" +
                             "  <key>CFBundleShortVersionString</key>\n" +
                             "  <string>" + project.osxBundleConfiguration().shortVersion + "</string>\n" +
-                            (project.osxBundleConfiguration().icon.exists() ?
+                            (project.osxBundleConfiguration().icon != null ?
                                     "  <key>CFBundleIconFile</key>\n" +
                                             "  <string>" + project.osxBundleConfiguration().icon.getName() + "</string>\n" : "") +
                             (project.osxBundleConfiguration().highResolutionCapable ?
@@ -216,7 +216,7 @@ public class JetBuildTask {
             throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
         }
 
-        if (project.osxBundleConfiguration().icon.exists()) {
+        if (project.osxBundleConfiguration().icon != null) {
             Files.copy(project.osxBundleConfiguration().icon.toPath(),
                     new File(contentsResources, project.osxBundleConfiguration().icon.getName()).toPath());
         }

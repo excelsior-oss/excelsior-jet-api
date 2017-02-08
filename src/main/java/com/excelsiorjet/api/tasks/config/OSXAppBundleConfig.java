@@ -22,6 +22,8 @@
 package com.excelsiorjet.api.tasks.config;
 
 import com.excelsiorjet.api.tasks.JetProject;
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 
@@ -117,7 +119,7 @@ public class OSXAppBundleConfig {
      */
     public String installPath = "/Applications";
 
-    public void fillDefaults(JetProject project, String fileName, String bundleName, String version, String shortVersion) {
+    public void fillDefaults(JetProject project, String fileName, String bundleName, String version, String shortVersion) throws JetTaskFailureException {
         if (this.fileName == null) {
             this.fileName = fileName;
         }
@@ -127,9 +129,8 @@ public class OSXAppBundleConfig {
         if (this.identifier == null) {
             this.identifier = project.groupId() + "." + project.artifactName();
         }
-        if (this.icon == null) {
-            this.icon = new File(project.jetResourcesDir(), "icon.icns");
-        }
+        this.icon = Utils.checkFileWithDefault(this.icon, new File(project.jetResourcesDir(), "icon.icns"),
+                "JetApi.OSXBundle.FileDoesNotExist", "icon");
         if (this.version == null) {
             this.version = version;
         }
