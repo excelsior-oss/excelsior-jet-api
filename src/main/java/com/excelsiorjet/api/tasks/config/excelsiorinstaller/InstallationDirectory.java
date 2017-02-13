@@ -41,7 +41,7 @@ public class InstallationDirectory {
     /**
      * Installation directory type. Valid values are:
      * {@code program-files} (default on Windows, Windows only),
-     * {@code system-drive} (Windows Only, default for Tomcat web applications),
+     * {@code system-drive} (Windows only, default for Tomcat Web applications),
      * {@code current-directory} (default on Linux), {@code user-home} (Linux only), and {@code absolute-path}.
      * <p>
      * Specifies whether the default installation directory pathname is relative to the Program Files folder,

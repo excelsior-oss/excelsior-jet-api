@@ -32,12 +32,12 @@ import static com.excelsiorjet.api.util.Txt.s;
 public enum ApplicationType {
 
     /**
-     * Plain Java application, that runs standalone.
+     * Plain Java application that runs standalone.
      */
     PLAIN,
 
     /**
-     * Servlet-based Java application, that runs within Tomcat servlet container.
+     * Servlet-based Java application that runs within the Tomcat servlet container.
      */
     TOMCAT,
 

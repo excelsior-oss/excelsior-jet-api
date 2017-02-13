@@ -144,7 +144,7 @@ public class JetProject {
 
     /**
      * If you only need to add a few additional package files,
-     * it may be more convenient to specify them separately then to prepare {@link #packageFilesDir} directory.
+     * it may be more convenient to specify them separately rather than prepare a {@link #packageFilesDir} directory.
      */
     private List<PackageFile> packageFiles;
 

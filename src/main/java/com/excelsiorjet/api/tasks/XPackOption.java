@@ -12,8 +12,8 @@ public class XPackOption {
     String option;
     String[] parameters;
 
-    // Unfortunately some xpack options may contain a parameter that is list of arguments such as
-    // "arg1 arg2 arg3". However if an argument has a space inside, there is no way to express such an argument
+    // Unfortunately, some xpack options may have a parameter that is a list of arguments such as
+    // "arg1 arg2 arg3". However, if an argument has a space inside, there is no way to express such an argument
     // in an xpack response file in JET 11.3 and it should be passed to xpack directly.
     boolean validForRspFile;
 

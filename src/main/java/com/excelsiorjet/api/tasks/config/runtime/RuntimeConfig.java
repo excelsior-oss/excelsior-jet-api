@@ -98,7 +98,7 @@ public class RuntimeConfig {
      * are referenced by the application and select the smallest compact profile that includes them all,
      * or the entire Platform API if there is no such profile.
      * </p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available for Excelsior JET 11.3 and above.
      */
     public String profile;
 
@@ -108,7 +108,7 @@ public class RuntimeConfig {
      * unused Java SE API classes in the resulting package in a compressed form.
      * Valid values are: {@code none},  {@code medium} (default),  {@code high-memory},  {@code high-disk}.
      * <p>
-     * The feature is only available if {@link JetProject#globalOptimizer} is enabled.
+     * This feature is only available if {@link JetProject#globalOptimizer} is enabled.
      * In this mode, the Java SE classes that were not compiled into the resulting executable are placed
      * into the resulting package in bytecode form, possibly compressed depending on the mode:
      * </p>
@@ -120,7 +120,7 @@ public class RuntimeConfig {
      * selective decompression.</dd>
      * <dt>high-memory</dt>
      * <dd>Compress all unused Java SE API classes as a whole. This results in more significant disk
-     * footprint reduction compared to than medium compression. However, if one of the compressed classes
+     * footprint reduction compared to the {@code medium} compression. However, if one of the compressed classes
      * is needed at run time, the entire bundle must be decompressed to retrieve it.
      * In the {@code high-memory} reduction mode the bundle is decompressed
      * onto the heap and can be garbage collected later.</dd>

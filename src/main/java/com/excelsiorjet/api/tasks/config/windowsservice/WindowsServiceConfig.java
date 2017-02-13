@@ -39,10 +39,10 @@ import static com.excelsiorjet.api.util.Txt.s;
 public class WindowsServiceConfig {
 
     /**
-     * The system name of the service.
-     * It is used to install, remove and otherwise manage the service.
+     * The <em>system</em> name of the service,
+     * used to install, remove and otherwise manage the service.
      * It can also be used to recognize messages from this service in the system event log.
-     * This name is set during the creation of the service executable.
+     * The system name is set during the creation of the service executable.
      * It is displayed for reference so you cannot edit it.
      * <p>
      * By default, {@link JetProject#outputName} is used for the name.
@@ -51,26 +51,26 @@ public class WindowsServiceConfig {
     public String name;
 
     /**
-     * The descriptive name of the service.
+     * The <em>descriptive</em> name of the service.
      * It is shown in the Event Viewer system tool and in the Services applet of the Windows Control Panel.
      * <p>
-     * By default, {@link #name} is used for the dispaly name.
+     * By default, the value of {@link #name} is re-used as the display name.
      * </p>
      */
     public String displayName;
 
     /**
-     * The user description of the service. It must not exceed 1000 characters.
+     * The user description of the service. It must not exceed 1,000 characters.
      */
     public String description;
 
     /**
-     * The command line arguments passed to the service upon startup.
+     * The command-line arguments passed to the service upon startup.
      */
     public String[] arguments;
 
     /**
-     * Specifies an account to be used by the service. Valid values are: "local-system-account" (default), "user-account".
+     * Specifies the account to be used by the service. Valid values are: "local-system-account" (default), "user-account".
      * <p>
      * {@code local-system-account} - run the service under the built-in system account.
      * </p>
@@ -84,12 +84,13 @@ public class WindowsServiceConfig {
 
     /**
      * Specifies if the service needs to interact with the system desktop,
-     * e.g. open/close other windows, etc. This option is only available under the "local-system-account".
+     * e.g. open/close other windows, etc. This option is only available if {@link #logOnType}
+     * is set to {@code local-system-account}.
      */
     public boolean allowDesktopInteraction;
 
     /**
-     * Specify how to start the service. Valid values are "automatic" (default), "manual", "disabled".
+     * Specify how to start the service. Valid values are "automatic" (default), "manual", and "disabled".
      * <p>
      * {@code automatic} - specifies that the service should start automatically when the system starts.
      * </p>

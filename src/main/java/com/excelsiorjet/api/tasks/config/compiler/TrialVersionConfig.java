@@ -22,7 +22,7 @@
 package com.excelsiorjet.api.tasks.config.compiler;
 
 /**
- * Configuration parameters of Trial Version generation feature.
+ * Configuration parameters of the Trial Version generation feature.
  *
  * @author Nikita Lipsky
  */
