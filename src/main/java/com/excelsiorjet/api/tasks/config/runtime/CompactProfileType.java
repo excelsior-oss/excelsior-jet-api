@@ -30,7 +30,7 @@ import static com.excelsiorjet.api.util.Txt.s;
  * Java SE 8 compact profiles enumeration.
  */
 public enum CompactProfileType {
-    AUTO, // special value that means that Excelsior JET should choose minimal required profile for the application itself
+    AUTO, // special value meaning that Excelsior JET should determine the smallest possible profile itself.
     COMPACT1,
     COMPACT2,
     COMPACT3,

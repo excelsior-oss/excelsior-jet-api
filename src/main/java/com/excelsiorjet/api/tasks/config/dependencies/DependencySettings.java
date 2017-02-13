@@ -71,8 +71,8 @@ public class DependencySettings {
     /**
      * Code protection mode. Valid values are {@code "all"} and {@code "not-required"}.
      * <p>
-     * If set to {@code "all"}, all class files of the dependency will be compiled to native code,
-     * thus protecting them from reverse engineering.
+     * If set to {@code "all"}, the JET Optimizer will compile all class files of the dependency
+     * to native code, thus protecting them against Java decompilers.
      * </p>
      * If set to {@code "not-required"}, the JET Optimizer may avoid compilation of some classes
      * in favor of reducing the download size and compilation time of the application.
@@ -89,7 +89,7 @@ public class DependencySettings {
      * If set to {@code "auto-detect"}, the compiler detects which classes will be used at run time,
      * and optimizes those classes only, leaving the unused ones in bytecode or non-optimized form.
      * This mode provides smaller binaries, but may negatively affect application performance,
-     * should any of the compiler assumptions fail.
+     * should any of the compiler assumptions be wrong.
      */
     public String optimize;
 
@@ -139,7 +139,7 @@ public class DependencySettings {
     public String packagePath;
 
     /**
-     * If set to {@code true}, disables copying of dependencies that have the {@link #pack} parameter set to {@code "none"} to the final package 
+     * If set to {@code true}, disables copying of dependencies that have the {@link #pack} parameter set to {@code "none"} to the final package.
      */
     public Boolean disableCopyToPackage;
 
