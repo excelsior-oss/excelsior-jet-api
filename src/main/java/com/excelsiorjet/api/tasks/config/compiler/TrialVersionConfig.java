@@ -19,10 +19,10 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks.config;
+package com.excelsiorjet.api.tasks.config.compiler;
 
 /**
- * Configuration parameters of Trial Version generation feature.
+ * Configuration parameters of the Trial Version generation feature.
  *
  * @author Nikita Lipsky
  */
@@ -49,7 +49,7 @@ public class TrialVersionConfig {
      */
     public String expireMessage;
 
-    public boolean isEnabled() {
+    public boolean isDefined() {
         return (expireInDays >=0) || (expireDate != null);
     }
 

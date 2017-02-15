@@ -284,5 +284,14 @@ public class Utils {
         return String.join(".", (CharSequence[]) finalVersions);
     }
 
-
+    public static File checkFileWithDefault(File file, File defaultFile, String notExistKey, String notExistParam) throws JetTaskFailureException {
+        if (file == null) {
+            if (defaultFile.exists()) {
+                return defaultFile;
+            }
+        } else if (!file.exists()) {
+            throw new JetTaskFailureException(s(notExistKey, file.getAbsolutePath(), notExistParam));
+        }
+        return file;
+    }
 }

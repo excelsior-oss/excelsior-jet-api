@@ -2,8 +2,9 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.log.StdOutLog;
-import com.excelsiorjet.api.tasks.config.DependencySettings;
-import com.excelsiorjet.api.tasks.config.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
+import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
 import com.excelsiorjet.api.util.Utils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -203,17 +204,19 @@ public class JetBuildTaskTest {
 
     static void mockUtilsClass() throws Exception {
         PowerMockito.mockStatic(Utils.class, invocationOnMock -> {
-            if (invocationOnMock.getMethod().getName().equals("parameterToEnumConstantName") ||
-                    invocationOnMock.getMethod().getName().equals("enumConstantNameToParameter") ||
-                    invocationOnMock.getMethod().getName().equals("idStr") ||
-                    invocationOnMock.getMethod().getName().equals("getCanonicalPath"))
+            String methodName = invocationOnMock.getMethod().getName();
+            if (methodName.equals("parameterToEnumConstantName") ||
+                methodName.equals("enumConstantNameToParameter") ||
+                methodName.equals("idStr") ||
+                methodName.equals("getCanonicalPath"))
             {
                 return invocationOnMock.callRealMethod();
+            } else if (methodName.equals("isEmpty")) {
+                return true;
             } else {
                 return null;
             }
         });
-        when(Utils.class, "isEmpty", anyObject()).thenReturn(true);
     }
 
     private void prepareJetBuildDir() throws IOException {

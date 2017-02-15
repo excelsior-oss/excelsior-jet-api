@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -22,17 +22,21 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.tasks.config.RuntimeConfig;
-import com.excelsiorjet.api.tasks.config.WindowsServiceConfig;
+import com.excelsiorjet.api.platform.Host;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
+import com.excelsiorjet.api.tasks.config.excelsiorinstaller.*;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
+import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
+import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
@@ -50,8 +54,8 @@ public class PackagerArgsGenerator {
         this.excelsiorJet = excelsiorJet;
     }
 
-    public ArrayList<String> getCommonXPackArgs() throws JetTaskFailureException {
-        ArrayList<String> xpackArgs = new ArrayList<>();
+    ArrayList<XPackOption> getCommonXPackOptions() throws JetTaskFailureException {
+        ArrayList<XPackOption> xpackOptions = new ArrayList<>();
 
         File source = null;
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
@@ -62,23 +66,20 @@ public class PackagerArgsGenerator {
                 //fall through
             case PLAIN:
             case WINDOWS_SERVICE:
-                if (project.packageFilesDir().exists()) {
-                    xpackArgs.add("-source");
+                if (project.packageFilesDir() != null) {
                     source = project.packageFilesDir();
-                    xpackArgs.add(source.getAbsolutePath());
+                    xpackOptions.add(new XPackOption("-source", source.getAbsolutePath()));
                 }
 
-                xpackArgs.addAll(Arrays.asList(
-                        "-add-file", exeName, "/"
-                ));
+                xpackOptions.add(new XPackOption("-add-file", exeName, "/"));
+
+                for (PackageFile pfile : project.packageFiles()) {
+                    xpackOptions.add(new XPackOption("-add-file", pfile.path.getAbsolutePath(), pfile.packagePath));
+                }
                 break;
             case TOMCAT:
-                xpackArgs.add("-source");
                 source = project.tomcatInBuildDir();
-                xpackArgs.add(source.getAbsolutePath());
-                if (project.packageFilesDir().exists()) {
-                    logger.warn(s("TestRunTask.PackageFilesIgnoredForTomcat.Warning"));
-                }
+                xpackOptions.add(new XPackOption("-source", source.getAbsolutePath()));
                 break;
             default:
                 throw new AssertionError("Unknown app type");
@@ -101,59 +102,51 @@ public class PackagerArgsGenerator {
                 }
             }
             if (!runtime.location.equals("rt")) {
-                xpackArgs.addAll(Arrays.asList("-move-file", rtLocation, runtime.location));
+                xpackOptions.add(new XPackOption("-move-file", rtLocation, runtime.location));
             }
         }
 
         if (!Utils.isEmpty(runtime.components)) {
             if (checkNone(runtime.components)) {
-                xpackArgs.add("-remove-opt-rt-files");
-                xpackArgs.add("all");
+                xpackOptions.add(new XPackOption("-remove-opt-rt-files", "all"));
             } else {
-                xpackArgs.add("-add-opt-rt-files");
-                xpackArgs.add(String.join(",", runtime.components));
+                xpackOptions.add(new XPackOption("-add-opt-rt-files", String.join(",", runtime.components)));
                 if (Arrays.stream(runtime.components).noneMatch(s -> (s.equalsIgnoreCase("jce") || s.equalsIgnoreCase("all")))) {
-                    xpackArgs.add("-remove-opt-rt-files");
                     //jce is included by default, so if it is not in the list remove it
-                    xpackArgs.add("jce");
+                    xpackOptions.add(new XPackOption("-remove-opt-rt-files", "jce"));
                 }
             }
         }
 
         if (!Utils.isEmpty(runtime.locales)) {
             if (checkNone(runtime.locales)) {
-                xpackArgs.add("-remove-locales");
-                xpackArgs.add("all");
+                xpackOptions.add(new XPackOption("-remove-locales", "all"));
             } else {
-                xpackArgs.add("-add-locales");
-                xpackArgs.add(String.join(",", runtime.locales));
+                xpackOptions.add(new XPackOption("-add-locales", String.join(",", runtime.locales)));
                 if (Arrays.stream(runtime.locales).noneMatch(s -> (s.equalsIgnoreCase("european") || s.equalsIgnoreCase("all")))) {
-                    xpackArgs.add("-remove-locales");
                     //european is included by default, so if it is not in the list remove it
-                    xpackArgs.add("european");
+                    xpackOptions.add(new XPackOption("-remove-locales", "european"));
                 }
             }
         }
 
 
         if (runtime.slimDown != null) {
-            xpackArgs.addAll(Arrays.asList(
-                    "-detached-base-url", runtime.slimDown.detachedBaseURL,
-                    "-detach-components",
+            xpackOptions.add(new XPackOption("-detached-base-url", runtime.slimDown.detachedBaseURL));
+            xpackOptions.add(new XPackOption("-detach-components",
                     (runtime.slimDown.detachComponents != null && runtime.slimDown.detachComponents.length > 0) ?
-                            String.join(",", runtime.slimDown.detachComponents) : "auto",
-                    "-detached-package", new File(project.jetOutputDir(), runtime.slimDown.detachedPackage).getAbsolutePath()
+                            String.join(",", runtime.slimDown.detachComponents) : "auto"));
+            xpackOptions.add(new XPackOption("-detached-package",
+                    new File(project.jetOutputDir(), runtime.slimDown.detachedPackage).getAbsolutePath()
             ));
         }
 
         if (excelsiorJet.isCompactProfilesSupported()) {
-            xpackArgs.add("-profile");
-            xpackArgs.add(runtime.compactProfile().toString());
+            xpackOptions.add(new XPackOption("-profile",  runtime.profile));
         }
 
-        if (runtime.diskFootprintReduction() != null) {
-            xpackArgs.add("-reduce-disk-footprint");
-            xpackArgs.add(runtime.diskFootprintReduction().toString());
+        if (runtime.diskFootprintReduction != null) {
+            xpackOptions.add(new XPackOption("-reduce-disk-footprint", runtime.diskFootprintReduction));
         }
 
         if (project.appType() != ApplicationType.TOMCAT) {
@@ -162,101 +155,214 @@ public class PackagerArgsGenerator {
                 if (ClasspathEntry.PackType.NONE == classpathEntry.pack) {
                     if (classpathEntry.packagePath == null) {
                         if (classpathEntry.disableCopyToPackage != null && classpathEntry.disableCopyToPackage) {
-                            xpackArgs.add("-disable-resource");
-                            xpackArgs.add(exeName);
-                            xpackArgs.add(depInBuildDir.getFileName().toString());
+                            xpackOptions.add(new XPackOption("-disable-resource", exeName, depInBuildDir.getFileName().toString()));
                         } else {
-                            xpackArgs.add("-add-file");
-                            xpackArgs.add(depInBuildDir.toString());
-                            if (classpathEntry.path.isDirectory()) {
-                                xpackArgs.add("/");
-                            } else {
-                                xpackArgs.add("/lib");
-                            }
+                            xpackOptions.add(new XPackOption("-add-file", depInBuildDir.toString(),
+                                    classpathEntry.path.isDirectory() ? "/" : "/lib"
+                            ));
                         }
                     } else {
-                        xpackArgs.add("-add-file");
-                        xpackArgs.add(depInBuildDir.toString());
-                        xpackArgs.add(classpathEntry.packagePath);
-
-                        xpackArgs.add("-assign-resource");
-                        xpackArgs.add(exeName);
-                        xpackArgs.add(depInBuildDir.getFileName().toString());
-                        xpackArgs.add(depInBuildDir.toString());
+                        xpackOptions.add(new XPackOption("-add-file", depInBuildDir.toString(), classpathEntry.packagePath));
+                        xpackOptions.add(new XPackOption("-assign-resource", exeName, depInBuildDir.getFileName().toString(),
+                                depInBuildDir.toString()));
                     }
                 }
 
             }
         }
 
-        return xpackArgs;
+        return xpackOptions;
     }
 
-    public ArrayList<String> getExcelsiorInstallerXPackArgs(File target) throws JetTaskFailureException {
-        ArrayList<String> xpackArgs = getCommonXPackArgs();
+    private static boolean argsValidForRsp(String[] args) {
+        return (args == null) || Arrays.stream(args).noneMatch(arg -> arg.contains(" "));
+    }
+
+    private static String argsToString(String[] args) {
+        return args == null?
+               "":
+               Arrays.stream(args).map(arg ->
+                            arg.contains(" ") ?
+                                    Host.isWindows()?
+                                            // This looks weird right?
+                                            // In fact this combination of " and \ was found to be working to escape spaces
+                                            // within arguments by trial and error.
+                                            // In short, there are three levels of magic here.
+                                            // First, Java's ProcessImpl does a magic with escaping " inside arguments meeting Windows
+                                            // standards but it does it wrong. Then Windows itself does some magic with interpreting
+                                            // " and \. Finally xpack does some magic with interpreting " and \.
+                                            // This combination may not work on some Windows flavours and with some Java microversions,
+                                            // but it least it were tested with Windows 10 and Java 8 Update 101.
+                                            "\\\"\\\\\"\\\"" + arg + "\\\"\\\\\"\\\""
+                                    :
+                                            "\"" + arg + "\""
+                            :
+                                arg).collect(Collectors.joining(" "));
+    }
+
+    ArrayList<XPackOption> getExcelsiorInstallerXPackOptions(File target) throws JetTaskFailureException {
+        ArrayList<XPackOption> xpackOptions = getCommonXPackOptions();
 
         boolean canInstallTomcatAsService = (project.appType() == ApplicationType.TOMCAT) &&
                                 excelsiorJet.isWindowsServicesInExcelsiorInstallerSupported();
         if ((project.appType() == ApplicationType.WINDOWS_SERVICE) ||
                  canInstallTomcatAsService && project.tomcatConfiguration().installWindowsService)
         {
-            addWindowsServiceArgs(xpackArgs);
+            xpackOptions.addAll(getWindowsServiceArgs());
         } else if (canInstallTomcatAsService && !project.tomcatConfiguration().installWindowsService) {
-            xpackArgs.add("-no-tomcat-service-install");
+            xpackOptions.add(new XPackOption("-no-tomcat-service-install"));
         }
 
-        if (project.excelsiorInstallerConfiguration().eula.exists()) {
-            xpackArgs.add(project.excelsiorInstallerConfiguration().eulaFlag());
-            xpackArgs.add(project.excelsiorInstallerConfiguration().eula.getAbsolutePath());
+        ExcelsiorInstallerConfig config = project.excelsiorInstallerConfiguration();
+        if (config.eula != null) {
+            xpackOptions.add(new XPackOption(config.eulaFlag(), config.eula.getAbsolutePath()));
         }
-        if (excelsiorJet.getTargetOS().isWindows() && project.excelsiorInstallerConfiguration().installerSplash.exists()) {
-            xpackArgs.add("-splash");
-            xpackArgs.add(project.excelsiorInstallerConfiguration().installerSplash.getAbsolutePath());
+        if (excelsiorJet.getTargetOS().isWindows() && (config.installerSplash != null)) {
+            xpackOptions.add(new XPackOption("-splash", config.installerSplash.getAbsolutePath()));
         }
-        xpackArgs.addAll(Arrays.asList(
-                "-backend", "excelsior-installer",
-                "-company", project.vendor(),
-                "-product", project.product(),
-                "-version", project.version(),
-                "-target", target.getAbsolutePath())
-        );
-        return xpackArgs;
+
+        if (config.language != null) {
+            xpackOptions.add(new XPackOption("-language", config.language));
+        }
+
+        if (config.cleanupAfterUninstall) {
+            xpackOptions.add(new XPackOption("-cleanup-after-uninstall"));
+        }
+
+        if (config.afterInstallRunnable.isDefined()) {
+            xpackOptions.add(new XPackOption("-after-install-runnable",
+                    argsValidForRsp(config.afterInstallRunnable.arguments),
+                    config.afterInstallRunnable.target,
+                    argsToString(config.afterInstallRunnable.arguments)));
+        }
+
+        if (config.compressionLevel != null) {
+            xpackOptions.add(new XPackOption("-compression-level", config.compressionLevel));
+        }
+
+        if (config.installationDirectory.isDefined()) {
+            if (!Utils.isEmpty(config.installationDirectory.path)) {
+                xpackOptions.add(new XPackOption("-installation-directory", config.installationDirectory.path));
+            }
+            if (config.installationDirectory.type != null) {
+                xpackOptions.add(new XPackOption("-installation-directory-type", config.installationDirectory.type));
+            }
+            if (config.installationDirectory.fixed) {
+                xpackOptions.add(new XPackOption("-installation-directory-fixed"));
+            }
+        }
+
+        if (excelsiorJet.getTargetOS().isWindows()) {
+            //handle windows only parameters
+            xpackOptions.addAll(getWindowsOnlyExcelsiorInstallerOptions(config));
+        }
+
+        if (config.installCallback != null) {
+            xpackOptions.add(new XPackOption("-install-callback", config.installCallback.getAbsolutePath()));
+        }
+
+        if (config.uninstallCallback.isDefined()) {
+            if (config.uninstallCallback.path != null) {
+                xpackOptions.add(new XPackOption("-add-file",
+                        config.uninstallCallback.path.getAbsolutePath(), config.uninstallCallback.packagePath));
+            }
+            xpackOptions.add(new XPackOption("-uninstall-callback", config.uninstallCallback.getLocationInPackage()));
+        }
+
+        if ((project.appType() == ApplicationType.TOMCAT) && project.tomcatConfiguration().allowUserToChangeTomcatPort) {
+            xpackOptions.add(new XPackOption("-allow-user-to-change-tomcat-port"));
+        }
+
+        xpackOptions.add(new XPackOption("-backend", "excelsior-installer"));
+        xpackOptions.add(new XPackOption("-company", project.vendor()));
+        xpackOptions.add(new XPackOption("-product", project.product()));
+        xpackOptions.add(new XPackOption("-version", project.version()));
+        xpackOptions.add(new XPackOption("-target", target.getAbsolutePath()));
+        return xpackOptions;
+    }
+
+    private ArrayList<XPackOption> getWindowsOnlyExcelsiorInstallerOptions(ExcelsiorInstallerConfig config) {
+        ArrayList<XPackOption> xpackOptions = new ArrayList<>();
+        if (config.registryKey != null) {
+            xpackOptions.add(new XPackOption("-registry-key", config.registryKey));
+        }
+
+        for (Shortcut shortcut: config.shortcuts) {
+            if (shortcut.icon.path != null) {
+                xpackOptions.add(new XPackOption("-add-file", shortcut.icon.path.getAbsolutePath(), shortcut.icon.packagePath));
+            }
+            xpackOptions.add(new XPackOption("-shortcut", argsValidForRsp(shortcut.arguments),
+                    shortcut.location, shortcut.target, shortcut.name, shortcut.icon.getLocationInPackage(),
+                    shortcut.workingDirectory, argsToString(shortcut.arguments)));
+        }
+
+        if (config.noDefaultPostInstallActions) {
+            xpackOptions.add(new XPackOption("-no-default-post-install-actions"));
+        }
+
+        for (PostInstallCheckbox postInstallCheckbox: config.postInstallCheckboxes) {
+            switch (postInstallCheckbox.type()) {
+                case RUN:
+                    xpackOptions.add(new XPackOption("-post-install-checkbox-run",
+                            argsValidForRsp(postInstallCheckbox.arguments),
+                            postInstallCheckbox.target, postInstallCheckbox.workingDirectory,
+                            argsToString(postInstallCheckbox.arguments),
+                            postInstallCheckbox.checkedArg()));
+                    break;
+                case OPEN:
+                    xpackOptions.add(new XPackOption("-post-install-checkbox-open",
+                            postInstallCheckbox.target, postInstallCheckbox.checkedArg()));
+                    break;
+                case RESTART:
+                    xpackOptions.add(new XPackOption("-post-install-checkbox-restart", postInstallCheckbox.checkedArg()));
+                    break;
+                default:
+                    throw new AssertionError("Unknown PostInstallCheckBox type: " + postInstallCheckbox.type);
+            }
+        }
+
+        for (FileAssociation fileAssociation: config.fileAssociations) {
+            if (fileAssociation.icon.path != null) {
+                xpackOptions.add(new XPackOption("-add-file", fileAssociation.icon.path.getAbsolutePath(), fileAssociation.icon.packagePath));
+            }
+            xpackOptions.add(new XPackOption("-file-association", argsValidForRsp(fileAssociation.arguments),
+                    fileAssociation.extension, fileAssociation.target, fileAssociation.description,
+                    fileAssociation.targetDescription,fileAssociation.icon.getLocationInPackage(),
+                    argsToString(fileAssociation.arguments), fileAssociation.checked? "checked" : "unchecked"));
+        }
+
+        if (config.welcomeImage != null) {
+            xpackOptions.add(new XPackOption("-welcome-image", config.welcomeImage.getAbsolutePath()));
+        }
+
+        if (config.installerImage != null) {
+            xpackOptions.add(new XPackOption("-installer-image", config.installerImage.getAbsolutePath()));
+        }
+
+        if (config.uninstallerImage != null) {
+            xpackOptions.add(new XPackOption("-uninstaller-image", config.uninstallerImage.getAbsolutePath()));
+        }
+        return xpackOptions;
     }
 
     //Surprisingly Windows just removes empty argument from list of arguments if we do not pass "" instead.
-    private String escapeEmptyArgForWindows(String arg) {
+    private static String escapeEmptyArgForWindows(String arg) {
         return arg.isEmpty() ? "\"\"" : arg;
     }
 
-    private void addWindowsServiceArgs(ArrayList<String> xpackArgs) {
+    private ArrayList<XPackOption> getWindowsServiceArgs() {
+        ArrayList<XPackOption> xpackOptions = new ArrayList<>();
         String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
         if (project.appType() == ApplicationType.TOMCAT) {
             exeName = "bin/" + exeName;
         }
         WindowsServiceConfig serviceConfig = project.windowsServiceConfiguration();
-        String serviceArguments = "";
-        if (serviceConfig.arguments != null) {
-            serviceArguments = Arrays.stream(serviceConfig.arguments).map(s ->
-                    s.contains(" ") ?
-                            // This looks weird right?
-                            // In fact this combination of " and \ was found to be working to escape spaces
-                            // within arguments by trial and error.
-                            // In short, there are three levels of magic here.
-                            // First, Java's ProcessImpl does a magic with escaping " inside arguments meeting Windows
-                            // standards but it does it wrong. Then Windows itself does some magic with interpreting
-                            // " and \. Finally xpack does some magic with interpreting " and \.
-                            // This combination may not work on some Windows flavours and with some Java microversions,
-                            // but it least it were tested with Windows 10 and Java 8 Update 101.
-                            "\\\"\\\\\"\\\"" + s + "\\\"\\\\\"\\\"" :
-                            s).
-                    collect(Collectors.joining(" "));
-        }
-        xpackArgs.addAll(Arrays.asList(
-                "-service",
+        xpackOptions.add(new XPackOption("-service",
+                argsValidForRsp(serviceConfig.arguments),
                 exeName,
-                escapeEmptyArgForWindows(serviceArguments),
+                argsToString(serviceConfig.arguments),
                 serviceConfig.displayName,
-                escapeEmptyArgForWindows(serviceConfig.description)
+                serviceConfig.description
         ));
 
         String logOnType;
@@ -274,8 +380,7 @@ public class PackagerArgsGenerator {
         String startAfterInstall = serviceConfig.startServiceAfterInstall ? "start-after-install" :
                 "no-start-after-install";
 
-        xpackArgs.addAll(Arrays.asList(
-                "-service-startup",
+        xpackOptions.add(new XPackOption("-service-startup",
                 exeName,
                 logOnType,
                 serviceConfig.getStartupType().toXPackValue(),
@@ -283,12 +388,12 @@ public class PackagerArgsGenerator {
         ));
 
         if (serviceConfig.dependencies != null) {
-            xpackArgs.addAll(Arrays.asList(
-                    "-service-dependencies",
+            xpackOptions.add(new XPackOption("-service-dependencies",
                     exeName,
                     String.join(",", serviceConfig.dependencies)
             ));
         }
+        return xpackOptions;
     }
 
 
@@ -298,11 +403,26 @@ public class PackagerArgsGenerator {
         return values.length == 1 && (values[0].equalsIgnoreCase("none"));
     }
 
-    public ArrayList<String> getCommonXPackArgs(String targetDir) throws JetTaskFailureException {
-        ArrayList<String> xpackArgs = getCommonXPackArgs();
-        xpackArgs.addAll(Arrays.asList(
-                "-target", targetDir
-        ));
-        return xpackArgs;
+    ArrayList<XPackOption> getCommonXPackOptions(String targetDir) throws JetTaskFailureException {
+        ArrayList<XPackOption> xpackOptions = getCommonXPackOptions();
+        xpackOptions.add(new XPackOption("-target", targetDir));
+        return xpackOptions;
     }
+
+    static ArrayList<String> optionsToArgs(ArrayList<XPackOption> options, boolean notValidToRspOnly) {
+        ArrayList<String> args = new ArrayList<>();
+        for (XPackOption option: options) {
+            if (!notValidToRspOnly || !option.validForRspFile) {
+                args.add(option.option);
+                args.addAll(Arrays.stream(option.parameters).map(
+                        p -> Host.isWindows() && p.isEmpty()?escapeEmptyArgForWindows(p): p).collect(Collectors.toList()));
+            }
+        }
+        return args;
+    }
+
+    static List<String> getArgFileContent(ArrayList<XPackOption> xpackOptions) {
+        return xpackOptions.stream().map(XPackOption::toArgFileLine).collect(Collectors.toList());
+    }
+
 }

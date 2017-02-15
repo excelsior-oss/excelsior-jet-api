@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,12 +19,15 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.compiler;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Inline expansion type.
+ * Inline expansion types enumeration.
  */
 public enum InlineExpansionType {
     VERY_AGGRESSIVE,
@@ -37,11 +40,19 @@ public enum InlineExpansionType {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static InlineExpansionType fromString(String inlineExpansion) {
+    public static InlineExpansionType validate(String inlineExpansion) throws JetTaskFailureException {
         try {
             return InlineExpansionType.valueOf(Utils.parameterToEnumConstantName(inlineExpansion));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownInlineExpansionValue.Failure", inlineExpansion));
+        }
+    }
+
+    public static InlineExpansionType fromString(String inlineExpansion) {
+        try {
+            return validate(inlineExpansion);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("inlineExpansion should be valid here", e);
         }
     }
 }

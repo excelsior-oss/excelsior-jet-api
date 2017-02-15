@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,47 +19,38 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.compiler;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Supported application types enumeration.
+ * Stacktrace support types enumeration.
  */
-public enum ApplicationType {
-
-    /**
-     * Plain Java application, that runs standalone.
-     */
-    PLAIN,
-
-    /**
-     * Servlet-based Java application, that runs within Tomcat servlet container.
-     */
-    TOMCAT,
-
-    /**
-     * Dynamic library callable from a non-Java environment.
-     */
-    DYNAMIC_LIBRARY,
-
-    /**
-     * Windows service (Windows only).
-     */
-    WINDOWS_SERVICE
-    ;
+public enum StackTraceSupportType {
+    MINIMAL,
+    FULL,
+    NONE;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static ApplicationType fromString(String appType) {
+    public static StackTraceSupportType validate(String stackTraceSupport) throws JetTaskFailureException {
         try {
-            return ApplicationType.valueOf(Utils.parameterToEnumConstantName(appType));
+            return StackTraceSupportType.valueOf(Utils.parameterToEnumConstantName(stackTraceSupport));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.UnknownStackTraceSupportValue.Failure", stackTraceSupport));
         }
     }
 
-
+    public static StackTraceSupportType fromString(String stackTraceSupport){
+        try {
+            return validate(stackTraceSupport);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("stackTraceSupport should be valid here");
+        }
+    }
 }

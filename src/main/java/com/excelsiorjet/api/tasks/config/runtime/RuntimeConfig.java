@@ -1,4 +1,25 @@
-package com.excelsiorjet.api.tasks.config;
+/*
+ * Copyright (c) 2017, Excelsior LLC.
+ *
+ *  This file is part of Excelsior JET API.
+ *
+ *  Excelsior JET API is free software:
+ *  you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Excelsior JET API is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Excelsior JET API.
+ *  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+package com.excelsiorjet.api.tasks.config.runtime;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.tasks.*;
@@ -77,7 +98,7 @@ public class RuntimeConfig {
      * are referenced by the application and select the smallest compact profile that includes them all,
      * or the entire Platform API if there is no such profile.
      * </p>
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available for Excelsior JET 11.3 and above.
      */
     public String profile;
 
@@ -87,7 +108,7 @@ public class RuntimeConfig {
      * unused Java SE API classes in the resulting package in a compressed form.
      * Valid values are: {@code none},  {@code medium} (default),  {@code high-memory},  {@code high-disk}.
      * <p>
-     * The feature is only available if {@link JetProject#globalOptimizer} is enabled.
+     * This feature is only available if {@link JetProject#globalOptimizer} is enabled.
      * In this mode, the Java SE classes that were not compiled into the resulting executable are placed
      * into the resulting package in bytecode form, possibly compressed depending on the mode:
      * </p>
@@ -99,7 +120,7 @@ public class RuntimeConfig {
      * selective decompression.</dd>
      * <dt>high-memory</dt>
      * <dd>Compress all unused Java SE API classes as a whole. This results in more significant disk
-     * footprint reduction compared to than medium compression. However, if one of the compressed classes
+     * footprint reduction compared to the {@code medium} compression. However, if one of the compressed classes
      * is needed at run time, the entire bundle must be decompressed to retrieve it.
      * In the {@code high-memory} reduction mode the bundle is decompressed
      * onto the heap and can be garbage collected later.</dd>
@@ -121,10 +142,8 @@ public class RuntimeConfig {
     public void fillDefaults(JetProject jetProject, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
 
         if (flavor != null) {
-            if (flavor() == null) {
-                throw new JetTaskFailureException(s("JetApi.UnknownRuntimeKind.Failure", flavor));
-            }
-            if (!excelsiorJet.isRuntimeSupported(flavor())) {
+            RuntimeFlavorType flavorType = RuntimeFlavorType.validate(flavor);
+            if (!excelsiorJet.isRuntimeSupported(flavorType)) {
                 throw new JetTaskFailureException(s("JetApi.RuntimeKindNotSupported.Failure", flavor));
             }
         }
@@ -137,20 +156,20 @@ public class RuntimeConfig {
 
         if (profile == null) {
             profile = CompactProfileType.AUTO.toString();
-        }
-        if (compactProfile() == null) {
-            throw new JetTaskFailureException(s("JetApi.UnknownProfileType.Failure", profile));
-        }
-        if (!excelsiorJet.isCompactProfilesSupported()) {
-            switch (compactProfile()) {
-                case COMPACT1: case COMPACT2: case COMPACT3:
-                    throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
-                case AUTO: case FULL:
-                    break;
-                default:  throw new AssertionError("Unknown compact profile: " + compactProfile());
+        } else {
+            CompactProfileType compactProfile = CompactProfileType.validate(profile);
+            if (!excelsiorJet.isCompactProfilesSupported()) {
+                switch (compactProfile) {
+                    case COMPACT1: case COMPACT2: case COMPACT3:
+                        throw new JetTaskFailureException(s("JetApi.CompactProfilesNotSupported.Failure", profile));
+                    case AUTO: case FULL:
+                        break;
+                    default:  throw new AssertionError("Unknown compact profile: " + compactProfile);
+                }
             }
         }
-        if ((slimDown != null) && !slimDown.isEnabled()) {
+
+        if ((slimDown != null) && !slimDown.isDefined()) {
             slimDown = null;
         }
 
@@ -173,9 +192,7 @@ public class RuntimeConfig {
         }
 
         if (diskFootprintReduction != null) {
-            if (diskFootprintReduction() == null) {
-                throw new JetTaskFailureException(s("JetApi.UnknownDiskFootprintReductionType.Failure", profile));
-            }
+            DiskFootprintReductionType.validate(diskFootprintReduction);
             if (!excelsiorJet.isDiskFootprintReductionSupported()) {
                 logger.warn(s("JetApi.NoDiskFootprintReduction.Warning"));
                 diskFootprintReduction = null;
@@ -186,17 +203,4 @@ public class RuntimeConfig {
         }
 
     }
-
-    public CompactProfileType compactProfile() {
-        return CompactProfileType.fromString(profile);
-    }
-
-    public DiskFootprintReductionType diskFootprintReduction() {
-        return DiskFootprintReductionType.fromString(diskFootprintReduction);
-    }
-
-    public RuntimeFlavorType flavor() {
-        return RuntimeFlavorType.fromString(flavor);
-    }
-
 }

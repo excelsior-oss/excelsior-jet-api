@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -23,7 +23,8 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
-import com.excelsiorjet.api.tasks.config.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.compiler.StackTraceSupportType;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
@@ -115,7 +116,7 @@ class CompilerArgsGenerator {
         ArrayList<String> modules = new ArrayList<>();
 
         if (excelsiorJet.getTargetOS().isWindows()) {
-            if (project.icon().isFile()) {
+            if (project.icon() != null) {
                 modules.add(toJetPrjFormat(project.icon()));
             }
         }
@@ -135,7 +136,7 @@ class CompilerArgsGenerator {
             case PLAIN:
                 compilerArgs.add("-main=" + project.mainClass());
 
-                if (project.splash().isFile()) {
+                if (project.splash() != null) {
                     compilerArgs.add("-splash=" + project.splash().getAbsolutePath());
                 } else {
                     compilerArgs.add("-splashgetfrommanifest+");
@@ -224,8 +225,8 @@ class CompilerArgsGenerator {
             compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
         }
 
-        if (project.runtimeConfiguration().flavor() != null) {
-            compilerArgs.add("-jetrt=" + project.runtimeConfiguration().flavor());
+        if (project.runtimeConfiguration().flavor != null) {
+            compilerArgs.add("-jetrt=" + project.runtimeConfiguration().flavor);
         }
 
         switch (project.inlineExpansion()) {

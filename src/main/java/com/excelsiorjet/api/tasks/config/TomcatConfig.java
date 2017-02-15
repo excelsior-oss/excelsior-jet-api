@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -79,9 +79,17 @@ public class TomcatConfig {
      * If you opt for {@code excelsior-installer} packaging for Tomcat on Windows,
      * the installer will register the Tomcat executable as a Windows service by default.
      * You may set this parameter to {@code false} to disable that behavior.
-     * The functionality is available for Excelsior JET 11.3 and above.
+     * This functionality is available in Excelsior JET 11.3 and above.
      */
     public boolean installWindowsService = true;
+
+    /**
+     * If you opt for {@code excelsior-installer} packaging for Tomcat on Windows,
+     * you may have the Excelsior Installer wizard prompt the user
+     * to specify the Tomcat HTTP port during installation
+     * by setting this parameter to {@code true}.
+     */
+    public boolean allowUserToChangeTomcatPort;
 
     public void fillDefaults(String mainWarName) throws JetTaskFailureException {
         // check Tomcat home
@@ -119,6 +127,10 @@ public class TomcatConfig {
 
         if (new File(webApps, warDeployName).exists() || new File(webApps, explodedWar).exists()) {
             throw new JetTaskFailureException(s("JetApi.WarAlreadyDeployedIntoTomcat.Failure", explodedWar, tomcatHome));
+        }
+
+        if (hideConfig && allowUserToChangeTomcatPort) {
+            throw new JetTaskFailureException(s("JetApi.CantChangePortWhenHideConfig.Failure"));
         }
     }
 }

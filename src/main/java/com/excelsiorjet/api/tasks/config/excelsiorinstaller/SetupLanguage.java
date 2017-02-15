@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,28 +19,37 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Stacktrace support types.
+ * Setup languages enumeration.
  */
-public enum StackTraceSupportType {
-    MINIMAL,
-    FULL,
-    NONE;
+public enum SetupLanguage {
+    AUTODETECT,
+    ENGLISH,
+    FRENCH,
+    GERMAN,
+    JAPANESE,
+    RUSSIAN,
+    POLISH,
+    SPANISH,
+    ITALIAN,
+    BRAZILIAN;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static StackTraceSupportType fromString(String stackTraceSupport) {
+    public static SetupLanguage validate(String language) throws JetTaskFailureException {
         try {
-            return StackTraceSupportType.valueOf(Utils.parameterToEnumConstantName(stackTraceSupport));
+            return SetupLanguage.valueOf(Utils.parameterToEnumConstantName(language));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnsupportedLanguage", language));
         }
     }
-
 }

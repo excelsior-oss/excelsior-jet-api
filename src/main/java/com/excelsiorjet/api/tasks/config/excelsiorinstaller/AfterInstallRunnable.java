@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,33 +19,38 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Disk footprint reduction modes enumeration.
+ * After-install runnable description.
+ *
+ * @author Nikita Lipsky
  */
-public enum DiskFootprintReductionType {
-    NONE,
-    MEDIUM,
-    HIGH_DISK,
-    HIGH_MEMORY;
+public class AfterInstallRunnable {
 
-    public String toString() {
-        return Utils.enumConstantNameToParameter(name());
+    /**
+     * Location of the after-install runnable within the package.
+     */
+    public String target;
+
+    /**
+     * Command-line arguments for {@code target}.
+     */
+    public String[] arguments;
+
+    public boolean isDefined() {
+        return (target != null) || !Utils.isEmpty(arguments);
     }
 
-    public static DiskFootprintReductionType fromString(String profile) {
-        if (profile == null) {
-            return null;
-        }
-        try {
-            return DiskFootprintReductionType.valueOf(Utils.parameterToEnumConstantName(profile));
-        } catch (Exception e) {
-            return null;
+    void validate() throws JetTaskFailureException {
+        if (target == null) {
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.AfterInstallRunnableTargetNull"));
         }
     }
-
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2016-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -24,11 +24,14 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
 import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -142,9 +145,19 @@ public class TestRunTask {
             case WINDOWS_SERVICE:
             case DYNAMIC_LIBRARY:
                 List<ClasspathEntry> dependencies = project.copyClasspathEntries();
-                if (project.packageFilesDir().exists()) {
+                if (project.packageFilesDir() != null) {
                     //application may access custom package files at runtime. So copy them as well.
                     Utils.copyQuietly(project.packageFilesDir().toPath(), buildDir.toPath());
+                }
+
+                for (PackageFile pFile : project.packageFiles()) {
+                    Path packagePath = buildDir.toPath().resolve(pFile.packagePath);
+                    packagePath.toFile().mkdirs();
+                    if (pFile.path.isDirectory()) {
+                        Utils.copyDirectory(pFile.path.toPath(), packagePath.resolve(pFile.path.getName()));
+                    } else {
+                        Utils.copyFile(pFile.path.toPath(), packagePath.resolve(pFile.path.getName()));
+                    }
                 }
 
                 classpath = String.join(File.pathSeparator,

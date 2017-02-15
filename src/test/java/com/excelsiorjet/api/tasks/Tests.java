@@ -5,16 +5,25 @@ import com.excelsiorjet.api.JetEdition;
 import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.OS;
 import com.excelsiorjet.api.tasks.config.*;
+import com.excelsiorjet.api.tasks.config.ApplicationType;
+import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
+import com.excelsiorjet.api.tasks.config.runtime.RuntimeFlavorType;
+import com.excelsiorjet.api.tasks.config.excelsiorinstaller.ExcelsiorInstallerConfig;
+import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
 import org.mockito.Mockito;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.ResourceBundle;
 
 import static java.util.Collections.emptyList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-class Tests {
+public class Tests {
 
     static final Path testBaseDir = Paths.get(System.getProperty("java.io.tmpdir"), "excelsior-jet-api-test");
     private static final Path mavenLocalDir = testBaseDir.resolve(".m2");
@@ -26,7 +35,7 @@ class Tests {
     static final Path externalJarRel = Paths.get("lib", "external.jar");
     static final Path externalJarAbs = projectDir.resolve(externalJarRel);
 
-    static File dirSpy(String path) {
+    public static File dirSpy(String path) {
         File spy = Mockito.spy(new File(path));
         Mockito.when(spy.isFile()).thenReturn(false);
         Mockito.when(spy.isDirectory()).thenReturn(true);
@@ -38,7 +47,7 @@ class Tests {
         return dirSpy(path.toString());
     }
 
-    static File fileSpy(String path) {
+    public static File fileSpy(String path) {
         File spy = Mockito.spy(new File(path));
         Mockito.when(spy.isFile()).thenReturn(true);
         Mockito.when(spy.isDirectory()).thenReturn(false);
@@ -57,20 +66,19 @@ class Tests {
     static JetProject testProject(ApplicationType appType) throws JetTaskFailureException {
         JetProject.configureEnvironment(new StdOutLog(), ResourceBundle.getBundle("Strings"));
         JetProject project = new JetProject("test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
-                splash(new File("splash")).
-                icon(new File("icon")).
                 inlineExpansion("tiny-methods-only").
                 runArgs(new String[0]).
                 projectDependencies(emptyList()).
                 dependencies(emptyList()).
                 mainClass("HelloWorld").
                 jetBuildDir(jetBuildDir.toFile()).
-                packageFilesDir(projectDir.resolve("src").resolve("jetresources").resolve("packageFiles").toFile()).
+                packageFiles(Collections.emptyList()).
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).
                 windowsVersionInfoConfiguration(new WindowsVersionInfoConfig()).
                 runtimeConfiguration(new RuntimeConfig()).
                 outputName("test").
+                stackTraceSupport("minimal").
                 excelsiorJetPackaging("none");
         switch (appType) {
             case PLAIN:
@@ -111,7 +119,30 @@ class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isDiskFootprintReductionSupported();
         Mockito.doReturn(true).when(excelsiorJet).isRuntimeSupported(RuntimeFlavorType.DESKTOP);
         Mockito.doReturn(true).when(excelsiorJet).isChangeRTLocationAvailable();
+        Mockito.doReturn(true).when(excelsiorJet).since11_3();
+        Mockito.doReturn(true).when(excelsiorJet).isAdvancedExcelsiorInstallerFeaturesSupported();
         return excelsiorJet;
+    }
+
+    public interface Validation {
+        void validate() throws JetTaskFailureException;
+    }
+
+    public static void assertNotThrows(Validation body) {
+        try {
+            body.validate();
+        } catch (JetTaskFailureException e) {
+            fail("should be valid");
+        }
+    }
+
+    public static void assertThrows(Validation body, String message) {
+        try {
+            body.validate();
+            fail("should not be valid");
+        } catch (JetTaskFailureException e) {
+            assertEquals(message, e.getMessage());
+        }
     }
 
 }

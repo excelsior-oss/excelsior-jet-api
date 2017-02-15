@@ -21,7 +21,7 @@
 */
 package com.excelsiorjet.api.tasks;
 
-import com.excelsiorjet.api.tasks.config.DependencySettings;
+import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
 
 import java.util.Comparator;
 

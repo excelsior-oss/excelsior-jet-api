@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Excelsior LLC.
+ * Copyright (c) 2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -19,32 +19,30 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  *
 */
-package com.excelsiorjet.api.tasks;
+package com.excelsiorjet.api.tasks.config.excelsiorinstaller;
 
+import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.util.Utils;
 
+import static com.excelsiorjet.api.util.Txt.s;
+
 /**
- * Runtime flavors enumeration.
+ * Excelsior Installer compression levels enumeration.
  */
-public enum RuntimeFlavorType {
-    CLASSIC,
-    DESKTOP,
-    SERVER;
+public enum SetupCompressionLevel {
+    FAST,
+    MEDIUM,
+    HIGH;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static RuntimeFlavorType fromString(String flavor) {
-        if (flavor == null) {
-            return null;
-        }
+    public static SetupCompressionLevel validate(String compressionLevel) throws JetTaskFailureException {
         try {
-            return RuntimeFlavorType.valueOf(Utils.parameterToEnumConstantName(flavor));
+            return SetupCompressionLevel.valueOf(Utils.parameterToEnumConstantName(compressionLevel));
         } catch (Exception e) {
-            return null;
+            throw new JetTaskFailureException(s("JetApi.ExcelsiorInstaller.UnknownCompressionLevel", compressionLevel));
         }
     }
-
-
 }
