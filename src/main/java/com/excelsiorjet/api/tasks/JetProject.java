@@ -842,7 +842,12 @@ public class JetProject {
         splash = checkFileWithDefault(splash, "splash.png", "splash");
 
         if (outputName == null) {
-            outputName = projectName;
+            if ((appType() == ApplicationType.DYNAMIC_LIBRARY) && excelsiorJet.getTargetOS().isUnix()) {
+                //add lib prefix to output name
+                outputName = "lib" + projectName;
+            } else {
+                outputName = projectName;
+            }
         }
 
         if (stackTraceSupport == null) {
