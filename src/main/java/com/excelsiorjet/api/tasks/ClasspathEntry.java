@@ -92,6 +92,14 @@ public class ClasspathEntry {
         this.isMainArtifact = isMainArtifact;
     }
 
+    public PackType getEffectivePack() {
+        if ((pack == null) && path.isDirectory()) {
+            return PackType.NONE;
+        } else {
+            return pack;
+        }
+    }
+
     /**
      * Classpath entry optimization type.
      */

@@ -152,7 +152,7 @@ public class PackagerArgsGenerator {
         if (project.appType() != ApplicationType.TOMCAT) {
             for (ClasspathEntry classpathEntry : project.classpathEntries()) {
                 Path depInBuildDir = project.toPathRelativeToJetBuildDir(classpathEntry);
-                if (ClasspathEntry.PackType.NONE == classpathEntry.pack) {
+                if (ClasspathEntry.PackType.NONE == classpathEntry.getEffectivePack()) {
                     if (classpathEntry.packagePath == null) {
                         if (classpathEntry.disableCopyToPackage != null && classpathEntry.disableCopyToPackage) {
                             xpackOptions.add(new XPackOption("-disable-resource", exeName, depInBuildDir.getFileName().toString()));
