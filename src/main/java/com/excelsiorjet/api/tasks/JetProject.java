@@ -925,7 +925,7 @@ public class JetProject {
         }
         if (addWindowsVersionInfo || excelsiorJetPackaging().isNativeBundle()) {
             if (Utils.isEmpty(vendor)) {
-                //no organization name. Get it from groupId that cannot be empty.
+                //No organization name. Get it from groupId.
                 if (Utils.isEmpty(groupId)) {
                     if (addWindowsVersionInfo) {
                         throw new JetTaskFailureException(s("JetApi.VendorIsNotSetForVersionInfo"));
