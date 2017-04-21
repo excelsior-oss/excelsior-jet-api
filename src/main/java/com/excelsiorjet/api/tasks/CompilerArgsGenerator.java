@@ -220,9 +220,11 @@ class CompilerArgsGenerator {
             compilerArgs.add("-cryptseed=" + project.cryptSeed());
         }
 
-        TestRunExecProfiles execProfiles = project.testRunExecProfiles();
-        if (execProfiles.getStartup().exists()) {
-            compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
+        if (excelsiorJet.isStartupProfileGenerationSupported()) {
+            TestRunExecProfiles execProfiles = project.testRunExecProfiles();
+            if (execProfiles.getStartup().exists()) {
+                compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
+            }
         }
 
         if (project.runtimeConfiguration().flavor != null) {
