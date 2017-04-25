@@ -253,6 +253,10 @@ class CompilerArgsGenerator {
                 throw new AssertionError("Unknown inline expansion type: " + project.inlineExpansion());
         }
 
+        if (!project.stackAllocation()) {
+            compilerArgs.add("-genstackalloc-");
+        }
+
         if (project.runArgs().length > 0) {
             String quotedArgs = Arrays.stream(project.runArgs())
                     .map(Utils::quoteCmdLineArgument)

@@ -69,6 +69,7 @@ public class Tests {
                 inlineExpansion("tiny-methods-only").
                 runArgs(new String[0]).
                 addWindowsVersionInfo(false).
+                stackAllocation(true).
                 projectDependencies(emptyList()).
                 dependencies(emptyList()).
                 mainClass("HelloWorld").

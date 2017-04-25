@@ -484,6 +484,14 @@ public class JetProject {
     private String inlineExpansion;
 
     /**
+     * Allocate Java objects on the stack which life-time is proved to be method frame bound.
+     * By default, the parameter is set to {@code true}.
+     * This optimization may however result in higher consumption of stack memory by application's threads.
+     * You may wish to disable the optimization, if you run thousands of threads simultaneously.
+     */
+    private boolean stackAllocation;
+
+    /**
      * (Windows) If set to {@code true}, the resulting executable file will not have a console upon startup.
      */
     private boolean hideConsole;
@@ -1220,6 +1228,10 @@ public class JetProject {
         return InlineExpansionType.fromString(inlineExpansion);
     }
 
+    boolean stackAllocation() {
+        return stackAllocation;
+    }
+
     boolean hideConsole() {
         return hideConsole;
     }
@@ -1418,6 +1430,11 @@ public class JetProject {
 
     public JetProject inlineExpansion(String inlineExpansion) {
         this.inlineExpansion = inlineExpansion;
+        return this;
+    }
+
+    public JetProject stackAllocation(boolean stackAllocation) {
+        this.stackAllocation = stackAllocation;
         return this;
     }
 
