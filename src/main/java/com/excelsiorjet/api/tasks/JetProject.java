@@ -262,7 +262,7 @@ public class JetProject {
      * @see WindowsVersionInfoConfig#copyright
      * @see WindowsVersionInfoConfig#description
      */
-    private boolean addWindowsVersionInfo;
+    private Boolean addWindowsVersionInfo;
 
     /**
      * Windows version-information resource description.
@@ -912,6 +912,9 @@ public class JetProject {
     }
 
     private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+        if (addWindowsVersionInfo == null) {
+            addWindowsVersionInfo = !windowsVersionInfoConfiguration.isEmpty();
+        }
         if (!addWindowsVersionInfo && !windowsVersionInfoConfiguration.isEmpty()) {
             throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure"));
         }
@@ -1303,7 +1306,7 @@ public class JetProject {
         return this;
     }
 
-    public JetProject addWindowsVersionInfo(boolean addWindowsVersionInfo) {
+    public JetProject addWindowsVersionInfo(Boolean addWindowsVersionInfo) {
         this.addWindowsVersionInfo = addWindowsVersionInfo;
         return this;
     }
