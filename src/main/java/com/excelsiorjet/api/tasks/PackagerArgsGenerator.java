@@ -62,7 +62,7 @@ public class PackagerArgsGenerator {
         switch (project.appType()) {
             case DYNAMIC_LIBRARY:
                 //overwrite exe name for dynamic library
-                exeName = excelsiorJet.getTargetOS().mangleDllName(project.outputName());
+                exeName = excelsiorJet.getTargetOS().mangleDllName(project.outputName(), false);
                 //fall through
             case PLAIN:
             case WINDOWS_SERVICE:

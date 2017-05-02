@@ -82,8 +82,12 @@ public enum OS {
         return exe + getExeFileExtension();
     }
 
+    public String mangleDllName(String dll, boolean addPrefix) {
+        return (addPrefix ? getDllFilePrefix() : "") + dll + getDllFileExtension();
+    }
+
     public String mangleDllName(String dll) {
-        return getDllFilePrefix() + dll + getDllFileExtension();
+        return mangleDllName(dll, true);
     }
 }
 
