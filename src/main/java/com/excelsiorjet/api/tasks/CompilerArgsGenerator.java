@@ -220,9 +220,11 @@ class CompilerArgsGenerator {
             compilerArgs.add("-cryptseed=" + project.cryptSeed());
         }
 
-        TestRunExecProfiles execProfiles = project.testRunExecProfiles();
-        if (execProfiles.getStartup().exists()) {
-            compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
+        if (excelsiorJet.isStartupProfileGenerationSupported()) {
+            TestRunExecProfiles execProfiles = project.testRunExecProfiles();
+            if (execProfiles.getStartup().exists()) {
+                compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
+            }
         }
 
         if (project.runtimeConfiguration().flavor != null) {
@@ -249,6 +251,10 @@ class CompilerArgsGenerator {
                 break;
             default:
                 throw new AssertionError("Unknown inline expansion type: " + project.inlineExpansion());
+        }
+
+        if (!project.stackAllocation()) {
+            compilerArgs.add("-genstackalloc-");
         }
 
         if (project.runArgs().length > 0) {

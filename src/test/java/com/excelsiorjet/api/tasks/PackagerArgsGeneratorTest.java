@@ -63,7 +63,7 @@ public class PackagerArgsGeneratorTest {
     }
 
     @Test
-    public void testAddFileForNotPacketExternalDependencyWithoutPackagePath() throws Exception {
+    public void testAddFileForNotPackedExternalDependencyWithoutPackagePath() throws Exception {
         File extDepJarSpy = fileSpy(externalJarAbs);
         DependencySettings extDep = DependencyBuilder.testExternalDependency(extDepJarSpy).pack(ClasspathEntry.PackType.NONE).asDependencySettings();
         JetProject prj = testProject(ApplicationType.PLAIN).
@@ -77,6 +77,24 @@ public class PackagerArgsGeneratorTest {
                 assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
         int addLibIdx =
                 assertOptionsContain(xPackOptions, "-add-file", externalJarRel.toString(), "/lib");
+        assertTrue(addLibIdx > addExeIdx);
+    }
+
+    @Test
+    public void testAddFileForNotPackedDirExternalDependencyWithoutPackagePath() throws Exception {
+        File extDepDirSpy = dirSpy("folder");
+        DependencySettings extDep = DependencyBuilder.testExternalDependency(extDepDirSpy).asDependencySettings();
+        JetProject prj = testProject(ApplicationType.PLAIN).
+                dependencies(singletonList(extDep));
+        prj.processDependencies();
+        ExcelsiorJet excelsiorJet = excelsiorJet();
+        PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
+        ArrayList<XPackOption> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();
+
+        int addExeIdx =
+                assertOptionsContain(xPackOptions, "-add-file", excelsiorJet.getTargetOS().mangleExeName("test"), "/");
+        int addLibIdx =
+                assertOptionsContain(xPackOptions, "-add-file", extDepDirSpy.toString(), "/");
         assertTrue(addLibIdx > addExeIdx);
     }
 

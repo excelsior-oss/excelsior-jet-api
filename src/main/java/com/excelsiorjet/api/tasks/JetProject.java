@@ -262,7 +262,7 @@ public class JetProject {
      * @see WindowsVersionInfoConfig#copyright
      * @see WindowsVersionInfoConfig#description
      */
-    private boolean addWindowsVersionInfo;
+    private Boolean addWindowsVersionInfo;
 
     /**
      * Windows version-information resource description.
@@ -482,6 +482,16 @@ public class JetProject {
      * </p>
      */
     private String inlineExpansion;
+
+    /**
+     * Allocate on the stack the Java objects that do not escape the scope
+     * of the allocating method. By default, the parameter is set to {@code true}.
+     *
+     * This optimization may increase the consumption of stack memory
+     * by application threads, so you may wish to disable it if your application runs
+     * thousands of threads simultaneously.
+     */
+    private boolean stackAllocation;
 
     /**
      * (Windows) If set to {@code true}, the resulting executable file will not have a console upon startup.
@@ -842,7 +852,12 @@ public class JetProject {
         splash = checkFileWithDefault(splash, "splash.png", "splash");
 
         if (outputName == null) {
-            outputName = projectName;
+            if ((appType() == ApplicationType.DYNAMIC_LIBRARY) && excelsiorJet.getTargetOS().isUnix()) {
+                //add lib prefix to output name
+                outputName = "lib" + projectName;
+            } else {
+                outputName = projectName;
+            }
         }
 
         if (stackTraceSupport == null) {
@@ -907,6 +922,9 @@ public class JetProject {
     }
 
     private void checkVersionInfo(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
+        if (addWindowsVersionInfo == null) {
+            addWindowsVersionInfo = !windowsVersionInfoConfiguration.isEmpty();
+        }
         if (!addWindowsVersionInfo && !windowsVersionInfoConfiguration.isEmpty()) {
             throw new JetTaskFailureException(s("JetApi.AddWindowsVersionInfo.Failure"));
         }
@@ -920,7 +938,14 @@ public class JetProject {
         }
         if (addWindowsVersionInfo || excelsiorJetPackaging().isNativeBundle()) {
             if (Utils.isEmpty(vendor)) {
-                //no organization name. Get it from groupId that cannot be empty.
+                //No organization name. Get it from groupId.
+                if (Utils.isEmpty(groupId)) {
+                    if (addWindowsVersionInfo) {
+                        throw new JetTaskFailureException(s("JetApi.VendorIsNotSetForVersionInfo"));
+                    } else {
+                        throw new JetTaskFailureException(s("JetApi.VendorIsNotSetForPackaging", excelsiorJetPackaging().toString()));
+                    }
+                }
                 String[] groupId = groupId().split("\\.");
                 if (groupId.length >= 2) {
                     vendor = groupId[1];
@@ -1205,6 +1230,10 @@ public class JetProject {
         return InlineExpansionType.fromString(inlineExpansion);
     }
 
+    boolean stackAllocation() {
+        return stackAllocation;
+    }
+
     boolean hideConsole() {
         return hideConsole;
     }
@@ -1291,7 +1320,7 @@ public class JetProject {
         return this;
     }
 
-    public JetProject addWindowsVersionInfo(boolean addWindowsVersionInfo) {
+    public JetProject addWindowsVersionInfo(Boolean addWindowsVersionInfo) {
         this.addWindowsVersionInfo = addWindowsVersionInfo;
         return this;
     }
@@ -1403,6 +1432,11 @@ public class JetProject {
 
     public JetProject inlineExpansion(String inlineExpansion) {
         this.inlineExpansion = inlineExpansion;
+        return this;
+    }
+
+    public JetProject stackAllocation(boolean stackAllocation) {
+        this.stackAllocation = stackAllocation;
         return this;
     }
 

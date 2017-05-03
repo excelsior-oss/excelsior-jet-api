@@ -15,6 +15,7 @@ import static com.excelsiorjet.api.tasks.Tests.testProject;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class CompilerArgsGeneratorTest {
@@ -280,5 +281,19 @@ public class CompilerArgsGeneratorTest {
 
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
         assertTrue(compilerArgsGenerator.projectFileContent().contains("-jetrt=desktop"));
+    }
+
+    @Test
+    public void testStackAlloc() throws JetTaskFailureException {
+        JetProject prj = testProject(ApplicationType.PLAIN);
+        prj.validate(excelsiorJet(), true);
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        assertFalse(compilerArgsGenerator.projectFileContent().contains("-genstackalloc"));
+
+        prj = prj.stackAllocation(false);
+
+        compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        assertTrue(compilerArgsGenerator.projectFileContent().contains("-genstackalloc-"));
     }
 }

@@ -86,7 +86,10 @@ public class JetBuildTask {
 
     private boolean useXPackZipping() {
         return (project.excelsiorJetPackaging() == PackagingType.ZIP) && excelsiorJet.since11_3() &&
-                (project.appType() != ApplicationType.WINDOWS_SERVICE);
+                (project.appType() != ApplicationType.WINDOWS_SERVICE) &&
+                // JET-9267 workaround: cannot use xpack zipping when slimDown or diskFootprintReduction is enabled
+                (project.runtimeConfiguration().slimDown == null) &&
+                (project.runtimeConfiguration().diskFootprintReduction == null);
     }
 
     private ArrayList<String> getXPackArgs(ArrayList<XPackOption> xpackOptions, File rspFile) throws JetTaskFailureException {

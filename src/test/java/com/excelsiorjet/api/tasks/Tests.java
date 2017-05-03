@@ -68,6 +68,8 @@ public class Tests {
         JetProject project = new JetProject("test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
                 inlineExpansion("tiny-methods-only").
                 runArgs(new String[0]).
+                addWindowsVersionInfo(false).
+                stackAllocation(true).
                 projectDependencies(emptyList()).
                 dependencies(emptyList()).
                 mainClass("HelloWorld").
