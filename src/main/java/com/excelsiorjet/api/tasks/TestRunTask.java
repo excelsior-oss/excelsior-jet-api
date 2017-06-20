@@ -151,7 +151,15 @@ public class TestRunTask {
                 }
 
                 for (PackageFile pFile : project.packageFiles()) {
-                    Path packagePath = buildDir.toPath().resolve(pFile.packagePath);
+                    String packPath = pFile.packagePath.replace('/', File.separatorChar);
+                    while (packPath.startsWith(File.separator)) {
+                        //strip leading slashes
+                        packPath = packPath.substring(1);
+                    }
+                    if (packPath.isEmpty()) {
+                        packPath = ".";
+                    }
+                    Path packagePath = buildDir.toPath().resolve(packPath);
                     packagePath.toFile().mkdirs();
                     if (pFile.path.isDirectory()) {
                         Utils.copyDirectory(pFile.path.toPath(), packagePath.resolve(pFile.path.getName()));
