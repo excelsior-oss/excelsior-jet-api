@@ -169,11 +169,11 @@ public class ExcelsiorJet {
     }
 
     public boolean isGlobalOptimizerSupported() {
-        return isX86() && (getEdition() != JetEdition.STANDARD);
+        return (isX86() || since12_0()) && (getEdition() != JetEdition.STANDARD);
     }
 
     public boolean isSlimDownSupported() {
-        return isGlobalOptimizerSupported();
+        return isGlobalOptimizerSupported() && isX86();
     }
 
     public boolean isUsageListGenerationSupported() {
@@ -193,6 +193,10 @@ public class ExcelsiorJet {
 
     public boolean since11_3() {
         return jetHome.getJetVersion() >= 1130;
+    }
+
+    public boolean since12_0() {
+        return jetHome.getJetVersion() >= 1200;
     }
 
     public boolean isCrossCompilation() {
@@ -240,7 +244,7 @@ public class ExcelsiorJet {
     }
 
     public boolean isDiskFootprintReductionSupported() {
-        return since11_3() && isGlobalOptimizerSupported();
+        return since11_3() && isGlobalOptimizerSupported() && isX86();
     }
 
     public boolean isWindowsVersionInfoSupported() {
