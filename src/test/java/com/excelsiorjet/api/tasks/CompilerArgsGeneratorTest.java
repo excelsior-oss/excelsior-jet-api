@@ -1,6 +1,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
 import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
@@ -9,6 +10,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
+import java.io.IOException;
 
 import static com.excelsiorjet.api.tasks.Tests.excelsiorJet;
 import static com.excelsiorjet.api.tasks.Tests.testProject;
@@ -28,7 +30,7 @@ public class CompilerArgsGeneratorTest {
     public void testMainJarClasspathEntry() throws Exception {
         JetProject prj = Tests.testProject(ApplicationType.PLAIN);
         prj.processDependencies();
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -47,7 +49,7 @@ public class CompilerArgsGeneratorTest {
                 projectDependencies(singletonList(dep)).
                 dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).pack(ClasspathEntry.PackType.ALL).asDependencySettings()));
         prj.processDependencies();
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -67,7 +69,7 @@ public class CompilerArgsGeneratorTest {
         JetProject prj = testProject(ApplicationType.PLAIN).
                 projectDependencies(singletonList(DependencyBuilder.testProjectDependency(depFileSpy).asProjectDependency()));
         prj.processDependencies();
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -86,7 +88,7 @@ public class CompilerArgsGeneratorTest {
         JetProject prj = testProject(ApplicationType.PLAIN).
                 dependencies(singletonList(DependencyBuilder.testExternalDependency(depFileSpy).pack(ClasspathEntry.PackType.ALL).asDependencySettings()));
         prj.processDependencies();
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -109,7 +111,7 @@ public class CompilerArgsGeneratorTest {
                 dependencies(asList(artSettings, groupSettings));
         prj.processDependencies();
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -134,7 +136,7 @@ public class CompilerArgsGeneratorTest {
                 dependencies(singletonList(groupSettings));
         prj.processDependencies();
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -159,7 +161,7 @@ public class CompilerArgsGeneratorTest {
         prj.tomcatConfiguration().tomcatHome = "/tomcat-home";
         prj.processDependencies();
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrj = linesToString("-apptype=tomcat",
                 "-appdir=" + Tests.testBaseDir.resolve("prj/build/jet/build/tomcat-home").toString().replace(File.separatorChar, '/'),
                 "-outputname=test",
@@ -176,7 +178,7 @@ public class CompilerArgsGeneratorTest {
         JetProject prj = testProject(ApplicationType.PLAIN).
                 dependencies(singletonList(DependencyBuilder.testExternalDependency(depDirSpy).packagePath("abc").asDependencySettings()));
         prj.processDependencies();
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -193,7 +195,7 @@ public class CompilerArgsGeneratorTest {
         JetProject prj = testProject(ApplicationType.PLAIN).
                 dependencies(singletonList(DependencyBuilder.testExternalDependency(depDirSpy).asDependencySettings()));
         prj.processDependencies();
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "!classpathentry test.jar",
                 "  -optimize=all",
@@ -213,7 +215,7 @@ public class CompilerArgsGeneratorTest {
                 dependencies(singletonList(dependencySettings)));
         prj.processDependencies();
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrjTail = linesToString(
                 "%-jetvmprop=",
                 "!classloaderentry webapp webapps/test:/WEB-INF/lib/dep.jar",
@@ -232,7 +234,7 @@ public class CompilerArgsGeneratorTest {
                 dependencies(singletonList(DependencyBuilder.testDependencySettings().version(dep.version).asDependencySettings()));
         prj.processDependencies();
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         assertTrue(compilerArgsGenerator.projectFileContent().contains("gendll"));
     }
 
@@ -246,7 +248,7 @@ public class CompilerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.validate(excelsiorJet, true);
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet);
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet, false);
         String expectedPrjWinServiceSettings = linesToString(
                 "-servicemain=HelloWorld",
                 "-servicename=test"
@@ -265,7 +267,7 @@ public class CompilerArgsGeneratorTest {
         ExcelsiorJet excelsiorJet = excelsiorJet();
         prj.validate(excelsiorJet, true);
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet);
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet, false);
         String expectedPrjWinServiceSettings = linesToString(
                 "-servicemain=HelloWorld",
                 "-servicename=ServiceName"
@@ -279,7 +281,7 @@ public class CompilerArgsGeneratorTest {
         prj.runtimeConfiguration().flavor = "desktop";
         prj.validate(excelsiorJet(), true);
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         assertTrue(compilerArgsGenerator.projectFileContent().contains("-jetrt=desktop"));
     }
 
@@ -288,12 +290,35 @@ public class CompilerArgsGeneratorTest {
         JetProject prj = testProject(ApplicationType.PLAIN);
         prj.validate(excelsiorJet(), true);
 
-        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         assertFalse(compilerArgsGenerator.projectFileContent().contains("-genstackalloc"));
 
         prj = prj.stackAllocation(false);
 
-        compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet());
+        compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         assertTrue(compilerArgsGenerator.projectFileContent().contains("-genstackalloc-"));
+    }
+
+    @Test
+    public void testPGO() throws JetTaskFailureException, IOException {
+        JetProject prj = Mockito.spy(testProject(ApplicationType.PLAIN));
+        ExecProfilesConfig execProfiles = Mockito.mock(ExecProfilesConfig.class);
+        Mockito.doReturn(Tests.fileSpy("Test.jprof")).when(execProfiles).getJProfile();
+        Mockito.doReturn(Tests.fileSpy("Test.usg")).when(execProfiles).getUsg();
+        Mockito.when(prj.execProfiles()).thenReturn(execProfiles);
+        prj.validate(excelsiorJet(), true);
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
+        String prjContent = compilerArgsGenerator.projectFileContent();
+        assertTrue(prjContent.contains("-pgo+"));
+        assertTrue(prjContent.contains("-jprofile="));
+        assertTrue(prjContent.contains("Test.jprof"));
+
+        compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), true);
+        prjContent = compilerArgsGenerator.projectFileContent();
+        assertFalse(prjContent.contains("-pgo+"));
+        assertFalse(prjContent.contains("-jprofile="));
+        assertTrue(prjContent.contains("-Djet.profiler"));
+        assertTrue(prjContent.contains("-Djet.jprof.name"));
     }
 }

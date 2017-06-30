@@ -22,7 +22,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
 import com.excelsiorjet.api.tasks.config.compiler.StackTraceSupportType;
 import com.excelsiorjet.api.util.Utils;
@@ -49,9 +49,12 @@ class CompilerArgsGenerator {
 
     private final ExcelsiorJet excelsiorJet;
 
-    CompilerArgsGenerator(JetProject project, ExcelsiorJet excelsiorJet) {
+    private final boolean buildToProfile;
+
+    CompilerArgsGenerator(JetProject project, ExcelsiorJet excelsiorJet, boolean buildToProfile) {
         this.project = project;
         this.excelsiorJet = excelsiorJet;
+        this.buildToProfile = buildToProfile;
     }
 
     private String toJetPrjFormat(Path f) {
@@ -121,7 +124,7 @@ class CompilerArgsGenerator {
             }
         }
 
-        TestRunExecProfiles execProfiles = project.testRunExecProfiles();
+        ExecProfilesConfig execProfiles = project.execProfiles();
         if (execProfiles.getUsg().exists()) {
             modules.add(toJetPrjFormat(execProfiles.getUsg()));
         }
@@ -189,7 +192,7 @@ class CompilerArgsGenerator {
         compilerArgs.add("-outputname=" + project.outputName());
         compilerArgs.add("-decor=ht");
 
-        if (project.profileStartup()) {
+        if (project.profileStartup() && !buildToProfile) {
             compilerArgs.add("-saprofmode=ALWAYS");
             compilerArgs.add("-saproftimeout=" + project.profileStartupTimeout());
         }
@@ -220,10 +223,17 @@ class CompilerArgsGenerator {
             compilerArgs.add("-cryptseed=" + project.cryptSeed());
         }
 
+        ExecProfilesConfig execProfiles = project.execProfiles();
         if (excelsiorJet.isStartupProfileGenerationSupported()) {
-            TestRunExecProfiles execProfiles = project.testRunExecProfiles();
             if (execProfiles.getStartup().exists()) {
                 compilerArgs.add("-startupprofile=" + execProfiles.getStartup().getAbsolutePath());
+            }
+        }
+
+        if (excelsiorJet.isPGOSupported() && !buildToProfile) {
+            if (execProfiles.getJProfile().exists()) {
+                compilerArgs.add("-jprofile=" + execProfiles.getJProfile().getAbsolutePath());
+                compilerArgs.add("-pgo+");
             }
         }
 
@@ -257,8 +267,8 @@ class CompilerArgsGenerator {
             compilerArgs.add("-genstackalloc-");
         }
 
-        if (project.runArgs().length > 0) {
-            String quotedArgs = Arrays.stream(project.runArgs())
+        if (!Utils.isEmpty(project.exeRunArgs())) {
+            String quotedArgs = Arrays.stream(project.exeRunArgs())
                     .map(Utils::quoteCmdLineArgument)
                     .collect(joining(" "));
             compilerArgs.add("-runarguments=" + quotedArgs);
@@ -284,6 +294,14 @@ class CompilerArgsGenerator {
         List<String> jvmArgs = project.jvmArgs() != null ? new ArrayList<>(Arrays.asList(project.jvmArgs())) : new ArrayList<>();
         if (project.stackTraceSupport() == StackTraceSupportType.NONE) {
             jvmArgs.add("-Djet.stack.trace=false");
+        }
+        if (buildToProfile) {
+            jvmArgs.add("-Djet.profiler");
+            if (project.isProfileLocally()) {
+                jvmArgs.add("-Djet.jprof.name=" + project.execProfiles().getJProfile().getAbsolutePath());
+            } else {
+                jvmArgs.add("-Djet.jprof.name=" + project.execProfiles().getJProfile().getName());
+            }
         }
         return jvmArgs;
     }

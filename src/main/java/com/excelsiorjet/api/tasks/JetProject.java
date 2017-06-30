@@ -23,13 +23,9 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.JetHomeException;
-import com.excelsiorjet.api.cmd.TestRunExecProfiles;
 import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.tasks.config.*;
-import com.excelsiorjet.api.tasks.config.compiler.InlineExpansionType;
-import com.excelsiorjet.api.tasks.config.compiler.StackTraceSupportType;
-import com.excelsiorjet.api.tasks.config.compiler.TrialVersionConfig;
-import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
+import com.excelsiorjet.api.tasks.config.compiler.*;
 import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
 import com.excelsiorjet.api.tasks.config.dependencies.OptimizationPreset;
 import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
@@ -74,6 +70,7 @@ public class JetProject {
     private static final String JET_OUTPUT_DIR = "jet";
     private static final String BUILD_DIR = "build";
     private static final String PACKAGE_FILES_DIR = "packagefiles";
+    private static final String APP_DIR = "app";
 
     /**
      * Name of the project. For Maven, project artifactId is used as project name by default.
@@ -133,6 +130,14 @@ public class JetProject {
     private File jetBuildDir;
 
     /**
+     * Target directory where the plugin places the executable, the required Excelsior JET Runtime files and
+     * package files you configured with {@link #packageFiles} and {@link #packageFilesDir}.
+     *
+     * The value is set to "app" subdirectory of {@link #jetOutputDir}.
+     */
+    private File jetAppDir;
+
+    /**
      * Directory containing additional package files - README, license, media, help files, native libraries, and the like.
      * The contents of the directory will be recursively copied to the final application package.
      *
@@ -189,20 +194,15 @@ public class JetProject {
     private TomcatConfig tomcatConfiguration;
 
     /**
-     * The target location for application execution profiles gathered during Test Run.
-     * It is recommended to commit the collected profiles (.usg, .startup) to VCS to enable the {@code {@link JetBuildTask}}
-     * to re-use them during subsequent builds without performing a Test Run.
+     * Execution profiles configuration parameters.
+     * You can configure where to place execution profiles and whether you can collect the profiles locally.
      *
-     * By default, {@link #jetResourcesDir} is used for the directory.
-     *
-     * @see TestRunTask
+     * @see ExecProfilesConfig#outputDir
+     * @see ExecProfilesConfig#outputName
+     * @see ExecProfilesConfig#profileLocally
+     * @see ExecProfilesConfig#daysToWarnAboutOutdatedProfiles
      */
-    private File execProfilesDir;
-
-    /**
-     * The base file name of execution profiles. By default, {@link #projectName} is used.
-     */
-    private String execProfilesName;
+    private ExecProfilesConfig execProfilesConfiguration;
 
     /**
      * Defines system properties and JVM arguments to be passed to the Excelsior JET JVM at runtime, e.g.:
@@ -512,13 +512,25 @@ public class JetProject {
      * </p>
      */
     private String[] compilerOptions;
+
     /**
-     * Command line arguments that will be passed to the application during startup accelerator profiling and the test run.
+     * Command line arguments that will be passed to the application during the test run.
      * You may also set the parameter via the {@code jet.runArgs} system property, where arguments
      * are comma separated (use "\" to escape commas inside arguments,
      * i.e. {@code -Djet.runArgs="arg1,Hello\, World"} will be passed to your application as {@code arg1 "Hello, World"})
      */
     private String[] runArgs;
+
+    /**
+     * Command line arguments that will be passed to the application during startup accelerator or execution profiling
+     * and usual run.
+     * If not specified runArgs are reused for {@code exeRunArgs}.
+     * Please note, the parameter must be in the format of multi-app executables, if {@link #multiApp} is {@code true}.
+     * You may also set the parameter via the {@code jet.exeRunArgs} system property, where arguments
+     * are comma separated (use "\" to escape commas inside arguments,
+     * i.e. {@code -Djet.exeRunArgs="arg1,Hello\, World"} will be passed to your application as {@code arg1 "Hello, World"})
+     */
+    private String[] exeRunArgs;
 
     /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
@@ -637,6 +649,10 @@ public class JetProject {
             jetBuildDir = new File(jetOutputDir, BUILD_DIR);
         }
 
+        if (jetAppDir == null) {
+            jetAppDir = new File(jetOutputDir, APP_DIR);
+        }
+
         packageFilesDir = checkFileWithDefault(packageFilesDir, PACKAGE_FILES_DIR, "packageFilesDir");
 
         if (excelsiorJetPackaging == null) {
@@ -680,9 +696,7 @@ public class JetProject {
             throw new JetTaskFailureException(s("JetApi.WinServiceInEINotSupported.Failure"));
         }
 
-        if (execProfilesDir == null) {
-            execProfilesDir = jetResourcesDir;
-        }
+        execProfilesConfiguration.fillDefaults(this, excelsiorJet);
 
         // Override run args from system property
         String runArgs = System.getProperty("jet.runArgs");
@@ -690,8 +704,18 @@ public class JetProject {
             this.runArgs = Utils.parseRunArgs(runArgs);
         }
 
-        if (Utils.isEmpty(execProfilesName)) {
-            execProfilesName = projectName;
+        // Override exe run args from system property
+        String exeRunArgs = System.getProperty("jet.exeRunArgs");
+        if (exeRunArgs != null) {
+            this.exeRunArgs = Utils.parseRunArgs(exeRunArgs);
+        } else {
+            if (Utils.isEmpty(this.exeRunArgs) && !Utils.isEmpty(this.runArgs)) {
+                if (multiApp) {
+                    this.exeRunArgs = Utils.prepend("-args", this.runArgs);
+                } else {
+                    this.exeRunArgs = this.runArgs;
+                }
+            }
         }
 
         if ((packageFilesDir() != null) && appType == ApplicationType.TOMCAT) {
@@ -742,7 +766,7 @@ public class JetProject {
 
         // allProjectDependencies = project dependencies + main artifact
         List<ProjectDependency> allProjectDependencies = new ArrayList<>(projectDependencies);
-        ProjectDependency mainArtifactDep = new ProjectDependency(groupId, projectName, version, appType != ApplicationType.TOMCAT ? mainJar : mainWar, true);
+        ProjectDependency mainArtifactDep = new ProjectDependency(groupId, projectName, version, mainArtifact(), true);
         // in original implementation main artifact is preceded other dependencies
         allProjectDependencies.add(0, mainArtifactDep);
 
@@ -964,8 +988,8 @@ public class JetProject {
         }
     }
 
-    TestRunExecProfiles testRunExecProfiles() {
-        return new TestRunExecProfiles(execProfilesDir, execProfilesName);
+    ExecProfilesConfig execProfiles() {
+        return execProfilesConfiguration;
     }
 
     private void checkGlobal(ExcelsiorJet excelsiorJet) throws JetHomeException, JetTaskFailureException {
@@ -977,7 +1001,7 @@ public class JetProject {
         }
 
         if (globalOptimizer) {
-            TestRunExecProfiles execProfiles = testRunExecProfiles();
+            ExecProfilesConfig execProfiles = execProfiles();
             if (!execProfiles.getUsg().exists()) {
                 throw new JetTaskFailureException(s("JetApi.NoTestRun.Failure"));
             }
@@ -1094,6 +1118,10 @@ public class JetProject {
 
     ////////// Getters //////////////
 
+    public String projectName() {
+        return projectName;
+    }
+
     public String groupId() {
         return groupId;
     }
@@ -1132,14 +1160,6 @@ public class JetProject {
 
     List<PackageFile> packageFiles() {
         return packageFiles;
-    }
-
-    File execProfilesDir() {
-        return execProfilesDir;
-    }
-
-    String execProfilesName() {
-        return execProfilesName;
     }
 
     String[] jvmArgs() {
@@ -1242,7 +1262,7 @@ public class JetProject {
         return profileStartupTimeout;
     }
 
-    File jetOutputDir() {
+    public File jetOutputDir() {
         return jetOutputDir;
     }
 
@@ -1256,6 +1276,10 @@ public class JetProject {
 
     public String[] runArgs() {
         return runArgs;
+    }
+
+    public String[] exeRunArgs() {
+        return exeRunArgs;
     }
 
 ////////// Builder methods ////////////////////
@@ -1305,13 +1329,8 @@ public class JetProject {
         return this;
     }
 
-    public JetProject execProfilesDir(File execProfilesDir) {
-        this.execProfilesDir = execProfilesDir;
-        return this;
-    }
-
-    public JetProject execProfilesName(String execProfilesName) {
-        this.execProfilesName = execProfilesName;
+    public JetProject execProfiles(ExecProfilesConfig execProfilesConfig) {
+        this.execProfilesConfiguration = execProfilesConfig;
         return this;
     }
 
@@ -1460,6 +1479,11 @@ public class JetProject {
         return this;
     }
 
+    public JetProject jetAppDir(File jetAppDir) {
+        this.jetAppDir = jetAppDir;
+        return this;
+    }
+
     public JetProject compilerOptions(String[] compilerOptions) {
         this.compilerOptions = compilerOptions;
         return this;
@@ -1470,12 +1494,29 @@ public class JetProject {
         return this;
     }
 
+    public JetProject exeRunArgs(String[] runArgs) {
+        this.exeRunArgs = runArgs;
+        return this;
+    }
+
     public File jetBuildDir() {
         return jetBuildDir;
     }
 
-    public File mainJar() {
-        return mainJar;
+    public File jetAppDir() {
+        return jetAppDir;
+    }
+
+    public File jetAppToProfileDir() {
+        return execProfilesConfiguration.profileDir;
+    }
+
+    public boolean isProfileLocally() {
+        return execProfilesConfiguration.profileLocally;
+    }
+
+    public File mainArtifact() {
+        return appType != ApplicationType.TOMCAT ? mainJar : mainWar;
     }
 
     public static ApplicationType checkAndGetAppType(String appType) throws JetTaskFailureException {
@@ -1496,5 +1537,20 @@ public class JetProject {
             libPath = jetBuildDir.resolve(classpathEntry.packagePath).resolve(classpathEntry.path.getName());
         }
         return jetBuildDir.relativize(libPath);
+    }
+
+    String exeRelativePath(ExcelsiorJet excelsiorJet) {
+        //TODO: add configuration to customize exe location.
+        switch (appType) {
+            case PLAIN:
+            case WINDOWS_SERVICE:
+                return excelsiorJet.getTargetOS().mangleExeName(outputName());
+            case DYNAMIC_LIBRARY:
+                return excelsiorJet.getTargetOS().mangleDllName(outputName());
+            case TOMCAT:
+                return "bin" + File.separatorChar + excelsiorJet.getTargetOS().mangleExeName(outputName());
+            default:
+                throw new AssertionError("Unknown apptype: " + appType);
+        }
     }
 }

@@ -1,7 +1,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
 import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
@@ -200,7 +200,7 @@ public class PackagerArgsGeneratorTest {
 
         ArrayList<XPackOption> xPackOptions = packagerArgsGenerator.getExcelsiorInstallerXPackOptions(new File("target.exe"));
 
-        String exeName = "bin/" + excelsiorJet.getTargetOS().mangleExeName("test");
+        String exeName = "bin" + File.separatorChar + excelsiorJet.getTargetOS().mangleExeName("test");
         int serviceIdx =
                 assertOptionsContain(xPackOptions,"-service", exeName, "", "Apache Tomcat",
                         "Apache Tomcat Server - http://tomcat.apache.org/");
@@ -226,11 +226,10 @@ public class PackagerArgsGeneratorTest {
         JetProject prj = testProject(ApplicationType.PLAIN).globalOptimizer(true);
         prj.runtimeConfiguration().diskFootprintReduction = "high-memory";
         ExcelsiorJet excelsiorJet = excelsiorJet();
-        prj.execProfilesDir(prj.jetResourcesDir()).execProfilesName("test");
-        TestRunExecProfiles testRunExecProfiles = Mockito.mock(TestRunExecProfiles.class);
+        ExecProfilesConfig testRunExecProfiles = Mockito.mock(ExecProfilesConfig.class);
         Mockito.doReturn(fileSpy("test.usg")).when(testRunExecProfiles).getUsg();
         prj = Mockito.spy(prj);
-        Mockito.when(prj.testRunExecProfiles()).thenReturn(testRunExecProfiles);
+        Mockito.when(prj.execProfiles()).thenReturn(testRunExecProfiles);
         prj.validate(excelsiorJet, true);
         PackagerArgsGenerator packagerArgsGenerator = new PackagerArgsGenerator(prj, excelsiorJet);
         ArrayList<XPackOption> xPackOptions = packagerArgsGenerator.getCommonXPackOptions();

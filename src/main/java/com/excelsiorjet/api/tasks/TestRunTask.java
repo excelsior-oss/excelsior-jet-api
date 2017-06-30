@@ -23,7 +23,7 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
-import com.excelsiorjet.api.cmd.TestRunExecProfiles;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.packagefile.PackageFile;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
 import com.excelsiorjet.api.util.Txt;
@@ -183,7 +183,7 @@ public class TestRunTask {
                 throw new AssertionError("Unknown app type");
         }
 
-        Utils.mkdir(project.execProfilesDir());
+        Utils.mkdir(project.execProfiles().outputDir);
 
         List<String> args = xjavaArgs(buildDir, classpath, additionalVMArgs);
         String cmdLine = args.stream()
@@ -206,7 +206,7 @@ public class TestRunTask {
 
     private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs) throws JetTaskFailureException {
         List<String> args = new ArrayList<>();
-        TestRunExecProfiles execProfiles = project.testRunExecProfiles();
+        ExecProfilesConfig execProfiles = project.execProfiles();
         if (excelsiorJet.isStartupProfileGenerationSupported()) {
             args.add("-Djet.jit.profile.startup=" + execProfiles.getStartup().getAbsolutePath());
         }

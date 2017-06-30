@@ -58,12 +58,9 @@ public class PackagerArgsGenerator {
         ArrayList<XPackOption> xpackOptions = new ArrayList<>();
 
         File source = null;
-        String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        String exeRelativePath = project.exeRelativePath(excelsiorJet);
         switch (project.appType()) {
             case DYNAMIC_LIBRARY:
-                //overwrite exe name for dynamic library
-                exeName = excelsiorJet.getTargetOS().mangleDllName(project.outputName(), false);
-                //fall through
             case PLAIN:
             case WINDOWS_SERVICE:
                 if (project.packageFilesDir() != null) {
@@ -71,7 +68,7 @@ public class PackagerArgsGenerator {
                     xpackOptions.add(new XPackOption("-source", source.getAbsolutePath()));
                 }
 
-                xpackOptions.add(new XPackOption("-add-file", exeName, "/"));
+                xpackOptions.add(new XPackOption("-add-file", exeRelativePath, "/"));
 
                 for (PackageFile pfile : project.packageFiles()) {
                     xpackOptions.add(new XPackOption("-add-file", pfile.path.getAbsolutePath(), pfile.packagePath));
@@ -155,7 +152,7 @@ public class PackagerArgsGenerator {
                 if (ClasspathEntry.PackType.NONE == classpathEntry.getEffectivePack()) {
                     if (classpathEntry.packagePath == null) {
                         if (classpathEntry.disableCopyToPackage != null && classpathEntry.disableCopyToPackage) {
-                            xpackOptions.add(new XPackOption("-disable-resource", exeName, depInBuildDir.getFileName().toString()));
+                            xpackOptions.add(new XPackOption("-disable-resource", exeRelativePath, depInBuildDir.getFileName().toString()));
                         } else {
                             xpackOptions.add(new XPackOption("-add-file", depInBuildDir.toString(),
                                     classpathEntry.path.isDirectory() ? "/" : "/lib"
@@ -163,7 +160,7 @@ public class PackagerArgsGenerator {
                         }
                     } else {
                         xpackOptions.add(new XPackOption("-add-file", depInBuildDir.toString(), classpathEntry.packagePath));
-                        xpackOptions.add(new XPackOption("-assign-resource", exeName, depInBuildDir.getFileName().toString(),
+                        xpackOptions.add(new XPackOption("-assign-resource", exeRelativePath, depInBuildDir.getFileName().toString(),
                                 depInBuildDir.toString()));
                     }
                 }
@@ -352,14 +349,11 @@ public class PackagerArgsGenerator {
 
     private ArrayList<XPackOption> getWindowsServiceArgs() {
         ArrayList<XPackOption> xpackOptions = new ArrayList<>();
-        String exeName = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
-        if (project.appType() == ApplicationType.TOMCAT) {
-            exeName = "bin/" + exeName;
-        }
+        String exeRelPath = project.exeRelativePath(excelsiorJet);
         WindowsServiceConfig serviceConfig = project.windowsServiceConfiguration();
         xpackOptions.add(new XPackOption("-service",
                 argsValidForRsp(serviceConfig.arguments),
-                exeName,
+                exeRelPath,
                 argsToString(serviceConfig.arguments),
                 serviceConfig.displayName,
                 serviceConfig.description
@@ -381,7 +375,7 @@ public class PackagerArgsGenerator {
                 "no-start-after-install";
 
         xpackOptions.add(new XPackOption("-service-startup",
-                exeName,
+                exeRelPath,
                 logOnType,
                 serviceConfig.getStartupType().toXPackValue(),
                 startAfterInstall
@@ -389,7 +383,7 @@ public class PackagerArgsGenerator {
 
         if (serviceConfig.dependencies != null) {
             xpackOptions.add(new XPackOption("-service-dependencies",
-                    exeName,
+                    exeRelPath,
                     String.join(",", serviceConfig.dependencies)
             ));
         }

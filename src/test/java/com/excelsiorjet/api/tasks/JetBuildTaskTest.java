@@ -2,6 +2,7 @@ package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.log.StdOutLog;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
 import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
@@ -49,7 +50,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = Mockito.spy(new JetBuildTask(excelsiorJet, prj));
+        JetBuildTask buildTask = Mockito.spy(new JetBuildTask(excelsiorJet, prj, false));
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -76,7 +77,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -101,7 +102,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         PowerMockito.verifyStatic(Mockito.never());
@@ -128,7 +129,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -159,7 +160,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -185,7 +186,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -224,4 +225,25 @@ public class JetBuildTaskTest {
         Tests.jetBuildDir.toFile().mkdirs();
     }
 
+    private File fileSpy(String path, long modifyTime) {
+        File spy = Mockito.spy(new File(path));
+        Mockito.when(spy.exists()).thenReturn(true);
+        Mockito.when(spy.lastModified()).thenReturn(modifyTime);
+        return spy;
+    }
+
+    @Test
+    public void testCheckProfilesUpToDate() throws JetTaskFailureException {
+        JetProject prj = Mockito.spy(Tests.testProject(ApplicationType.PLAIN));
+        JetBuildTask jetBuildTask = new JetBuildTask(Tests.excelsiorJet(), prj, false);
+        ExecProfilesConfig execProfiles = Mockito.mock(ExecProfilesConfig.class);
+        long day = 1000L * 60 * 60 * 24;
+        Mockito.doReturn(fileSpy("Test.jprof", 1 * day)).when(execProfiles).getJProfile();
+        Mockito.doReturn(fileSpy("Test.startup", 2 * day)).when(execProfiles).getStartup();
+        execProfiles.daysToWarnAboutOutdatedProfiles = 1;
+        File mainArtifact = fileSpy("Test.jar", 33 * day);
+        Mockito.when(prj.mainArtifact()).thenReturn(mainArtifact);
+        Mockito.when(prj.execProfiles()).thenReturn(execProfiles);
+        jetBuildTask.checkProfilesUpToDate();
+    }
 }

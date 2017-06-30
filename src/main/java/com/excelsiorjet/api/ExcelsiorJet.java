@@ -177,7 +177,7 @@ public class ExcelsiorJet {
     }
 
     public boolean isUsageListGenerationSupported() {
-        return isX86();
+        return isX86() || since12_0();
     }
 
     public boolean isStartupProfileGenerationSupported()  {
@@ -267,6 +267,10 @@ public class ExcelsiorJet {
 
     public boolean isChangeRTLocationAvailable() {
         return since11_3();
+    }
+
+    public boolean isPGOSupported() {
+        return since12_0() && !isX86() && (edition != JetEdition.STANDARD) && (edition != JetEdition.PROFESSIONAL);
     }
 
     /**
