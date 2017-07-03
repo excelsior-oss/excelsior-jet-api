@@ -33,17 +33,23 @@ import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * Execution profiles configuration parameters.
- *
- * Currently, the Excelsior JET Maven and Gradle plugins collect execution profiles during special
- * plugins tasks: Test Run (jet:testrun task for Maven, jetTestRun task for Gradle)
- * or/and Profile Run (jet:profile task for Maven, jetProfile task for Gradle).
- *
- * Test Run collects startup profile (.startup file) and reflective-access profile (.usg file) that are used
- * by the Startup Optimizer and the Global Optimizer consequently.
- *
- * Profile Run collects execution profile that is used to perform profile guided optimizations.
- *
+ * <p>Application execution profiles configuration parameters.</p>
+ * <p>
+ * Currently, the Excelsior JET Maven and Gradle plugins collect application execution profiles
+ * when one of the two special plugin tasks is invoked:
+ * <b>Test Run</b> (Maven task {@code jet:testrun}, Gradle task {@code jetTestRun})
+ * and/or <b>Profile</b> ({@code jet:profile} and {@code jetProfile}, respectively).
+ * </p>
+ * <p>
+ * The Test Run task collects an application startup profile ({@code .startup} file) and reflective-access
+ * profile ({@code .usg} file) prior to the native build. These profiles are used by the Startup Optimizer
+ * and the Global Optimizer respectively.
+ * </p>
+ * <p>
+ * The Profile task runs a natively compiled application to collect its execution profile, enabling
+ * profile-guided optimization on subsequent builds.
+ * </p>
+ * 
  * @author Nikita Lipsky
  */
 public class ExecProfilesConfig {
@@ -55,51 +61,72 @@ public class ExecProfilesConfig {
     private File jprofile;
 
     /**
-     * The target location for application execution profiles gathered during Test Run and Profile tasks.
-     * It is recommended to commit the collected profiles (.usg, .startup) to VCS to enable the {@link JetBuildTask}
-     * to re-use them during subsequent builds without performing a Test Run or/and Profile.
-     *
-     * By default, {@link JetProject#jetResourcesDir} is used for the directory.
-     *
+     * The target location for application execution profiles gathered by the Test Run and Profile tasks.
+     * It is recommended to commit the collected profiles ({@code .usg}, {@code .startup}, {@code .jprof})
+     * to the VCS to enable the {@link JetBuildTask} to re-use them during subsequent builds without performing
+     * a Test Run and/or Profile task again.
+     * <p>
+     * By default, {@link JetProject#jetResourcesDir} is used.
+     * </p>
      * @see TestRunTask
+     * @see RunTask
      */
     public File outputDir;
 
     /**
-     * The base file name of execution profiles. By default, {@link JetProject#projectName} is used.
+     * The base file name of all execution profiles. By default, {@link JetProject#projectName} is used.
      */
     public String outputName;
 
     /**
-     * In certain cases, you may need to run jet compiled binaries not on a computer where the build is performed
-     * but on another computer with a special configured environment.
-     * For this case, you may tell the plugin to create a special profile image that you will deploy to such environment
-     * to collect execution profile by setting this parameter to {@code false}.
+     * <p>
+     * Whether to run the Profile task on the same machine or prepare an image for deployment
+     * to a reference system.
+     * </p>
+     * <p>
+     * It may be necessary to profile the natively compiled application on a computer other than the one
+     * conducting the build, e.g. because profiling requires a specially configured environment.
+     * Setting this parameter to {@code false} forces the plugin to create a special <em>profiling image</em>
+     * that you can then deploy to such an environment to collect an application execution profile.
+     * </p>
+     * <p>
+     * You can also set the {@code jet.create.profiling.image} system property to force the Profile task to create
+     * such an image instead of running the generated binary locally.
+     * </p>
+     * <p>
+     * Note that this parameter is always set to {@code false} for the cross-compiling flavors of Excelsior JET,
+     * e.g. those targeting Linux/ARM.
+     * </p>
      *
-     * You may also set the {@code jet.create.profile.image} system property to force the Profile task to create
-     * such an image instead of running generated binary locally.
-     *
-     * Note, that the parameter is always {@code false} for cross-compilation Excelsior JET flavors (Linux ARM).
+     * @see profileDir
      */
     public Boolean profileLocally;
 
     /**
-     * Directory with a special "profile" image that is used to collect execution profile that can be used
-     * to enable profile guided optimizations.
-     *
-     * The value is set to "appToProfile" subdirectory of {@link JetProject#jetOutputDir} by default.
-     *
-     * If {@link #profileLocally} is set to {@code false} then a zip archive near to the directory will be created
-     * with the same name that you can deploy to a target system to perform profiling.
+     * <p>
+     * Directory where the special "profiling" image of the natively compiled application has to be placed.
+     * </p>
+     * <p>
+     * By default, points to the {@code "appToProfile"} subdirectory of {@link JetProject#jetOutputDir}.
+     * </p>
+     * <p>
+     * To facilitate deployment of the profiling image to a reference system when {@link #profileLocally}
+     * is set to {@code false}, the plugin also creates a zip archive that contains a copy of that image,
+     * gives it the same base name and places it next to this directory.
+     * </p>
      */
     public File profileDir;
 
     /**
-     * It is recommended to re-collect the profiles periodically as your code base evolve.
-     * The plugins issues a warning if you use outdated profiles for your builds.
-     * With this parameter you can configure how old in days the profiles are treated as outdated.
-     * You may set the parameter to {@code 0} to disable the warning.
-     * The default value is 30 days.
+     * <p>
+     * Profile validity threshold in days.
+     * </p>
+     * <p>
+     * It is recommended to re-collect all profiles periodically as your code base evolves.
+     * The plugins issue a warning upon detecting an outdated profile during a build.
+     * With this parameter, you can adjust the respective threshold, measured in days,
+     * or set it to {@code 0} to disable the warning. The default value is 30.
+     * </p>
      */
     public int daysToWarnAboutOutdatedProfiles = 30;
 
