@@ -195,7 +195,9 @@ public class JetProject {
 
     /**
      * Execution profiles configuration parameters.
-     * You can configure where to place execution profiles and whether you can collect the profiles locally.
+     * You can configure the filesystem location and base name of all application execution profiles,
+     * whether they can be collected locally, i.e. on the machine where the build takes place,
+     * and the maximum profile age when they are considered outdated.
      *
      * @see ExecProfilesConfig#outputDir
      * @see ExecProfilesConfig#outputName
@@ -514,7 +516,7 @@ public class JetProject {
     private String[] compilerOptions;
 
     /**
-     * Command line arguments that will be passed to the application during the test run.
+     * Command line arguments that will be passed to the application during a Test Run.
      * You may also set the parameter via the {@code jet.runArgs} system property, where arguments
      * are comma separated (use "\" to escape commas inside arguments,
      * i.e. {@code -Djet.runArgs="arg1,Hello\, World"} will be passed to your application as {@code arg1 "Hello, World"})
