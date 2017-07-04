@@ -61,6 +61,13 @@ public class Tests {
         return fileSpy(path.toString());
     }
 
+    public static File fileSpy(String path, long modifyTime) {
+        File spy = Mockito.spy(new File(path));
+        Mockito.when(spy.exists()).thenReturn(true);
+        Mockito.when(spy.lastModified()).thenReturn(modifyTime);
+        return spy;
+    }
+
     static File mavenDepSpy(String depName) {
         return fileSpy(mavenLocalDir.resolve(depName).toString());
     }
@@ -109,7 +116,6 @@ public class Tests {
         }
         //some tests disable validation where this default is set. TODO: refactor it
         project.runtimeConfiguration().profile = "auto";
-        project.execProfiles().fillDefaults(project, excelsiorJet());
         return project;
     }
 

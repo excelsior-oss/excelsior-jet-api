@@ -264,7 +264,9 @@ public class JetBuildTask {
         File targetZip = toProfile ? new File(project.jetAppToProfileDir().getAbsolutePath() + ".zip"):
                 new File(project.jetOutputDir(), project.artifactName() + ".zip");
         if (useXPackZipping()) {
-            new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip);
+            if (!new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip)) {
+                throw new IOException(s("JetBuildTask.UnableToRename.Error", packageDir.getAbsolutePath() + ".zip", targetZip));
+            }
         } else {
             logger.info(s("JetBuildTask.ZipApp.Info"));
             Utils.compressZipfile(packageDir, targetZip);
@@ -367,10 +369,10 @@ public class JetBuildTask {
             if (project.isProfileLocally()) {
                 switch (project.appType()) {
                     case WINDOWS_SERVICE:
-                        logger.info(Txt.s("JetApi.Profile.WinService", project.execProfiles().profileDir.getAbsolutePath()));
+                        logger.info(Txt.s("JetApi.Profile.WinService", project.execProfiles().profilingImageDir.getAbsolutePath()));
                         break;
                     case DYNAMIC_LIBRARY:
-                        logger.info(Txt.s("JetApi.Profile.DynamicLibrary", project.execProfiles().profileDir.getAbsolutePath()));
+                        logger.info(Txt.s("JetApi.Profile.DynamicLibrary", project.execProfiles().profilingImageDir.getAbsolutePath()));
                         break;
                     case PLAIN:
                     case TOMCAT:
@@ -387,7 +389,7 @@ public class JetBuildTask {
             } else {
                 File zipFile = zipBuild(buildDir);
                 logger.info(Txt.s("JetApi.Profile.NotLocally",
-                        project.execProfiles().profileDir.getAbsolutePath(), zipFile.getAbsolutePath(),
+                        project.execProfiles().profilingImageDir.getAbsolutePath(), zipFile.getAbsolutePath(),
                         project.execProfiles().getJProfile().getName(), project.execProfiles().outputDir.getAbsolutePath()));
             }
         } else {

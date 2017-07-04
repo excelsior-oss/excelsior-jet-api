@@ -22,14 +22,15 @@
 package com.excelsiorjet.api.tasks.config.compiler;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.tasks.JetBuildTask;
-import com.excelsiorjet.api.tasks.JetProject;
-import com.excelsiorjet.api.tasks.TestRunTask;
+import com.excelsiorjet.api.tasks.*;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 
 import static com.excelsiorjet.api.log.Log.logger;
+import static com.excelsiorjet.api.tasks.config.compiler.ExecProfilesExistenceType.ALL;
+import static com.excelsiorjet.api.tasks.config.compiler.ExecProfilesExistenceType.PROFILE;
+import static com.excelsiorjet.api.tasks.config.compiler.ExecProfilesExistenceType.TEST_RUN;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
@@ -56,15 +57,13 @@ public class ExecProfilesConfig {
 
     private static final String PROFILE_DIR = "appToProfile";
 
-    private File usg;
-    private File startup;
-    private File jprofile;
-
     /**
      * The target location for application execution profiles gathered by the Test Run and Profile tasks.
      * It is recommended to commit the collected profiles ({@code .usg}, {@code .startup}, {@code .jprof})
      * to the VCS to enable the {@link JetBuildTask} to re-use them during subsequent builds without performing
-     * a Test Run and/or Profile task again.
+     * a Test Run and/or Profile task again. Once you committed the profiles it s recommended to set
+     * the {@link #checkExistence} parameter to appropriate value to be sure that the profiles are applied
+     * to subsequent builds.
      * <p>
      * By default, {@link JetProject#jetResourcesDir} is used.
      * </p>
@@ -98,7 +97,7 @@ public class ExecProfilesConfig {
      * e.g. those targeting Linux/ARM.
      * </p>
      *
-     * @see profileDir
+     * @see #profilingImageDir
      */
     public Boolean profileLocally;
 
@@ -115,7 +114,7 @@ public class ExecProfilesConfig {
      * gives it the same base name and places it next to this directory.
      * </p>
      */
-    public File profileDir;
+    public File profilingImageDir;
 
     /**
      * <p>
@@ -130,7 +129,22 @@ public class ExecProfilesConfig {
      */
     public int daysToWarnAboutOutdatedProfiles = 30;
 
-    public void fillDefaults(JetProject jetProject, ExcelsiorJet excelsiorJet) {
+    /**
+     * Force checking existence of collected profiles to ensure that they are applied during subsequent builds.
+     * Valid values are: "all" , "test-run", "profile", "none" (default).
+     * <p>
+     * {@code all} - check existence of all profiles (".usg", ".startup", ".jprof").
+     * </p>
+     * <p>
+     * {@code test-run} - check existence of profiles collected during  test run (".usg", ".startup").
+     * </p>
+     * <p>
+     * {@code profile} - check existence of a profile collected during Profile task (".jprof").
+     * </p>
+     */
+    public String checkExistence = ExecProfilesExistenceType.NONE.toString();
+
+    public void fillDefaults(JetProject jetProject, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         if (outputDir == null) {
             outputDir = jetProject.jetResourcesDir();
         }
@@ -143,31 +157,43 @@ public class ExecProfilesConfig {
                 logger.warn(s("JetApi.CannotProfileLocallyForCrossCompilation.Warning"));
             }
             profileLocally = false;
-        } else if (System.getProperty("jet.create.profile.image") != null) {
+        } else if (System.getProperty("jet.create.profiling.image") != null) {
             profileLocally = false;
         } else if (profileLocally == null) {
             profileLocally = true;
         }
 
-        if (profileDir == null) {
-            profileDir = new File(jetProject.jetOutputDir(), PROFILE_DIR);
+        if (profilingImageDir == null) {
+            profilingImageDir = new File(jetProject.jetOutputDir(), PROFILE_DIR);
         }
 
-        usg = new File(outputDir, outputName + ".usg");
-        startup = new File(outputDir, outputName + ".startup");
-        jprofile = new File(outputDir, outputName + ".jprof");
+        ExecProfilesExistenceType existenceType = ExecProfilesExistenceType.validate(checkExistence);
+        if ((existenceType == ALL) || (existenceType == TEST_RUN)) {
+            if (excelsiorJet.isUsageListGenerationSupported() && !getUsg().exists()) {
+                throw new JetTaskFailureException(s("JetApi.NoTestRunProfile.Failure", getUsg().getAbsolutePath()));
+            }
+            if (excelsiorJet.isStartupProfileGenerationSupported() && !getStartup().exists()) {
+                throw new JetTaskFailureException(s("JetApi.NoTestRunProfile.Failure", getStartup().getAbsolutePath()));
+            }
+        }
+        if ((existenceType == ALL) || (existenceType == PROFILE)) {
+            if (excelsiorJet.isPGOSupported() && !getJProfile().exists()) {
+                throw new JetTaskFailureException(s("JetApi.NoJProfile.Failure", getJProfile().getAbsolutePath()));
+            }
+        }
     }
 
 
     public File getUsg() {
-        return usg;
+        return new File(outputDir, outputName + ".usg");
     }
 
     public File getStartup() {
-        return startup;
+        return new File(outputDir, outputName + ".startup");
     }
 
     public File getJProfile() {
-        return jprofile;
+        return new File(outputDir, outputName + ".jprof");
     }
+
 }

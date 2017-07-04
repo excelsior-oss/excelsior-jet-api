@@ -303,7 +303,7 @@ public class JetProject {
 
 
     /**
-     * (32-bit only) If set to {@code true}, the Global Optimizer is enabled,
+     * If set to {@code true}, the Global Optimizer is enabled,
      * providing higher performance and lower memory usage for the compiled application.
      *
      * <p>
@@ -516,7 +516,8 @@ public class JetProject {
     private String[] compilerOptions;
 
     /**
-     * Command line arguments that will be passed to the application during a Test Run.
+     * Command line arguments that will be passed to the application during the test run, startup accelerator,
+     * execution profiling and usual run.
      * You may also set the parameter via the {@code jet.runArgs} system property, where arguments
      * are comma separated (use "\" to escape commas inside arguments,
      * i.e. {@code -Djet.runArgs="arg1,Hello\, World"} will be passed to your application as {@code arg1 "Hello, World"})
@@ -524,15 +525,17 @@ public class JetProject {
     private String[] runArgs;
 
     /**
-     * Command line arguments that will be passed to the application during startup accelerator or execution profiling
-     * and usual run.
-     * If not specified runArgs are reused for {@code exeRunArgs}.
-     * Please note, the parameter must be in the format of multi-app executables, if {@link #multiApp} is {@code true}.
-     * You may also set the parameter via the {@code jet.exeRunArgs} system property, where arguments
+     * If you set {@link #multiApp} to {@code true} then command line arguments for resulting executable
+     * are in the format of multi-app executables.
+     *
+     * So if you need to alter a main class and/or VM properties during startup accelerator,
+     * execution profiling or usual run set this parameter that will override {@link #runArgs} parameter.
+     *
+     * You may also set the parameter via the {@code jet.multiAppRunArgs} system property, where arguments
      * are comma separated (use "\" to escape commas inside arguments,
-     * i.e. {@code -Djet.exeRunArgs="arg1,Hello\, World"} will be passed to your application as {@code arg1 "Hello, World"})
+     * i.e. {@code -Djet.multiAppRunArgs="-args,arg1,Hello\, World"} will be passed to your application as {@code -args arg1 "Hello, World"})
      */
-    private String[] exeRunArgs;
+    private String[] multiAppRunArgs;
 
     /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
@@ -704,20 +707,6 @@ public class JetProject {
         String runArgs = System.getProperty("jet.runArgs");
         if (runArgs != null) {
             this.runArgs = Utils.parseRunArgs(runArgs);
-        }
-
-        // Override exe run args from system property
-        String exeRunArgs = System.getProperty("jet.exeRunArgs");
-        if (exeRunArgs != null) {
-            this.exeRunArgs = Utils.parseRunArgs(exeRunArgs);
-        } else {
-            if (Utils.isEmpty(this.exeRunArgs) && !Utils.isEmpty(this.runArgs)) {
-                if (multiApp) {
-                    this.exeRunArgs = Utils.prepend("-args", this.runArgs);
-                } else {
-                    this.exeRunArgs = this.runArgs;
-                }
-            }
         }
 
         if ((packageFilesDir() != null) && appType == ApplicationType.TOMCAT) {
@@ -903,8 +892,20 @@ public class JetProject {
             checkVersionInfo(excelsiorJet);
 
             if (multiApp && !excelsiorJet.isMultiAppSupported()) {
-                logger.warn(s("JetApi.NoMultiappInStandard.Warning"));
-                multiApp = false;
+                throw new JetTaskFailureException(s("JetApi.NoMultiappInStandard.Failure"));
+            }
+
+            // Override multiApp run args from system property
+            String multiAppRunArgs = System.getProperty("jet.multiAppRunArgs");
+            if (multiAppRunArgs != null) {
+                this.multiAppRunArgs = Utils.parseRunArgs(multiAppRunArgs);
+            }
+            if (multiApp || appType() == ApplicationType.TOMCAT) { //tomcat is always multiApp
+                if (Utils.isEmpty(this.multiAppRunArgs) && !Utils.isEmpty(this.runArgs)) {
+                    this.multiAppRunArgs = Utils.prepend("-args", this.runArgs);
+                }
+            } else if (!Utils.isEmpty(this.multiAppRunArgs)) {
+                throw new JetTaskFailureException(s("JetApi.MultiAppRunArgsNotForMultiApp.Failure"));
             }
 
             if (profileStartup) {
@@ -1280,8 +1281,12 @@ public class JetProject {
         return runArgs;
     }
 
+    public String[] multiAppRunArgs() {
+        return multiAppRunArgs;
+    }
+
     public String[] exeRunArgs() {
-        return exeRunArgs;
+        return (multiApp || appType == ApplicationType.TOMCAT) ? multiAppRunArgs : runArgs;
     }
 
 ////////// Builder methods ////////////////////
@@ -1496,8 +1501,8 @@ public class JetProject {
         return this;
     }
 
-    public JetProject exeRunArgs(String[] runArgs) {
-        this.exeRunArgs = runArgs;
+    public JetProject multiAppRunArgs(String[] runArgs) {
+        this.multiAppRunArgs = runArgs;
         return this;
     }
 
@@ -1510,7 +1515,7 @@ public class JetProject {
     }
 
     public File jetAppToProfileDir() {
-        return execProfilesConfiguration.profileDir;
+        return execProfilesConfiguration.profilingImageDir;
     }
 
     public boolean isProfileLocally() {

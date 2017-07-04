@@ -103,7 +103,7 @@ public class RuntimeConfig {
     public String profile;
 
     /**
-     * (32-bit only) Disk footprint reduction mode.
+     * Disk footprint reduction mode.
      * Excelsior JET can reduce the disk footprint of the application by including the supposedly
      * unused Java SE API classes in the resulting package in a compressed form.
      * Valid values are: {@code none},  {@code medium} (default),  {@code high-memory},  {@code high-disk}.
@@ -119,13 +119,13 @@ public class RuntimeConfig {
      * <dd>Use a simple compression algorithm that has minimal run time overheads and permits
      * selective decompression.</dd>
      * <dt>high-memory</dt>
-     * <dd>Compress all unused Java SE API classes as a whole. This results in more significant disk
+     * <dd>(32-bit only) Compress all unused Java SE API classes as a whole. This results in more significant disk
      * footprint reduction compared to the {@code medium} compression. However, if one of the compressed classes
      * is needed at run time, the entire bundle must be decompressed to retrieve it.
      * In the {@code high-memory} reduction mode the bundle is decompressed
      * onto the heap and can be garbage collected later.</dd>
      * <dt>high-disk</dt>
-     * <dd>Same as {@code high-memory}, but decompress to the temp directory.</dd>
+     * <dd>(32-bit only) Same as {@code high-memory}, but decompress to the temp directory.</dd>
      * </dl>
      */
     public String diskFootprintReduction;
