@@ -236,6 +236,7 @@ public class JetBuildTaskTest {
         long day = 1000L * 60 * 60 * 24;
         Mockito.doReturn(Tests.fileSpy("Test.jprof", 1 * day)).when(execProfiles).getJProfile();
         Mockito.doReturn(Tests.fileSpy("Test.startup", 2 * day)).when(execProfiles).getStartup();
+        Mockito.doReturn(Tests.fileSpy("Test.usg", 3 * day)).when(execProfiles).getUsg();
         execProfiles.daysToWarnAboutOutdatedProfiles = 1;
         File mainArtifact = Tests.fileSpy("Test.jar", 33 * day);
         Mockito.when(prj.mainArtifact()).thenReturn(mainArtifact);
@@ -246,8 +247,9 @@ public class JetBuildTaskTest {
             Log.logger = Mockito.spy(Log.logger);
             jetBuildTask.checkProfilesUpToDate();
 
-            Mockito.verify(Log.logger).warn(Txt.s("JetApi.TestRun.RecollectProfile.Warning", 31));
-            Mockito.verify(Log.logger).warn(Txt.s("JetApi.PGO.RecollectProfile.Warning", 32));
+            Mockito.verify(Log.logger).warn(Txt.s("JetApi.TestRun.RecollectProfile.Warning", execProfiles.getUsg().getAbsolutePath(), 30));
+            Mockito.verify(Log.logger).warn(Txt.s("JetApi.TestRun.RecollectProfile.Warning", execProfiles.getStartup().getAbsolutePath(), 31));
+            Mockito.verify(Log.logger).warn(Txt.s("JetApi.PGO.RecollectProfile.Warning", execProfiles.getJProfile().getAbsolutePath(), 32));
         } finally {
             Log.logger = previous;
         }

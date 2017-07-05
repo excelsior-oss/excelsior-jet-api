@@ -203,6 +203,7 @@ public class JetProject {
      * @see ExecProfilesConfig#outputName
      * @see ExecProfilesConfig#profileLocally
      * @see ExecProfilesConfig#daysToWarnAboutOutdatedProfiles
+     * @see ExecProfilesConfig#checkExistence
      */
     private ExecProfilesConfig execProfilesConfiguration;
 

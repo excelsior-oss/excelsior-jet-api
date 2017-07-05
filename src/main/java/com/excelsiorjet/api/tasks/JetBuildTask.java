@@ -310,7 +310,7 @@ public class JetBuildTask {
         if (profile.exists()) {
             long daysBefore = computeModifyTimeDaysBetween(profile, project.mainArtifact());
             if (daysBefore >= project.execProfiles().daysToWarnAboutOutdatedProfiles) {
-                logger.warn(Txt.s(warnKey, daysBefore));
+                logger.warn(Txt.s(warnKey, profile.getAbsolutePath(), daysBefore));
             }
         }
 
@@ -320,6 +320,7 @@ public class JetBuildTask {
         ExecProfilesConfig execProfiles = project.execProfiles();
         if (execProfiles.daysToWarnAboutOutdatedProfiles > 0 ) {
             checkProfileUpToDate(execProfiles.getStartup(), "JetApi.TestRun.RecollectProfile.Warning");
+            checkProfileUpToDate(execProfiles.getUsg(), "JetApi.TestRun.RecollectProfile.Warning");
             checkProfileUpToDate(execProfiles.getJProfile(), "JetApi.PGO.RecollectProfile.Warning");
         }
     }
