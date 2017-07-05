@@ -27,7 +27,7 @@ import com.excelsiorjet.api.util.Utils;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * Execution profiles existence types enumeration.
+ * Execution profile types enumeration for existence checks.
  */
 public enum ExecProfilesExistenceType {
     ALL,

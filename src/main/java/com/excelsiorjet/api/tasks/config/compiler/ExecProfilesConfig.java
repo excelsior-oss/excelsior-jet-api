@@ -50,7 +50,7 @@ import static com.excelsiorjet.api.util.Txt.s;
  * The Profile task runs a natively compiled application to collect its execution profile, enabling
  * profile-guided optimization on subsequent builds.
  * </p>
- * 
+ *
  * @author Nikita Lipsky
  */
 public class ExecProfilesConfig {
@@ -61,9 +61,9 @@ public class ExecProfilesConfig {
      * The target location for application execution profiles gathered by the Test Run and Profile tasks.
      * It is recommended to commit the collected profiles ({@code .usg}, {@code .startup}, {@code .jprof})
      * to the VCS to enable the {@link JetBuildTask} to re-use them during subsequent builds without performing
-     * a Test Run and/or Profile task again. Once you committed the profiles it s recommended to set
-     * the {@link #checkExistence} parameter to appropriate value to be sure that the profiles are applied
-     * to subsequent builds.
+     * a Test Run and/or Profile task again. Once you have committed the profiles, it is recommended to set
+     * the {@link #checkExistence} parameter to an appropriate value in order to verify that the profiles
+     * are available during subsequent builds.
      * <p>
      * By default, {@link JetProject#jetResourcesDir} is used.
      * </p>
@@ -130,16 +130,16 @@ public class ExecProfilesConfig {
     public int daysToWarnAboutOutdatedProfiles = 30;
 
     /**
-     * Force checking existence of collected profiles to ensure that they are applied during subsequent builds.
-     * Valid values are: "all" , "test-run", "profile", "none" (default).
+     * Check that all or certain application profiles are available before starting a build.
+     * Valid values are: "all" , "test-run", "profile", "none" (default):
      * <p>
-     * {@code all} - check existence of all profiles (".usg", ".startup", ".jprof").
+     * {@code test-run} - profiles collected by the Test Run task (".usg", ".startup").
      * </p>
      * <p>
-     * {@code test-run} - check existence of profiles collected during  test run (".usg", ".startup").
+     * {@code profile} - application executiion profile collected by the Profile task (".jprof").
      * </p>
      * <p>
-     * {@code profile} - check existence of a profile collected during Profile task (".jprof").
+     * {@code all} - all profiles (".usg", ".startup", and ".jprof").
      * </p>
      */
     public String checkExistence = ExecProfilesExistenceType.NONE.toString();
