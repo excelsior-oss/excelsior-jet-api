@@ -264,8 +264,15 @@ public class JetBuildTask {
         File targetZip = toProfile ? new File(project.jetAppToProfileDir().getAbsolutePath() + ".zip"):
                 new File(project.jetOutputDir(), project.artifactName() + ".zip");
         if (useXPackZipping()) {
-            if (!new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip)) {
-                throw new IOException(s("JetBuildTask.UnableToRename.Error", packageDir.getAbsolutePath() + ".zip", targetZip));
+            if (!toProfile) {
+                if (targetZip.exists()) {
+                    if (!targetZip.delete() && targetZip.exists()) {
+                        throw new IOException(s("JetApi.UnableToDelete.Error", packageDir.getAbsolutePath() + ".zip", targetZip));
+                    }
+                }
+                if (!new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip) && !targetZip.exists()) {
+                    throw new IOException(s("JetBuildTask.UnableToRename.Error", packageDir.getAbsolutePath() + ".zip", targetZip));
+                }
             }
         } else {
             logger.info(s("JetBuildTask.ZipApp.Info"));

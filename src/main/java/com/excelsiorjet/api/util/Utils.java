@@ -50,7 +50,7 @@ public class Utils {
             private void deleteFile(File f) throws IOException {
                 if (!f.delete()) {
                     if (f.exists()) {
-                        throw new IOException(Txt.s("Utils.CleanDirectory.Failed", f.getAbsolutePath()));
+                        throw new IOException(Txt.s("JetApi.UnableToDelete.Error", f.getAbsolutePath()));
                     }
                 }
             }
@@ -64,7 +64,7 @@ public class Utils {
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
                 if (file.toFile().exists()) {
-                    throw new IOException(Txt.s("Utils.CleanDirectory.Failed", f.getAbsolutePath()));
+                    throw new IOException(Txt.s("JetApi.UnableToDelete.Error", f.getAbsolutePath()));
                 }
                 return FileVisitResult.CONTINUE;
             }
