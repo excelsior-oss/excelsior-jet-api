@@ -1564,7 +1564,7 @@ public class JetProject {
             case WINDOWS_SERVICE:
                 return excelsiorJet.getTargetOS().mangleExeName(outputName());
             case DYNAMIC_LIBRARY:
-                return excelsiorJet.getTargetOS().mangleDllName(outputName());
+                return excelsiorJet.getTargetOS().mangleDllName(outputName(), false);
             case TOMCAT:
                 return "bin" + File.separatorChar + excelsiorJet.getTargetOS().mangleExeName(outputName());
             default:
