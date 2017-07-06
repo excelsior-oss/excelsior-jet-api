@@ -153,7 +153,7 @@ public class ExecProfilesConfig {
         }
 
         if (excelsiorJet.isCrossCompilation())  {
-            if (profileLocally != null) {
+            if ((profileLocally != null) && profileLocally) {
                 logger.warn(s("JetApi.CannotProfileLocallyForCrossCompilation.Warning"));
             }
             profileLocally = false;
