@@ -244,7 +244,11 @@ public class ExcelsiorJet {
     }
 
     public boolean isDiskFootprintReductionSupported() {
-        return since11_3() && isGlobalOptimizerSupported() && isX86();
+        return since11_3() && isGlobalOptimizerSupported();
+    }
+
+    public boolean isHighDiskFootprintReductionSupported() {
+        return isDiskFootprintReductionSupported() && isX86();
     }
 
     public boolean isWindowsVersionInfoSupported() {

@@ -62,8 +62,7 @@ public class Tests {
     }
 
     public static File fileSpy(String path, long modifyTime) {
-        File spy = Mockito.spy(new File(path));
-        Mockito.when(spy.exists()).thenReturn(true);
+        File spy = fileSpy(path);
         Mockito.when(spy.lastModified()).thenReturn(modifyTime);
         return spy;
     }
@@ -130,6 +129,7 @@ public class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isCompactProfilesSupported();
         Mockito.doReturn(true).when(excelsiorJet).isGlobalOptimizerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isDiskFootprintReductionSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isHighDiskFootprintReductionSupported();
         Mockito.doReturn(true).when(excelsiorJet).isRuntimeSupported(RuntimeFlavorType.DESKTOP);
         Mockito.doReturn(true).when(excelsiorJet).isChangeRTLocationAvailable();
         Mockito.doReturn(true).when(excelsiorJet).since11_3();

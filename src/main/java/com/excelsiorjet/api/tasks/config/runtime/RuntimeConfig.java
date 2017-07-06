@@ -192,13 +192,18 @@ public class RuntimeConfig {
         }
 
         if (diskFootprintReduction != null) {
-            DiskFootprintReductionType.validate(diskFootprintReduction);
+            DiskFootprintReductionType dfrType = DiskFootprintReductionType.validate(diskFootprintReduction);
             if (!excelsiorJet.isDiskFootprintReductionSupported()) {
                 logger.warn(s("JetApi.NoDiskFootprintReduction.Warning"));
                 diskFootprintReduction = null;
             } else if (!jetProject.globalOptimizer()) {
                 logger.warn(s("JetApi.DiskFootprintReductionForGlobalOnly.Warning"));
                 diskFootprintReduction = null;
+            } else if (!excelsiorJet.isHighDiskFootprintReductionSupported() &&
+                    ((dfrType == DiskFootprintReductionType.HIGH_DISK) ||
+                            (dfrType == DiskFootprintReductionType.HIGH_MEMORY))) {
+                logger.warn(s("JetApi.NoHighDiskFootprintReduction.Warning", diskFootprintReduction));
+                diskFootprintReduction = DiskFootprintReductionType.MEDIUM.toString();
             }
         }
 
