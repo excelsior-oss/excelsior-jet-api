@@ -26,11 +26,14 @@ import com.excelsiorjet.api.cmd.CmdLineTool;
 import com.excelsiorjet.api.cmd.CmdLineToolException;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
 import com.excelsiorjet.api.tasks.config.PackagingType;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
+import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
@@ -47,17 +50,17 @@ public class JetBuildTask {
     private final CompilerArgsGenerator compilerArgsGenerator;
     private final PackagerArgsGenerator packagerArgsGenerator;
     private final ExcelsiorJet excelsiorJet;
+    private final boolean toProfile;
 
     private File buildDir;
 
-    public JetBuildTask(ExcelsiorJet excelsiorJet, JetProject project) throws JetTaskFailureException {
+    public JetBuildTask(ExcelsiorJet excelsiorJet, JetProject project, boolean profile) throws JetTaskFailureException {
         this.excelsiorJet = excelsiorJet;
         this.project = project;
-        compilerArgsGenerator = new CompilerArgsGenerator(project, excelsiorJet);
+        this.toProfile = profile;
+        compilerArgsGenerator = new CompilerArgsGenerator(project, excelsiorJet, profile);
         packagerArgsGenerator = new PackagerArgsGenerator(project, excelsiorJet);
     }
-
-    private static final String APP_DIR = "app";
 
     /**
      * Generates Excelsior JET project file in {@code buildDir}
@@ -85,7 +88,9 @@ public class JetBuildTask {
     }
 
     private boolean useXPackZipping() {
-        return (project.excelsiorJetPackaging() == PackagingType.ZIP) && excelsiorJet.since11_3() &&
+        return (!toProfile && (project.excelsiorJetPackaging() == PackagingType.ZIP) ||
+                 toProfile && !project.isProfileLocally()) &&
+                excelsiorJet.since11_3() &&
                 (project.appType() != ApplicationType.WINDOWS_SERVICE) &&
                 // JET-9267 workaround: cannot use xpack zipping when slimDown or diskFootprintReduction is enabled
                 (project.runtimeConfiguration().slimDown == null) &&
@@ -118,8 +123,8 @@ public class JetBuildTask {
      * Packages the generated executable and required Excelsior JET runtime files
      * as a self-contained directory
      */
-    private void createAppDir(File buildDir, File appDir) throws CmdLineToolException, JetTaskFailureException {
-        ArrayList<String> xpackArgs = getCommonXPackArgs(appDir.getAbsolutePath(), buildDir, ".SFD");
+    private void createAppOrProfileDir(File buildDir, File appOrProfileDir) throws CmdLineToolException, JetTaskFailureException {
+        ArrayList<String> xpackArgs = getCommonXPackArgs(appOrProfileDir.getAbsolutePath(), buildDir, ".SFD");
         if (useXPackZipping()) {
             //since 11.3 Excelsior JET supports zipping self-contained directories itself
             xpackArgs.add("-backend");
@@ -131,7 +136,7 @@ public class JetBuildTask {
         }
         if (project.appType() == ApplicationType.WINDOWS_SERVICE) {
             try {
-                createWinServiceInstallScripts(appDir);
+                createWinServiceInstallScripts(appOrProfileDir);
             } catch (IOException e) {
                 throw new JetTaskFailureException(s("JetBuildTask.WinServiceScriptsCreation.Failure", e.toString()), e);
             }
@@ -255,17 +260,31 @@ public class JetBuildTask {
 
     }
 
+    private File zipBuild(File packageDir) throws IOException {
+        File targetZip = toProfile ? new File(project.jetAppToProfileDir().getAbsolutePath() + ".zip"):
+                new File(project.jetOutputDir(), project.artifactName() + ".zip");
+        if (useXPackZipping()) {
+            if (!toProfile) {
+                if (targetZip.exists()) {
+                    if (!targetZip.delete() && targetZip.exists()) {
+                        throw new IOException(s("JetApi.UnableToDelete.Error", packageDir.getAbsolutePath() + ".zip", targetZip));
+                    }
+                }
+                if (!new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip) && !targetZip.exists()) {
+                    throw new IOException(s("JetBuildTask.UnableToRename.Error", packageDir.getAbsolutePath() + ".zip", targetZip));
+                }
+            }
+        } else {
+            logger.info(s("JetBuildTask.ZipApp.Info"));
+            Utils.compressZipfile(packageDir, targetZip);
+        }
+        return targetZip;
+    }
 
     private void packageBuild(File buildDir, File packageDir) throws IOException, JetTaskFailureException, CmdLineToolException {
         switch (project.excelsiorJetPackaging()) {
             case ZIP:
-                File targetZip = new File(project.jetOutputDir(), project.artifactName() + ".zip");
-                if (useXPackZipping()) {
-                    new File(packageDir.getAbsolutePath() + ".zip").renameTo(targetZip);
-                } else {
-                    logger.info(s("JetBuildTask.ZipApp.Info"));
-                    Utils.compressZipfile(packageDir, targetZip);
-                }
+                File targetZip = zipBuild(packageDir);
                 logger.info(s("JetBuildTask.Build.Success"));
                 logger.info(s("JetBuildTask.GetZip.Info", targetZip.getAbsolutePath()));
                 break;
@@ -286,6 +305,33 @@ public class JetBuildTask {
         }
     }
 
+    private void collectProfile(File profileDir) throws JetTaskFailureException, IOException, CmdLineToolException {
+        new RunTask(excelsiorJet, project).run(profileDir);
+    }
+
+    private long computeModifyTimeDaysBetween(File file1, File file2) {
+        return TimeUnit.DAYS.convert(file2.lastModified() - file1.lastModified(), TimeUnit.MILLISECONDS);
+    }
+
+    private void checkProfileUpToDate(File profile, String warnKey) {
+        if (profile.exists()) {
+            long daysBefore = computeModifyTimeDaysBetween(profile, project.mainArtifact());
+            if (daysBefore >= project.execProfiles().daysToWarnAboutOutdatedProfiles) {
+                logger.warn(Txt.s(warnKey, profile.getAbsolutePath(), daysBefore));
+            }
+        }
+
+    }
+
+    void checkProfilesUpToDate() {
+        ExecProfilesConfig execProfiles = project.execProfiles();
+        if (execProfiles.daysToWarnAboutOutdatedProfiles > 0 ) {
+            checkProfileUpToDate(execProfiles.getStartup(), "JetApi.TestRun.RecollectProfile.Warning");
+            checkProfileUpToDate(execProfiles.getUsg(), "JetApi.TestRun.RecollectProfile.Warning");
+            checkProfileUpToDate(execProfiles.getJProfile(), "JetApi.PGO.RecollectProfile.Warning");
+        }
+    }
+
     /**
      * Builds project, that was specified in constructor
      *
@@ -294,13 +340,17 @@ public class JetBuildTask {
      * @throws CmdLineToolException if any error occurs while cmd line tool calls
      */
     public void execute() throws JetTaskFailureException, IOException, CmdLineToolException {
+        if (toProfile && !excelsiorJet.isPGOSupported()) {
+            throw new JetTaskFailureException(Txt.s("JetApi.PGONotSupported.Failure"));
+        }
+
         project.validate(excelsiorJet, true);
         buildDir = project.createBuildDir();
 
-        File appDir = new File(project.jetOutputDir(), APP_DIR);
-        //cleanup packageDir
+        File appOrProfileDir = toProfile ? project.jetAppToProfileDir(): project.jetAppDir();
+        //cleanup appDir
         try {
-            Utils.cleanDirectory(appDir);
+            Utils.cleanDirectory(appOrProfileDir);
         } catch (IOException e) {
             throw new JetTaskFailureException(e.getMessage(), e);
         }
@@ -319,9 +369,40 @@ public class JetBuildTask {
             default:
                 throw new AssertionError("Unknown application type");
         }
-        createAppDir(buildDir, appDir);
 
-        packageBuild(buildDir, appDir);
+        createAppOrProfileDir(buildDir, appOrProfileDir);
+
+        if (toProfile) {
+            Utils.mkdir(project.execProfiles().outputDir);
+            if (project.isProfileLocally()) {
+                switch (project.appType()) {
+                    case WINDOWS_SERVICE:
+                        logger.info(Txt.s("JetApi.Profile.WinService", project.execProfiles().profilingImageDir.getAbsolutePath()));
+                        break;
+                    case DYNAMIC_LIBRARY:
+                        logger.info(Txt.s("JetApi.Profile.DynamicLibrary", project.execProfiles().profilingImageDir.getAbsolutePath()));
+                        break;
+                    case PLAIN:
+                    case TOMCAT:
+                        collectProfile(appOrProfileDir);
+                        if (project.execProfiles().getJProfile().exists()) {
+                            logger.info(Txt.s("JetApi.Profile.ProfileCollected"));
+                        } else {
+                            logger.error(Txt.s("JetApi.Profile.ProfileNotCollected"));
+                        }
+                        break;
+                    default:
+                        throw new AssertionError("Unknown application type");
+                }
+            } else {
+                File zipFile = zipBuild(buildDir);
+                logger.info(Txt.s("JetApi.Profile.NotLocally",
+                        project.execProfiles().profilingImageDir.getAbsolutePath(), zipFile.getAbsolutePath(),
+                        project.execProfiles().getJProfile().getName(), project.execProfiles().outputDir.getAbsolutePath()));
+            }
+        } else {
+            packageBuild(buildDir, appOrProfileDir);
+            checkProfilesUpToDate();
+        }
     }
-
 }

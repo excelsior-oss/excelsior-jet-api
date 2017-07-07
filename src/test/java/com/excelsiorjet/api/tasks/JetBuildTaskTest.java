@@ -1,10 +1,13 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.log.Log;
 import com.excelsiorjet.api.log.StdOutLog;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
 import com.excelsiorjet.api.tasks.config.dependencies.ProjectDependency;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
+import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +53,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = Mockito.spy(new JetBuildTask(excelsiorJet, prj));
+        JetBuildTask buildTask = Mockito.spy(new JetBuildTask(excelsiorJet, prj, false));
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -76,7 +80,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -101,7 +105,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         PowerMockito.verifyStatic(Mockito.never());
@@ -128,7 +132,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -159,7 +163,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -185,7 +189,7 @@ public class JetBuildTaskTest {
         Mockito.doNothing().when(prj).validate(excelsiorJet, true);
         Mockito.when(excelsiorJet.compile(null, "=p", "test.prj", "-jetvmprop=")).thenReturn(0);
 
-        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj);
+        JetBuildTask buildTask = new JetBuildTask(excelsiorJet, prj, false);
         buildTask.execute();
 
         Mockito.verify(excelsiorJet).compile(Tests.jetBuildDir.toFile(), "=p", "test.prj", "-jetvmprop=");
@@ -224,4 +228,30 @@ public class JetBuildTaskTest {
         Tests.jetBuildDir.toFile().mkdirs();
     }
 
+    @Test
+    public void testCheckProfilesUpToDate() throws JetTaskFailureException {
+        JetProject prj = Mockito.spy(Tests.testProject(ApplicationType.PLAIN));
+        JetBuildTask jetBuildTask = new JetBuildTask(Tests.excelsiorJet(), prj, false);
+        ExecProfilesConfig execProfiles = Mockito.mock(ExecProfilesConfig.class);
+        long day = 1000L * 60 * 60 * 24;
+        Mockito.doReturn(Tests.fileSpy("Test.jprof", 1 * day)).when(execProfiles).getJProfile();
+        Mockito.doReturn(Tests.fileSpy("Test.startup", 2 * day)).when(execProfiles).getStartup();
+        Mockito.doReturn(Tests.fileSpy("Test.usg", 3 * day)).when(execProfiles).getUsg();
+        execProfiles.daysToWarnAboutOutdatedProfiles = 1;
+        File mainArtifact = Tests.fileSpy("Test.jar", 33 * day);
+        Mockito.when(prj.mainArtifact()).thenReturn(mainArtifact);
+        Mockito.when(prj.execProfiles()).thenReturn(execProfiles);
+
+        Log previous = Log.logger;
+        try {
+            Log.logger = Mockito.spy(Log.logger);
+            jetBuildTask.checkProfilesUpToDate();
+
+            Mockito.verify(Log.logger).warn(Txt.s("JetApi.TestRun.RecollectProfile.Warning", execProfiles.getUsg().getAbsolutePath(), 30));
+            Mockito.verify(Log.logger).warn(Txt.s("JetApi.TestRun.RecollectProfile.Warning", execProfiles.getStartup().getAbsolutePath(), 31));
+            Mockito.verify(Log.logger).warn(Txt.s("JetApi.PGO.RecollectProfile.Warning", execProfiles.getJProfile().getAbsolutePath(), 32));
+        } finally {
+            Log.logger = previous;
+        }
+    }
 }

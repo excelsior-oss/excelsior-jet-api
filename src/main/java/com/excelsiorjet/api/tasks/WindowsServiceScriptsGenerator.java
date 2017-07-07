@@ -46,7 +46,7 @@ public class WindowsServiceScriptsGenerator {
     }
 
     public List<String> isrvArgs() {
-        String exeFile = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        String exeFile = project.exeRelativePath(excelsiorJet);
         ArrayList<String> args = new ArrayList<>(Arrays.asList(new String[] {
                 "-install " + exeFile,
                 "-displayname " + Utils.quoteCmdLineArgument(project.windowsServiceConfiguration().displayName),
@@ -109,7 +109,7 @@ public class WindowsServiceScriptsGenerator {
     }
     
     public List<String> uninstallBatFileContent() {
-        String exeFile = excelsiorJet.getTargetOS().mangleExeName(project.outputName());
+        String exeFile = project.exeRelativePath(excelsiorJet);
         ArrayList<String> lines = new ArrayList<>();
         lines.add("@echo off");
         lines.add("set servicename=" + project.windowsServiceConfiguration().name);

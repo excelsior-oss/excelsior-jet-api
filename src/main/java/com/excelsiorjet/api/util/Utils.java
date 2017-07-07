@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Excelsior LLC.
+ * Copyright (c) 2015-2017, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -30,6 +30,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,7 +50,7 @@ public class Utils {
             private void deleteFile(File f) throws IOException {
                 if (!f.delete()) {
                     if (f.exists()) {
-                        throw new IOException(Txt.s("Utils.CleanDirectory.Failed", f.getAbsolutePath()));
+                        throw new IOException(Txt.s("JetApi.UnableToDelete.Error", f.getAbsolutePath()));
                     }
                 }
             }
@@ -63,7 +64,7 @@ public class Utils {
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
                 if (file.toFile().exists()) {
-                    throw new IOException(Txt.s("Utils.CleanDirectory.Failed", f.getAbsolutePath()));
+                    throw new IOException(Txt.s("JetApi.UnableToDelete.Error", f.getAbsolutePath()));
                 }
                 return FileVisitResult.CONTINUE;
             }
@@ -235,6 +236,16 @@ public class Utils {
         }
         res.add(buff.toString());
         return res.toArray(new String[res.size()]);
+    }
+
+    public static String[] prepend(String firstElement, String[] remaining) {
+        if (remaining == null) {
+            return new String[]{firstElement};
+        }
+        ArrayList<String> res = new ArrayList<>();
+        res.add(firstElement);
+        res.addAll(Arrays.asList(remaining));
+        return res.toArray(new String[remaining.length + 1]);
     }
 
     public static String getCanonicalPath(File path) {

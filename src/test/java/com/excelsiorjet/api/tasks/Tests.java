@@ -6,6 +6,7 @@ import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.platform.OS;
 import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.tasks.config.ApplicationType;
+import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
 import com.excelsiorjet.api.tasks.config.runtime.RuntimeConfig;
 import com.excelsiorjet.api.tasks.config.runtime.RuntimeFlavorType;
@@ -32,6 +33,7 @@ public class Tests {
     static final Path mainJar = buildDir.resolve("test.jar");
     private static final Path jetDir = buildDir.resolve("jet");
     static final Path jetBuildDir = jetDir.resolve("build");
+    static final Path jetAppDir = jetDir.resolve("app");
     static final Path externalJarRel = Paths.get("lib", "external.jar");
     static final Path externalJarAbs = projectDir.resolve(externalJarRel);
 
@@ -59,6 +61,12 @@ public class Tests {
         return fileSpy(path.toString());
     }
 
+    public static File fileSpy(String path, long modifyTime) {
+        File spy = fileSpy(path);
+        Mockito.when(spy.lastModified()).thenReturn(modifyTime);
+        return spy;
+    }
+
     static File mavenDepSpy(String depName) {
         return fileSpy(mavenLocalDir.resolve(depName).toString());
     }
@@ -74,11 +82,13 @@ public class Tests {
                 dependencies(emptyList()).
                 mainClass("HelloWorld").
                 jetBuildDir(jetBuildDir.toFile()).
+                jetAppDir(jetAppDir.toFile()).
                 packageFiles(Collections.emptyList()).
                 excelsiorInstallerConfiguration(new ExcelsiorInstallerConfig()).
                 windowsServiceConfiguration(new WindowsServiceConfig()).
                 windowsVersionInfoConfiguration(new WindowsVersionInfoConfig()).
                 runtimeConfiguration(new RuntimeConfig()).
+                execProfiles(new ExecProfilesConfig()).
                 outputName("test").
                 stackTraceSupport("minimal").
                 excelsiorJetPackaging("none");
@@ -119,10 +129,12 @@ public class Tests {
         Mockito.doReturn(true).when(excelsiorJet).isCompactProfilesSupported();
         Mockito.doReturn(true).when(excelsiorJet).isGlobalOptimizerSupported();
         Mockito.doReturn(true).when(excelsiorJet).isDiskFootprintReductionSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isHighDiskFootprintReductionSupported();
         Mockito.doReturn(true).when(excelsiorJet).isRuntimeSupported(RuntimeFlavorType.DESKTOP);
         Mockito.doReturn(true).when(excelsiorJet).isChangeRTLocationAvailable();
         Mockito.doReturn(true).when(excelsiorJet).since11_3();
         Mockito.doReturn(true).when(excelsiorJet).isAdvancedExcelsiorInstallerFeaturesSupported();
+        Mockito.doReturn(true).when(excelsiorJet).isPGOSupported();
         return excelsiorJet;
     }
 

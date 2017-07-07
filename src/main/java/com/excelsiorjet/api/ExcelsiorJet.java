@@ -169,15 +169,15 @@ public class ExcelsiorJet {
     }
 
     public boolean isGlobalOptimizerSupported() {
-        return isX86() && (getEdition() != JetEdition.STANDARD);
+        return (isX86() || since12_0()) && (getEdition() != JetEdition.STANDARD);
     }
 
     public boolean isSlimDownSupported() {
-        return isGlobalOptimizerSupported();
+        return isGlobalOptimizerSupported() && isX86();
     }
 
     public boolean isUsageListGenerationSupported() {
-        return isX86();
+        return isX86() || since12_0();
     }
 
     public boolean isStartupProfileGenerationSupported()  {
@@ -193,6 +193,10 @@ public class ExcelsiorJet {
 
     public boolean since11_3() {
         return jetHome.getJetVersion() >= 1130;
+    }
+
+    public boolean since12_0() {
+        return jetHome.getJetVersion() >= 1200;
     }
 
     public boolean isCrossCompilation() {
@@ -243,6 +247,10 @@ public class ExcelsiorJet {
         return since11_3() && isGlobalOptimizerSupported();
     }
 
+    public boolean isHighDiskFootprintReductionSupported() {
+        return isDiskFootprintReductionSupported() && isX86();
+    }
+
     public boolean isWindowsVersionInfoSupported() {
         return targetOS.isWindows() && (edition != JetEdition.STANDARD);
     }
@@ -263,6 +271,10 @@ public class ExcelsiorJet {
 
     public boolean isChangeRTLocationAvailable() {
         return since11_3();
+    }
+
+    public boolean isPGOSupported() {
+        return since12_0() && !isX86() && (edition != JetEdition.STANDARD) && (edition != JetEdition.PROFESSIONAL);
     }
 
     /**
