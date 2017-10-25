@@ -69,7 +69,7 @@ public class FileAssociation {
      * parameter, otherwise the icon will be added to the specified {@link PackageFile#packagePath} folder of the package.
      * If the icon is not set, the default icon of the target executable will be used.
      */
-    public PackageFile icon;
+    public PackageFile icon = new PackageFile(PackageFileType.FILE);
 
     /**
      * Command-line arguments for the target.
