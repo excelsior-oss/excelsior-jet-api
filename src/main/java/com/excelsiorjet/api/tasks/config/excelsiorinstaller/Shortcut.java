@@ -62,7 +62,7 @@ public class Shortcut {
      * that has an icon, that icon will be used, otherwise the system default icon for 
      * the target file type will be used.)
      */
-    public PackageFile icon;
+    public PackageFile icon = new PackageFile(PackageFileType.FILE);
 
     /**
      * Pathname of the working directory of the shortcut target within the package.
