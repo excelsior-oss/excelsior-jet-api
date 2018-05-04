@@ -118,7 +118,7 @@ public class JetProject {
     /**
      * Directory for temporary files generated during the build process
      * and the target directory for the resulting package.
-     * By defualt, it is placed at "jet" subdirectory of {@link #targetDir}
+     * By default, it is placed at "jet" subdirectory of {@link #targetDir}
      */
     private File jetOutputDir;
 
@@ -549,6 +549,13 @@ public class JetProject {
     private String[] multiAppRunArgs;
 
     /**
+     * Project Database placement configuration.
+     *
+     * @see PDBConfig
+     */
+    private PDBConfig pdbConfiguration;
+
+    /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
      * that should be shown to a user.
      */
@@ -949,6 +956,8 @@ public class JetProject {
 
             checkOSXBundleConfig();
 
+            pdbConfiguration.fillDefaults(this, excelsiorJet);
+
         } catch (JetHomeException e) {
             throw new JetTaskFailureException(e.getMessage());
         }
@@ -1300,6 +1309,10 @@ public class JetProject {
         return (multiApp || appType == ApplicationType.TOMCAT) ? multiAppRunArgs : runArgs;
     }
 
+    PDBConfig pdbConfiguration() {
+        return pdbConfiguration;
+    }
+
 ////////// Builder methods ////////////////////
 
     public JetProject mainWar(File mainWar) {
@@ -1514,6 +1527,11 @@ public class JetProject {
 
     public JetProject multiAppRunArgs(String[] runArgs) {
         this.multiAppRunArgs = runArgs;
+        return this;
+    }
+
+    public JetProject pdbConfiguration(PDBConfig pdbConfig) {
+        pdbConfiguration = pdbConfig;
         return this;
     }
 

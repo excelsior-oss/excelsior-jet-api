@@ -168,6 +168,10 @@ class CompilerArgsGenerator {
                 throw new AssertionError("Unknown app type");
         }
 
+        if (!project.pdbConfiguration().keepInBuildDir) {
+            compilerArgs.add("-pdblocation=" + project.pdbConfiguration().pdbLocation().getAbsolutePath().replace(File.separatorChar, '/'));
+        }
+
         //hideConsole handling
         if (excelsiorJet.getTargetOS().isWindows() && project.hideConsole()) {
             switch (project.appType()) {
