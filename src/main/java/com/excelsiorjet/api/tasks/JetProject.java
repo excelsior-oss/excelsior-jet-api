@@ -36,8 +36,8 @@ import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -942,16 +942,6 @@ public class JetProject {
                 }
             }
 
-            if (protectData) {
-                if (!excelsiorJet.isDataProtectionSupported()) {
-                    throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
-                } else {
-                    if (cryptSeed == null) {
-                        cryptSeed = Utils.randomAlphanumeric(64);
-                    }
-                }
-            }
-
             runtimeConfiguration.fillDefaults(this, excelsiorJet);
 
             checkTrialVersionConfig(excelsiorJet);
@@ -965,6 +955,8 @@ public class JetProject {
             checkOSXBundleConfig();
 
             pdbConfiguration.fillDefaults(this, excelsiorJet);
+
+            checkProtectData(excelsiorJet);
 
         } catch (JetHomeException e) {
             throw new JetTaskFailureException(e.getMessage());
@@ -1085,6 +1077,35 @@ public class JetProject {
             }
         }
 
+    }
+
+    private void checkProtectData(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
+        if (protectData) {
+            if (!excelsiorJet.isDataProtectionSupported()) {
+                throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
+            } else {
+                if (cryptSeed == null) {
+                    File cryptSeedFile = new File(pdbConfiguration.pdbLocation(), "cryptseed");
+                    if (cryptSeedFile.exists()) {
+                        //read cryptseed from PDB if exists.
+                        pdbConfiguration().pdbLocation().mkdirs();
+                        try {
+                            cryptSeed = Files.readAllLines(cryptSeedFile.toPath()).get(0);
+                        } catch (Throwable ignore) {
+                        }
+                    }
+                    if (cryptSeed == null) {
+                        cryptSeed = Utils.randomAlphanumeric(64);
+                        //store cryptseed to pdb to stabalize it.
+                        pdbConfiguration().pdbLocation().mkdirs();
+                        try (Writer writer = new BufferedWriter(new FileWriter(cryptSeedFile))) {
+                            writer.write(cryptSeed);
+                        } catch (IOException ignore) {
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void copyClasspathEntry(ClasspathEntry classpathEntry, File to) throws JetTaskWrappedException {
