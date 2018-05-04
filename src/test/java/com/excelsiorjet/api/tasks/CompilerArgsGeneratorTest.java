@@ -169,7 +169,7 @@ public class CompilerArgsGeneratorTest {
                 "-inline-",
                 "%-jetvmprop=");
 
-        assertEquals(expectedPrj, compilerArgsGenerator.projectFileContent());
+        assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrj));
     }
 
     @Test

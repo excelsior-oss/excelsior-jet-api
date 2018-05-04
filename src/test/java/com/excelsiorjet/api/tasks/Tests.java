@@ -73,7 +73,7 @@ public class Tests {
 
     public static JetProject testProject(ApplicationType appType) throws JetTaskFailureException {
         JetProject.configureEnvironment(new StdOutLog(), ResourceBundle.getBundle("Strings"));
-        JetProject project = new JetProject("test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
+        JetProject project = new JetProject("test", "test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
                 inlineExpansion("tiny-methods-only").
                 runArgs(new String[0]).
                 addWindowsVersionInfo(false).

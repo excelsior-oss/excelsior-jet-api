@@ -73,6 +73,12 @@ public class JetProject {
     private static final String APP_DIR = "app";
 
     /**
+     * Name and version of a plugin that created this project.
+     * Used for marking project files with the plugin name and version.
+     */
+    private String creatorPlugin;
+
+    /**
      * Name of the project. For Maven, project artifactId is used as project name by default.
      */
     private String projectName;
@@ -569,6 +575,7 @@ public class JetProject {
      * Constructor with required parameters of the project.
      * Usually they can be derived from the enclosing project(pom.xml, build.gradle).
      *
+     * @param creatorPlugin name and version of a plugin that creates this project.
      * @param projectName project name
      * @param groupId project groupId
      * @param version project version
@@ -576,7 +583,8 @@ public class JetProject {
      * @param targetDir target directory of the enclosing project
      * @param jetResourcesDir directory with jet specific resources
      */
-    public JetProject(String projectName, String groupId, String version, ApplicationType appType, File targetDir, File jetResourcesDir) {
+    public JetProject(String creatorPlugin, String projectName, String groupId, String version, ApplicationType appType, File targetDir, File jetResourcesDir) {
+        this.creatorPlugin = requireNonNull(creatorPlugin, "plugin cannot be null");
         this.projectName = requireNonNull(projectName, "projectName cannot be null");
         this.groupId = requireNonNull(groupId, "groupId cannot be null");
         this.version = requireNonNull(version, "version cannot be null");
@@ -1140,6 +1148,10 @@ public class JetProject {
     }
 
     ////////// Getters //////////////
+
+    public String creatorPlugin() {
+        return creatorPlugin;
+    }
 
     public String projectName() {
         return projectName;
