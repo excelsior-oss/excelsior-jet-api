@@ -16,7 +16,6 @@ import static com.excelsiorjet.api.tasks.Tests.excelsiorJet;
 import static com.excelsiorjet.api.tasks.Tests.testProject;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

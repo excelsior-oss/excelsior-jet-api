@@ -1088,10 +1088,10 @@ public class JetProject {
                     File cryptSeedFile = new File(pdbConfiguration.pdbLocation(), "cryptseed");
                     if (cryptSeedFile.exists()) {
                         //read cryptseed from PDB if exists.
-                        pdbConfiguration().pdbLocation().mkdirs();
                         try {
                             cryptSeed = Files.readAllLines(cryptSeedFile.toPath()).get(0);
-                        } catch (Throwable ignore) {
+                        } catch (Exception e) {
+                            logger.warn(e.getMessage(), e);
                         }
                     }
                     if (cryptSeed == null) {
@@ -1100,7 +1100,8 @@ public class JetProject {
                         pdbConfiguration().pdbLocation().mkdirs();
                         try (Writer writer = new BufferedWriter(new FileWriter(cryptSeedFile))) {
                             writer.write(cryptSeed);
-                        } catch (IOException ignore) {
+                        } catch (IOException e) {
+                            logger.warn(e.getMessage(), e);
                         }
                     }
                 }
