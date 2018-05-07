@@ -6,7 +6,7 @@ import com.excelsiorjet.api.util.Utils;
 import java.io.IOException;
 
 /**
- * Cleans up Excelsior JET Project database (PDB) directory for the current project.
+ * Cleans up the Excelsior JET Project Database (PDB) directory for the current project.
  */
 public class JetCleanTask {
     private final JetProject project;

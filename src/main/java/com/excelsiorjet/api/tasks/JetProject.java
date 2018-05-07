@@ -73,8 +73,7 @@ public class JetProject {
     private static final String APP_DIR = "app";
 
     /**
-     * Name and version of a plugin that created this project.
-     * Used for marking project files with the plugin name and version.
+     * Name and version of the plugin that created this project.
      */
     private String creatorPlugin;
 
@@ -124,12 +123,12 @@ public class JetProject {
     /**
      * Directory for temporary files generated during the build process
      * and the target directory for the resulting package.
-     * By default, it is placed at "jet" subdirectory of {@link #targetDir}
+     * The default is the "jet" subdirectory of {@link #targetDir}.
      */
     private File jetOutputDir;
 
     /**
-     * Excelsior project build dir.
+     * Excelsior JET project build directory.
      *
      * The value is set to "build" subdirectory of {@link #jetOutputDir}.
      */
@@ -575,7 +574,7 @@ public class JetProject {
      * Constructor with required parameters of the project.
      * Usually they can be derived from the enclosing project(pom.xml, build.gradle).
      *
-     * @param creatorPlugin name and version of a plugin that creates this project.
+     * @param creatorPlugin name and version of the plugin that creates this project.
      * @param projectName project name
      * @param groupId project groupId
      * @param version project version
