@@ -71,9 +71,9 @@ public class Tests {
         return fileSpy(mavenLocalDir.resolve(depName).toString());
     }
 
-    static JetProject testProject(ApplicationType appType) throws JetTaskFailureException {
+    public static JetProject testProject(ApplicationType appType) throws JetTaskFailureException {
         JetProject.configureEnvironment(new StdOutLog(), ResourceBundle.getBundle("Strings"));
-        JetProject project = new JetProject("test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
+        JetProject project = new JetProject("test", "test", "prjGroup", "0.1", appType, buildDir.toFile(), new File("/jr")).
                 inlineExpansion("tiny-methods-only").
                 runArgs(new String[0]).
                 addWindowsVersionInfo(false).
@@ -91,7 +91,8 @@ public class Tests {
                 execProfiles(new ExecProfilesConfig()).
                 outputName("test").
                 stackTraceSupport("minimal").
-                excelsiorJetPackaging("none");
+                excelsiorJetPackaging("none").
+                pdbConfiguration(new PDBConfig());
         switch (appType) {
             case PLAIN:
             case DYNAMIC_LIBRARY:
@@ -115,6 +116,7 @@ public class Tests {
         }
         //some tests disable validation where this default is set. TODO: refactor it
         project.runtimeConfiguration().profile = "auto";
+        project.pdbConfiguration().keepInBuildDir = true;
         return project;
     }
 

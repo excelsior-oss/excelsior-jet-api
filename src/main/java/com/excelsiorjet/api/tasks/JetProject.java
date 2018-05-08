@@ -36,8 +36,8 @@ import com.excelsiorjet.api.tasks.config.windowsservice.WindowsServiceConfig;
 import com.excelsiorjet.api.util.Txt;
 import com.excelsiorjet.api.util.Utils;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -71,6 +71,11 @@ public class JetProject {
     private static final String BUILD_DIR = "build";
     private static final String PACKAGE_FILES_DIR = "packagefiles";
     private static final String APP_DIR = "app";
+
+    /**
+     * Name and version of the plugin that created this project.
+     */
+    private String creatorPlugin;
 
     /**
      * Name of the project. For Maven, project artifactId is used as project name by default.
@@ -118,12 +123,12 @@ public class JetProject {
     /**
      * Directory for temporary files generated during the build process
      * and the target directory for the resulting package.
-     * By defualt, it is placed at "jet" subdirectory of {@link #targetDir}
+     * The default is the "jet" subdirectory of {@link #targetDir}.
      */
     private File jetOutputDir;
 
     /**
-     * Excelsior project build dir.
+     * Excelsior JET project build directory.
      *
      * The value is set to "build" subdirectory of {@link #jetOutputDir}.
      */
@@ -549,6 +554,13 @@ public class JetProject {
     private String[] multiAppRunArgs;
 
     /**
+     * Project Database placement configuration.
+     *
+     * @see PDBConfig
+     */
+    private PDBConfig pdbConfiguration;
+
+    /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
      * that should be shown to a user.
      */
@@ -562,6 +574,7 @@ public class JetProject {
      * Constructor with required parameters of the project.
      * Usually they can be derived from the enclosing project(pom.xml, build.gradle).
      *
+     * @param creatorPlugin name and version of the plugin that creates this project.
      * @param projectName project name
      * @param groupId project groupId
      * @param version project version
@@ -569,7 +582,8 @@ public class JetProject {
      * @param targetDir target directory of the enclosing project
      * @param jetResourcesDir directory with jet specific resources
      */
-    public JetProject(String projectName, String groupId, String version, ApplicationType appType, File targetDir, File jetResourcesDir) {
+    public JetProject(String creatorPlugin, String projectName, String groupId, String version, ApplicationType appType, File targetDir, File jetResourcesDir) {
+        this.creatorPlugin = requireNonNull(creatorPlugin, "plugin cannot be null");
         this.projectName = requireNonNull(projectName, "projectName cannot be null");
         this.groupId = requireNonNull(groupId, "groupId cannot be null");
         this.version = requireNonNull(version, "version cannot be null");
@@ -927,16 +941,6 @@ public class JetProject {
                 }
             }
 
-            if (protectData) {
-                if (!excelsiorJet.isDataProtectionSupported()) {
-                    throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
-                } else {
-                    if (cryptSeed == null) {
-                        cryptSeed = Utils.randomAlphanumeric(64);
-                    }
-                }
-            }
-
             runtimeConfiguration.fillDefaults(this, excelsiorJet);
 
             checkTrialVersionConfig(excelsiorJet);
@@ -948,6 +952,10 @@ public class JetProject {
             checkWindowsServiceConfig();
 
             checkOSXBundleConfig();
+
+            pdbConfiguration.fillDefaults(this, excelsiorJet);
+
+            checkProtectData(excelsiorJet);
 
         } catch (JetHomeException e) {
             throw new JetTaskFailureException(e.getMessage());
@@ -1070,6 +1078,36 @@ public class JetProject {
 
     }
 
+    private void checkProtectData(ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
+        if (protectData) {
+            if (!excelsiorJet.isDataProtectionSupported()) {
+                throw new JetTaskFailureException(s("JetApi.NoDataProtectionInStandard.Failure"));
+            } else {
+                if (cryptSeed == null) {
+                    File cryptSeedFile = new File(pdbConfiguration.pdbLocation(), "cryptseed");
+                    if (cryptSeedFile.exists()) {
+                        //read cryptseed from PDB if exists.
+                        try {
+                            cryptSeed = Files.readAllLines(cryptSeedFile.toPath()).get(0);
+                        } catch (Exception e) {
+                            logger.warn(e.getMessage(), e);
+                        }
+                    }
+                    if (cryptSeed == null) {
+                        cryptSeed = Utils.randomAlphanumeric(64);
+                        //store cryptseed to pdb to stabalize it.
+                        pdbConfiguration().pdbLocation().mkdirs();
+                        try (Writer writer = new BufferedWriter(new FileWriter(cryptSeedFile))) {
+                            writer.write(cryptSeed);
+                        } catch (IOException e) {
+                            logger.warn(e.getMessage(), e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void copyClasspathEntry(ClasspathEntry classpathEntry, File to) throws JetTaskWrappedException {
         try {
             Utils.mkdir(to.getParentFile());
@@ -1131,6 +1169,10 @@ public class JetProject {
     }
 
     ////////// Getters //////////////
+
+    public String creatorPlugin() {
+        return creatorPlugin;
+    }
 
     public String projectName() {
         return projectName;
@@ -1298,6 +1340,10 @@ public class JetProject {
 
     public String[] exeRunArgs() {
         return (multiApp || appType == ApplicationType.TOMCAT) ? multiAppRunArgs : runArgs;
+    }
+
+    PDBConfig pdbConfiguration() {
+        return pdbConfiguration;
     }
 
 ////////// Builder methods ////////////////////
@@ -1514,6 +1560,11 @@ public class JetProject {
 
     public JetProject multiAppRunArgs(String[] runArgs) {
         this.multiAppRunArgs = runArgs;
+        return this;
+    }
+
+    public JetProject pdbConfiguration(PDBConfig pdbConfig) {
+        pdbConfiguration = pdbConfig;
         return this;
     }
 

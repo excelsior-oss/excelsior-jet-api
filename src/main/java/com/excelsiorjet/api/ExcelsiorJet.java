@@ -191,12 +191,23 @@ public class ExcelsiorJet {
                         ((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION));
     }
 
+    public boolean isPDBConfigurationSupported() {
+        return since15_0();
+    }
+
+    public boolean isSmartSupported() {
+        return since15_0() && !isX86();
+    }
     public boolean since11_3() {
         return jetHome.getJetVersion() >= 1130;
     }
 
     public boolean since12_0() {
         return jetHome.getJetVersion() >= 1200;
+    }
+
+    public boolean since15_0() {
+        return jetHome.getJetVersion() >= 1500;
     }
 
     public boolean isCrossCompilation() {
