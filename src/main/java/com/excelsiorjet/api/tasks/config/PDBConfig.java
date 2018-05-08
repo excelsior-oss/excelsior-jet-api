@@ -10,34 +10,35 @@ import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * Project Data Base (PDB) is a directory created by the JET compiler at the very start of compilation.
- * That directory will later hold all auxiliary files produced by the compiler.
- * The files are then used for incremental compilation, so only the changed project dependencies
- * are recompiled during the subsequent builds.
+ * Project Data Base (PDB) is a directory that holds all auxiliary files produced by 
+ * the Excelsior JET AOT compiler. If the PDB directory does not exist, or a clean build
+ * is enforced, the compiler creates it automatically. Otherwise, it can re-use 
+ * the information that is already there for <i>incremental compilation</i>, skipping
+ * over the dependencies that did not change since the previous build.
  *
- * You may configure the placement of PDB using the parameters below.
+ * You may configure the location of the PDB using the parameters below.
  * To clean the PDB in case of problems use {@link JetCleanTask}.
  *
- * Note, that incremental builds and PDB configuration is only supported since Excelsior JET 15 for non x86 targets.
+ * Note, that incremental builds and PDB configuration are only supported since 
+ * Excelsior JET 15 for targets other than 32-bit x86.
  */
 public class PDBConfig {
 
     private static final String JET_PDB_BASEDIR_PROPERTY = "jet.pdb.basedir";
     private static final String JET_PDB_BASEDIR_ENV_VARIABLE = "JETPDBBASEDIR";
 
-
     /**
-     * If the parameter is set to {@code true} the PDB directory will be created in the {@link JetProject#jetBuildDir}
+     * If this parameter is set to {@code true}, the PDB directory will be created in the {@link JetProject#jetBuildDir}
      * directory and thus will be cleaned on every clean build.
      *
-     * By default, the parameter is set to {@code false}.
+     * By default, this parameter is set to {@code false}.
      */
     public boolean keepInBuildDir;
 
     /**
      * Base directory for the PDB.
      *
-     * If {@link #keepInBuildDir} is set to {@code false} and {@link #specificLocation} is not set,
+     * If {@link #keepInBuildDir} is set to {@code false} <i>and</i> {@link #specificLocation} is not set,
      * the PDB directory for the current project will be located in the
      * {@link JetProject#groupId}/{@link JetProject#projectName} subdirectory of {@link #baseDir}.
      *
@@ -50,11 +51,12 @@ public class PDBConfig {
 
     /**
      * In some cases, you may need to fully control the placement of the PDB.
-     * If this parameter is set, it will be used as the PDB location.
+     * If this parameter is set to a pathname of a directory, the compiler will use it 
+     * as the PDB location, possibly creating the directory if it does not exist.
      */
     public File specificLocation;
 
-    // computed PDB location according above parameters
+    // PDB location computed from the above parameters
     private File pdbLocation;
 
     public File pdbLocation() {
