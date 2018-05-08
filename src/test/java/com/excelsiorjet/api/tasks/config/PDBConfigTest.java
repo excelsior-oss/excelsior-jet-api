@@ -1,6 +1,8 @@
 package com.excelsiorjet.api.tasks.config;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.log.Log;
+import com.excelsiorjet.api.log.StdOutLog;
 import com.excelsiorjet.api.tasks.JetProject;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
 import com.excelsiorjet.api.tasks.Tests;
@@ -8,21 +10,36 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
+import java.util.ResourceBundle;
 
 import static com.excelsiorjet.api.tasks.Tests.assertThrows;
 import static com.excelsiorjet.api.util.Txt.s;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PDBConfigTest {
 
+    static {
+        JetProject.configureEnvironment(new StdOutLog(), ResourceBundle.getBundle("Strings"));
+    }
+
     @Test
-    public void testNotSupported() {
+    public void testNotSupported() throws JetTaskFailureException {
         ExcelsiorJet excelsiorJet = Mockito.mock(ExcelsiorJet.class);
         Mockito.doReturn(false).when(excelsiorJet).isSmartSupported();
         JetProject project = Mockito.mock(JetProject.class);
-        PDBConfig pdbConfig = new PDBConfig();
-        pdbConfig.baseDir = new File("");
-        assertThrows(()->pdbConfig.fillDefaults(project, excelsiorJet), s("JetApi.PDBConfigurationNotSupported.Failure"));
+
+        Log previous = Log.logger;
+        try {
+            Log.logger = Mockito.spy(Log.logger);
+            PDBConfig pdbConfig = new PDBConfig();
+            pdbConfig.baseDir = new File("");
+            pdbConfig.fillDefaults(project, excelsiorJet);
+            assertTrue(pdbConfig.keepInBuildDir);
+            Mockito.verify(Log.logger).warn(s("JetApi.PDBConfigurationNotSupported.Warning"));
+        } finally {
+            Log.logger = previous;
+        }
     }
 
 

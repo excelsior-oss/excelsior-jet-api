@@ -94,7 +94,7 @@ public class PDBConfig {
                 if (excelsiorJet.isPDBConfigurationSupported()) {
                     logger.warn(s("JetApi.NoSmartForX86.Warning"));
                 } else {
-                    throw new JetTaskFailureException(s("JetApi.PDBConfigurationNotSupported.Failure"));
+                    logger.warn(s("JetApi.PDBConfigurationNotSupported.Warning"));
                 }
             }
             keepInBuildDir = true;
