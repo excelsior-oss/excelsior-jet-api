@@ -176,7 +176,7 @@ public class JetProjectTest {
             project.validate(excelsiorJet(), false);
             fail("JetTaskFailureException expected");
         } catch (JetTaskFailureException e) {
-            assertEquals(Txt.s("JetApi.OverlappedTomcatDependency", dep2, dep1), e.getMessage());
+            assertEquals(Txt.s("JetApi.OverlappedTomcatOrSpringBootDependency", dep2, dep1, "war"), e.getMessage());
         }
     }
 

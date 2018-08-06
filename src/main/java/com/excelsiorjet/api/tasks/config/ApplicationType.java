@@ -37,6 +37,11 @@ public enum ApplicationType {
     PLAIN,
 
     /**
+     * Spring Boot application that runs as Spring Boot executable jar.
+     */
+    SPRING_BOOT,
+
+    /**
      * Servlet-based Java application that runs within the Tomcat servlet container.
      */
     TOMCAT,

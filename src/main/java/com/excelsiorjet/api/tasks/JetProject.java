@@ -41,6 +41,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.jar.Attributes;
+import java.util.jar.Attributes.Name;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import static com.excelsiorjet.api.log.Log.logger;
 import static com.excelsiorjet.api.tasks.config.PackagingType.*;
@@ -71,6 +75,9 @@ public class JetProject {
     private static final String BUILD_DIR = "build";
     private static final String PACKAGE_FILES_DIR = "packagefiles";
     private static final String APP_DIR = "app";
+    private static final String SPRING_BOOT_MAIN_CLASS = "org.springframework.boot.loader.JarLauncher";
+    private static final String SPRING_BOOT_VERSION_ATTR = "Spring-Boot-Version";
+    private static final String SPRING_BOOT_START_CLASS_ATTR = "Start-Class";
 
     /**
      * Name and version of the plugin that created this project.
@@ -103,6 +110,7 @@ public class JetProject {
      * @see ApplicationType#DYNAMIC_LIBRARY
      * @see ApplicationType#WINDOWS_SERVICE
      * @see ApplicationType#TOMCAT
+     * @see ApplicationType#SPRING_BOOT
      */
     private ApplicationType appType;
 
@@ -165,7 +173,7 @@ public class JetProject {
     private String artifactName;
 
     /**
-     * The main application jar for plain Java SE applications.
+     * The main application jar for plain Java SE and Spring Boot applications.
      * By default, {@link #artifactName}.jar is used.
      *
      * @see ApplicationType#PLAIN
@@ -611,7 +619,13 @@ public class JetProject {
         switch (appType) {
             case WINDOWS_SERVICE:
                 if (!excelsiorJet.isWindowsServicesSupported()) {
-                    throw new JetTaskFailureException(s("JetApi.WinServiceNotSupported.Failure", appType));
+                    throw new JetTaskFailureException(s("JetApi.WinServiceNotSupported.Failure"));
+                }
+                //fall through
+
+            case SPRING_BOOT:
+                if (appType != ApplicationType.WINDOWS_SERVICE && !excelsiorJet.isSpringBootSupported()) {
+                    throw new JetTaskFailureException(s("JetApi.SpringBootNotSupported.Failure"));
                 }
                 //fall through
 
@@ -650,6 +664,12 @@ public class JetProject {
                 throw new AssertionError("Unknown application type");
         }
 
+        if (appType == ApplicationType.SPRING_BOOT) {
+            if (!checkSpringBootJar(true)) {
+                throw new JetTaskFailureException(s("JetApi.SpringBoot.JarIsNotSpringBootJar.Failure", mainJar.getAbsolutePath()));
+            }
+        }
+
         // check main class
         switch (appType) {
             case PLAIN:
@@ -660,12 +680,20 @@ public class JetProject {
                     //normalize main
                     mainClass = mainClass.replace('.', '/');
                 }
+                if ((appType == ApplicationType.PLAIN) &&
+                        mainClass.equals(SPRING_BOOT_MAIN_CLASS.replace('.', '/')) &&
+                        checkSpringBootJar(false)) {
+                    appType = ApplicationType.SPRING_BOOT;
+                }
                 break;
             case DYNAMIC_LIBRARY:
                 //no need to check main here
                 break;
             case TOMCAT:
                 mainClass = "org/apache/catalina/startup/Bootstrap";
+                break;
+            case SPRING_BOOT:
+                mainClass = SPRING_BOOT_MAIN_CLASS.replace('.', '/');
                 break;
             default:
                 throw new AssertionError("Unknown application type");
@@ -817,7 +845,9 @@ public class JetProject {
 
         for (DependencySettings externalDependency : externalDependencies) {
             if (appType == ApplicationType.TOMCAT) {
-                throw new JetTaskFailureException(s("JetApi.TomcatApplicationCannotHaveExternalDependencies", externalDependency.path));
+                throw new JetTaskFailureException(s("JetApi.ApplicationCannotHaveExternalDependencies", externalDependency.path, "Tomcat web"));
+            } else if (appType == ApplicationType.SPRING_BOOT) {
+                throw new JetTaskFailureException(s("JetApi.ApplicationCannotHaveExternalDependencies", externalDependency.path, "Spring Boot"));
             }
 
             if (!externalDependency.path.exists()) {
@@ -856,6 +886,7 @@ public class JetProject {
             }
                 break;
             case TOMCAT:
+            case SPRING_BOOT:
                 HashMap<String, ProjectDependency> seenDeps = new HashMap<>();
                 for (ProjectDependency prjDep : allProjectDependencies) {
                     if (!prjDep.isMainArtifact || dependencySettingsResolver.hasSettingsFor(prjDep)) {
@@ -867,7 +898,8 @@ public class JetProject {
                             oldDep = seenDeps.put(depName, prjDep);
                         }
                         if (oldDep != null) {
-                            throw new JetTaskFailureException(s("JetApi.OverlappedTomcatDependency", prjDep, oldDep));
+                            throw new JetTaskFailureException(s("JetApi.OverlappedTomcatOrSpringBootDependency",
+                                    prjDep, oldDep, appType == ApplicationType.TOMCAT ? "war": "jar"));
                         } else {
                             classpathEntries.add(cpEntry);
                         }
@@ -1108,6 +1140,41 @@ public class JetProject {
         }
     }
 
+    private boolean checkSpringBootJar(boolean failOnVersionCheck) throws JetTaskFailureException {
+        Manifest manifest;
+        try {
+            manifest =  new JarFile(mainJar).getManifest();
+        } catch (IOException e) {
+            return false;
+        }
+
+        if (manifest == null) {
+            return false;
+        }
+
+        Attributes mainAttributes = manifest.getMainAttributes();
+        String main = mainAttributes.getValue(Name.MAIN_CLASS);
+        if (!SPRING_BOOT_MAIN_CLASS.equals(main)) {
+            return false;
+        }
+
+        String startClass = mainAttributes.getValue(SPRING_BOOT_START_CLASS_ATTR);
+        if (startClass == null) {
+            return false;
+        }
+
+        String springBootVersion = mainAttributes.getValue(SPRING_BOOT_VERSION_ATTR);
+        if ((springBootVersion != null) && springBootVersion.startsWith("1.")) {
+            if (failOnVersionCheck) {
+                throw new JetTaskFailureException(Txt.s("JetApi.SpringBoot.NotSupportedVersion.Failure", mainJar.getAbsolutePath(), springBootVersion));
+            } else {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private void copyClasspathEntry(ClasspathEntry classpathEntry, File to) throws JetTaskWrappedException {
         try {
             Utils.mkdir(to.getParentFile());
@@ -1155,6 +1222,19 @@ public class JetProject {
             Utils.copyFile(mainWar.toPath(), new File(tomcatInBuildDir(), TomcatConfig.WEBAPPS_DIR + File.separator + warName).toPath());
         } catch (IOException e) {
             throw new IOException(s("JetApi.ErrorCopyingTomcat.Exception", tomcatConfiguration.tomcatHome), e);
+        }
+    }
+
+    /**
+     * Copies Spring Boot jar to the build directory.
+     *
+     * @throws IOException
+     */
+    void copySpringBootJar() throws IOException {
+        try {
+            Utils.copyFile(mainJar.toPath(), new File(jetBuildDir, mainJar.getName()).toPath());
+        } catch (IOException e) {
+            throw new IOException(s("JetApi.ErrorCopyingDependency.Exception"), e.getCause());
         }
     }
 
@@ -1613,6 +1693,7 @@ public class JetProject {
         switch (appType) {
             case PLAIN:
             case WINDOWS_SERVICE:
+            case SPRING_BOOT:
                 return excelsiorJet.getTargetOS().mangleExeName(outputName());
             case DYNAMIC_LIBRARY:
                 return excelsiorJet.getTargetOS().mangleDllName(outputName(), false);

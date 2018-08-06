@@ -63,6 +63,7 @@ public class PackagerArgsGenerator {
             case DYNAMIC_LIBRARY:
             case PLAIN:
             case WINDOWS_SERVICE:
+            case SPRING_BOOT:
                 if (project.packageFilesDir() != null) {
                     source = project.packageFilesDir();
                     xpackOptions.add(new XPackOption("-source", source.getAbsolutePath()));
@@ -149,7 +150,8 @@ public class PackagerArgsGenerator {
         if (project.appType() != ApplicationType.TOMCAT) {
             for (ClasspathEntry classpathEntry : project.classpathEntries()) {
                 Path depInBuildDir = project.toPathRelativeToJetBuildDir(classpathEntry);
-                if (ClasspathEntry.PackType.NONE == classpathEntry.getEffectivePack()) {
+                if ((ClasspathEntry.PackType.NONE == classpathEntry.getEffectivePack()) &&
+                        (project.appType() != ApplicationType.SPRING_BOOT || classpathEntry.isMainArtifact)) {
                     if (classpathEntry.packagePath == null) {
                         if (classpathEntry.disableCopyToPackage != null && classpathEntry.disableCopyToPackage) {
                             xpackOptions.add(new XPackOption("-disable-resource", exeRelativePath, depInBuildDir.getFileName().toString()));

@@ -179,6 +179,12 @@ public class TestRunTask {
                 classpath = getTomcatClassPath(workingDirectory);
                 additionalVMArgs = getTomcatVMArgs();
                 break;
+            case SPRING_BOOT:
+                project.copySpringBootJar();
+                workingDirectory = buildDir;
+                classpath = project.mainArtifact().getName();
+                additionalVMArgs = Collections.singletonList("-Djet.classloader.id.provider=com/excelsior/jet/runtime/classload/customclassloaders/springboot/SpringBootCLIDProvider");
+                break;
             default:
                 throw new AssertionError("Unknown app type");
         }

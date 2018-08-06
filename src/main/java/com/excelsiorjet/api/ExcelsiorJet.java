@@ -191,6 +191,13 @@ public class ExcelsiorJet {
                         ((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION));
     }
 
+    public boolean isSpringBootSupported() {
+        JetEdition edition = getEdition();
+        return  since16_0() &&
+                ((edition == JetEdition.EVALUATION) || (edition == JetEdition.ENTERPRISE) ||
+                 (edition == JetEdition.EMBEDDED)   || (edition == JetEdition.EMBEDDED_EVALUATION));
+    }
+
     public boolean isPDBConfigurationSupported() {
         return since15_0();
     }
@@ -208,6 +215,10 @@ public class ExcelsiorJet {
 
     public boolean since15_0() {
         return jetHome.getJetVersion() >= 1500;
+    }
+
+    public boolean since16_0() {
+        return jetHome.getJetVersion() >= 1600;
     }
 
     public boolean isCrossCompilation() {

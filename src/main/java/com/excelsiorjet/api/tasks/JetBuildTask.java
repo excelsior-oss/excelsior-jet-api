@@ -366,6 +366,10 @@ public class JetBuildTask {
                 project.copyTomcatAndWar();
                 compile(buildDir);
                 break;
+            case SPRING_BOOT:
+                project.copySpringBootJar();
+                compile(buildDir);
+                break;
             default:
                 throw new AssertionError("Unknown application type");
         }
@@ -384,6 +388,7 @@ public class JetBuildTask {
                         break;
                     case PLAIN:
                     case TOMCAT:
+                    case SPRING_BOOT:
                         collectProfile(appOrProfileDir);
                         if (project.execProfiles().getJProfile().exists()) {
                             logger.info(Txt.s("JetApi.Profile.ProfileCollected"));

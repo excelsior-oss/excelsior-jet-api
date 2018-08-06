@@ -22,6 +22,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
+import com.excelsiorjet.api.tasks.ClasspathEntry.PackType;
 import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
 import com.excelsiorjet.api.tasks.config.compiler.StackTraceSupportType;
@@ -80,6 +81,7 @@ class CompilerArgsGenerator {
         }
 
         for (ClasspathEntry dep : project.classpathEntries()) {
+            String entryPath;
             switch (project.appType()) {
                 case PLAIN:
                 case DYNAMIC_LIBRARY:
@@ -88,13 +90,29 @@ class CompilerArgsGenerator {
                     break;
                 case TOMCAT:
                     String warDeployName = project.tomcatConfiguration().warDeployName;
-                    String entryPath = ":/WEB-INF/";
+                    entryPath = ":/WEB-INF/";
                     if (dep.isMainArtifact) {
                         entryPath += "classes";
                     } else {
                         entryPath += "lib/" + dep.path.getName();
                     }
                     out.println("!classloaderentry webapp webapps/" + warDeployName.substring(0, warDeployName.lastIndexOf(".war")) + entryPath);
+                    break;
+                case SPRING_BOOT:
+                    String springBootJar = project.mainArtifact().getName();
+                    entryPath = ":/BOOT-INF/";
+                    if (dep.isMainArtifact) {
+                        if (dep.pack != null) {
+                            //special case: we should set -pack equation for the whole Spring Boot Jar
+                            out.println("!classloaderentry app " + springBootJar);
+                            out.println("  -pack=" + dep.pack.jetValue);
+                            out.println("!end");
+                        }
+                        entryPath += "classes";
+                    } else {
+                        entryPath += "lib/" + dep.path.getName();
+                    }
+                    out.println("!classloaderentry springboot " + springBootJar + entryPath);
                     break;
                 default:
                     throw new AssertionError("Unknown app type");
@@ -167,6 +185,11 @@ class CompilerArgsGenerator {
                     compilerArgs.add("-gentomcatscripts-");
                 }
                 break;
+            case SPRING_BOOT:
+                compilerArgs.add("-apptype=springboot");
+                compilerArgs.add("-springbootjar=" + project.mainArtifact().getName());
+                break;
+
             default:
                 throw new AssertionError("Unknown app type");
         }
@@ -186,6 +209,7 @@ class CompilerArgsGenerator {
                     //fall through
                 case PLAIN:
                 case TOMCAT:
+                case SPRING_BOOT:
                     compilerArgs.add("-gui+");
                     break;
                 case DYNAMIC_LIBRARY:
