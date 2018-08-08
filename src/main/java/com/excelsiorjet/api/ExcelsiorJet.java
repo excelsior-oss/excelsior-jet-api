@@ -193,13 +193,11 @@ public class ExcelsiorJet {
     }
 
     public boolean isTomcatSupported() {
-        JetEdition edition = getEdition();
         return  isFullFeaturedEdition() ||
                 since11_3() && isEmbedded();
     }
 
     public boolean isSpringBootSupported() {
-        JetEdition edition = getEdition();
         return  since16_0() &&
                 (isFullFeaturedEdition() || isEmbedded());
     }

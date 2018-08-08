@@ -675,8 +675,10 @@ public class JetProject {
                 }
                 if ((appType == ApplicationType.PLAIN) &&
                         mainClass.equals(SPRING_BOOT_MAIN_CLASS.replace('.', '/')) &&
-                        excelsiorJet.isSpringBootSupported() &&
                         checkSpringBootJar(false)) {
+                    if (!excelsiorJet.isSpringBootSupported()) {
+                        throw new JetTaskFailureException(s("JetApi.SpringBootNotSupported.Failure"));
+                    }
                     appType = ApplicationType.SPRING_BOOT;
                 }
                 break;
