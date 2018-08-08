@@ -621,25 +621,24 @@ public class JetProject {
                 if (!excelsiorJet.isWindowsServicesSupported()) {
                     throw new JetTaskFailureException(s("JetApi.WinServiceNotSupported.Failure"));
                 }
-                //fall through
+                checkMainJar();
+                break;
 
             case SPRING_BOOT:
-                if (appType != ApplicationType.WINDOWS_SERVICE && !excelsiorJet.isSpringBootSupported()) {
+                if (!excelsiorJet.isSpringBootSupported()) {
                     throw new JetTaskFailureException(s("JetApi.SpringBootNotSupported.Failure"));
                 }
-                //fall through
+                checkMainJar();
+                if (!checkSpringBootJar(true)) {
+                    throw new JetTaskFailureException(s("JetApi.SpringBoot.JarIsNotSpringBootJar.Failure", mainJar.getAbsolutePath()));
+                }
+                break;
 
             case PLAIN:
             case DYNAMIC_LIBRARY:
-                if (mainJar == null) {
-                    mainJar = new File(targetDir, artifactName + ".jar");
-                }
-
-                if (!mainJar.exists()) {
-                    throw new JetTaskFailureException(s("JetApi.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
-                }
-
+                checkMainJar();
                 break;
+
             case TOMCAT:
                 if (!excelsiorJet.isTomcatSupported()) {
                     throw new JetTaskFailureException(s("JetApi.TomcatNotSupported.Failure"));
@@ -664,12 +663,6 @@ public class JetProject {
                 throw new AssertionError("Unknown application type");
         }
 
-        if (appType == ApplicationType.SPRING_BOOT) {
-            if (!checkSpringBootJar(true)) {
-                throw new JetTaskFailureException(s("JetApi.SpringBoot.JarIsNotSpringBootJar.Failure", mainJar.getAbsolutePath()));
-            }
-        }
-
         // check main class
         switch (appType) {
             case PLAIN:
@@ -682,6 +675,7 @@ public class JetProject {
                 }
                 if ((appType == ApplicationType.PLAIN) &&
                         mainClass.equals(SPRING_BOOT_MAIN_CLASS.replace('.', '/')) &&
+                        excelsiorJet.isSpringBootSupported() &&
                         checkSpringBootJar(false)) {
                     appType = ApplicationType.SPRING_BOOT;
                 }
@@ -783,6 +777,16 @@ public class JetProject {
         }
 
         processDependencies();
+    }
+
+    private void checkMainJar() throws JetTaskFailureException {
+        if (mainJar == null) {
+            mainJar = new File(targetDir, artifactName + ".jar");
+        }
+
+        if (!mainJar.exists()) {
+            throw new JetTaskFailureException(s("JetApi.MainJarNotFound.Failure", mainJar.getAbsolutePath()));
+        }
     }
 
     void processDependencies() throws JetTaskFailureException {
@@ -1212,8 +1216,6 @@ public class JetProject {
     /**
      * Copies the master Tomcat server to the build directory and main project artifact (.war)
      * to the "webapps" folder of copied Tomcat.
-     *
-     * @throws IOException
      */
     void copyTomcatAndWar() throws IOException {
         try {
@@ -1227,14 +1229,12 @@ public class JetProject {
 
     /**
      * Copies Spring Boot jar to the build directory.
-     *
-     * @throws IOException
      */
     void copySpringBootJar() throws IOException {
         try {
             Utils.copyFile(mainJar.toPath(), new File(jetBuildDir, mainJar.getName()).toPath());
         } catch (IOException e) {
-            throw new IOException(s("JetApi.ErrorCopyingDependency.Exception"), e.getCause());
+            throw new IOException(s("JetApi.ErrorCopyingSpringBootJar.Exception", mainJar.getAbsolutePath()), e.getCause());
         }
     }
 

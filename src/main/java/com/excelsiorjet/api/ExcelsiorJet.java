@@ -184,18 +184,24 @@ public class ExcelsiorJet {
         return getEdition() != JetEdition.STANDARD;
     }
 
+    private boolean isFullFeaturedEdition() {
+        return (edition == JetEdition.EVALUATION) || (edition == JetEdition.ENTERPRISE);
+    }
+
+    private boolean isEmbedded() {
+        return (edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION);
+    }
+
     public boolean isTomcatSupported() {
         JetEdition edition = getEdition();
-        return  (edition == JetEdition.EVALUATION) || (edition == JetEdition.ENTERPRISE) ||
-                since11_3() &&
-                        ((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION));
+        return  isFullFeaturedEdition() ||
+                since11_3() && isEmbedded();
     }
 
     public boolean isSpringBootSupported() {
         JetEdition edition = getEdition();
         return  since16_0() &&
-                ((edition == JetEdition.EVALUATION) || (edition == JetEdition.ENTERPRISE) ||
-                 (edition == JetEdition.EMBEDDED)   || (edition == JetEdition.EMBEDDED_EVALUATION));
+                (isFullFeaturedEdition() || isEmbedded());
     }
 
     public boolean isPDBConfigurationSupported() {
@@ -230,7 +236,7 @@ public class ExcelsiorJet {
     }
 
     public boolean isExcelsiorInstallerSupported() {
-        return !getTargetOS().isOSX() && !((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION));
+        return !getTargetOS().isOSX() && !(isEmbedded());
     }
 
     public boolean isAdvancedExcelsiorInstallerFeaturesSupported() {
@@ -280,8 +286,8 @@ public class ExcelsiorJet {
     public boolean isRuntimeSupported(RuntimeFlavorType flavor) {
         switch (flavor) {
             case SERVER:
-                return (edition == JetEdition.ENTERPRISE) || (edition == JetEdition.EVALUATION) ||
-                        (since11_3() && ((edition == JetEdition.EMBEDDED) || (edition == JetEdition.EMBEDDED_EVALUATION)));
+                return isFullFeaturedEdition() ||
+                        (since11_3() && isEmbedded());
             case DESKTOP:
                 return edition != JetEdition.STANDARD;
             case CLASSIC:
