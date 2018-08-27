@@ -22,7 +22,6 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.ExcelsiorJet;
-import com.excelsiorjet.api.tasks.ClasspathEntry.PackType;
 import com.excelsiorjet.api.tasks.config.compiler.ExecProfilesConfig;
 import com.excelsiorjet.api.tasks.config.compiler.WindowsVersionInfoConfig;
 import com.excelsiorjet.api.tasks.config.compiler.StackTraceSupportType;
@@ -99,20 +98,22 @@ class CompilerArgsGenerator {
                     out.println("!classloaderentry webapp webapps/" + warDeployName.substring(0, warDeployName.lastIndexOf(".war")) + entryPath);
                     break;
                 case SPRING_BOOT:
-                    String springBootJar = project.mainArtifact().getName();
-                    entryPath = ":/BOOT-INF/";
+                    String springBootArchive = project.mainArtifact().getName();
+                    entryPath = project.isMainArtifactJar()? ":/BOOT-INF/": ":/WEB-INF/";
                     if (dep.isMainArtifact) {
                         if (dep.pack != null) {
                             //special case: we should set -pack equation for the whole Spring Boot Jar
-                            out.println("!classloaderentry app " + springBootJar);
+                            out.println("!classloaderentry app " + springBootArchive);
                             out.println("  -pack=" + dep.pack.jetValue);
                             out.println("!end");
                         }
                         entryPath += "classes";
                     } else {
+                        //TODO: pass "provided" flag from the plugins to be able to set settings
+                        //for lib-provided/ jars of a Spring Boot war
                         entryPath += "lib/" + dep.path.getName();
                     }
-                    out.println("!classloaderentry springboot " + springBootJar + entryPath);
+                    out.println("!classloaderentry springboot " + springBootArchive + entryPath);
                     break;
                 default:
                     throw new AssertionError("Unknown app type");
@@ -187,7 +188,7 @@ class CompilerArgsGenerator {
                 break;
             case SPRING_BOOT:
                 compilerArgs.add("-apptype=springboot");
-                compilerArgs.add("-springbootjar=" + project.mainArtifact().getName());
+                compilerArgs.add("-springbootarchive=" + project.mainArtifact().getName());
                 break;
 
             default:

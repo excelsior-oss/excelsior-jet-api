@@ -180,7 +180,7 @@ public class TestRunTask {
                 additionalVMArgs = getTomcatVMArgs();
                 break;
             case SPRING_BOOT:
-                project.copySpringBootJar();
+                project.copySpringBootArtifact();
                 workingDirectory = buildDir;
                 classpath = project.mainArtifact().getName();
                 additionalVMArgs = Collections.singletonList("-Djet.classloader.id.provider=com/excelsior/jet/runtime/classload/customclassloaders/springboot/SpringBootCLIDProvider");

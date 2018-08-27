@@ -178,7 +178,7 @@ public class CompilerArgsGeneratorTest {
 
         CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
         String expectedPrj = linesToString("-apptype=springboot",
-                "-springbootjar=test.jar",
+                "-springbootarchive=test.jar",
                 "-outputname=test",
                 "-decor=ht",
                 "-inline-",

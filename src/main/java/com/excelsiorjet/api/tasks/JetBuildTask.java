@@ -367,7 +367,7 @@ public class JetBuildTask {
                 compile(buildDir);
                 break;
             case SPRING_BOOT:
-                project.copySpringBootJar();
+                project.copySpringBootArtifact();
                 compile(buildDir);
                 break;
             default:
