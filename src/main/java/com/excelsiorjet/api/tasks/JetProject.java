@@ -1156,6 +1156,10 @@ public class JetProject {
         }
     }
 
+    /**
+     * Checks that either mainWar or mainJar parameter is specified amd exists,
+     * and the artifact conforms Spring Boot jar or war shape.
+     */
     private boolean checkSpringBootArtifact() throws JetTaskFailureException {
         boolean isSpringBootArchive = false;
         if ((mainJar == null) && (mainWar == null)) {
@@ -1190,6 +1194,17 @@ public class JetProject {
         return checkSpringBootArtifact(mainArtifact(), isSpringBootArchive, true);
     }
 
+    /**
+     * Checks that {@code mainArtifact} conforms Spring Boot jar or war shape according
+     * {@code checkJar} parameter.
+     *
+     * @param mainArtifact artifact to check
+     * @param checkJar if the artifact is jar
+     * @param failOnVersionCheck if we should throw exception on unsupported Spring Boot version
+     * @return {@code true} if the artifact conforms Spring Boot archive shape.
+     *
+     * @throws JetTaskFailureException if {@code failOnVersionCheck} and Spring Boot version is not supported
+     */
     private boolean checkSpringBootArtifact(File mainArtifact, boolean checkJar, boolean failOnVersionCheck) throws JetTaskFailureException {
         Manifest manifest;
         try {
