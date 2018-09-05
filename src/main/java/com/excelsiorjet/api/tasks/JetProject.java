@@ -1195,6 +1195,24 @@ public class JetProject {
     }
 
     /**
+     * Returns {@code true} for supported versions.
+    */
+    private boolean checkSpringBootVersion(String version) {
+        String[] versionParts = version.split("\\.");
+        if (versionParts.length < 2) {
+            return false;
+        }
+
+        try {
+            int major = Integer.valueOf(versionParts[0]);
+            int minor = Integer.valueOf(versionParts[1]);
+            return (major > 1) || (major == 1) && (minor >= 4);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
      * Checks that {@code mainArtifact} conforms Spring Boot jar or war shape according
      * {@code checkJar} parameter.
      *
@@ -1235,7 +1253,7 @@ public class JetProject {
         }
 
         String springBootVersion = mainAttributes.getValue(SPRING_BOOT_VERSION_ATTR);
-        if ((springBootVersion != null) && springBootVersion.startsWith("1.")) {
+        if ((springBootVersion != null) && !checkSpringBootVersion(springBootVersion)) {
             if (failOnVersionCheck) {
                 throw new JetTaskFailureException(Txt.s("JetApi.SpringBoot.NotSupportedVersion.Failure", mainJar.getAbsolutePath(), springBootVersion));
             } else {
