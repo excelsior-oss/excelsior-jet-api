@@ -198,7 +198,7 @@ public class ExcelsiorJet {
     }
 
     public boolean isSpringBootSupported() {
-        return  since16_0() &&
+        return  since15_3() &&
                 (isFullFeaturedEdition() || isEmbedded());
     }
 
@@ -221,8 +221,8 @@ public class ExcelsiorJet {
         return jetHome.getJetVersion() >= 1500;
     }
 
-    public boolean since16_0() {
-        return jetHome.getJetVersion() >= 1600;
+    public boolean since15_3() {
+        return jetHome.getJetVersion() >= 1530;
     }
 
     public boolean isCrossCompilation() {
