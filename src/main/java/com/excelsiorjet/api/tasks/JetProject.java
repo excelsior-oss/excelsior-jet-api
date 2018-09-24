@@ -570,6 +570,21 @@ public class JetProject {
     private PDBConfig pdbConfiguration;
 
     /**
+     * Termination policy for {@link StopTask}. Permitted values are:
+     * <dl>
+     * <dt>ctrl-c</dt>
+     * <dd>Send Ctrl-C event to a running application</dd>
+     * <dt>halt</dt>
+     * <dd>call java.lang.Shutdown.halt() (System.exit()) within a running application</dd>
+     * </dl>
+     *
+     * Applications may perform some shutdown actions upon termination (e.g. close a database).
+     * Some applications do not terminate well on System.exit() call such as Tomcat and Spring Boot applications.
+     * So by default, we use Ctrl-C termination policy for such applications to terminate properly.
+     */
+    private String terminationPolicy;
+
+    /**
      * Sets a build tool specific logger and build tool specific messages overriding common ones
      * that should be shown to a user.
      */
@@ -769,6 +784,13 @@ public class JetProject {
                 pFile.validate("JetApi.PackageFileDoesNotExist.Error");
             }
         }
+
+        if (terminationPolicy == null) {
+            terminationPolicy = TerminationPolicy.CTRL_C.toString();
+        } else {
+            TerminationPolicy.validate(terminationPolicy);
+        }
+
 
         if (validateForBuild) {
             validateForBuild(excelsiorJet);
@@ -1511,6 +1533,17 @@ public class JetProject {
         return pdbConfiguration;
     }
 
+    public String getTerminationVMProp(File termFile) {
+        switch (TerminationPolicy.fromString(terminationPolicy)) {
+            case CTRL_C:
+                return "-Djet.ctrlc.signal.file=" + termFile.getAbsolutePath();
+            case HALT:
+                return  "-Djet.terminator=" + termFile.getAbsolutePath();
+            default:
+                throw new AssertionError("Unknown termination policy:" + terminationPolicy);
+        }
+    }
+
 ////////// Builder methods ////////////////////
 
     public JetProject mainWar(File mainWar) {
@@ -1730,6 +1763,11 @@ public class JetProject {
 
     public JetProject pdbConfiguration(PDBConfig pdbConfig) {
         pdbConfiguration = pdbConfig;
+        return this;
+    }
+
+    public JetProject terminationPolicy(String terminationPolicy) {
+        this.terminationPolicy = terminationPolicy;
         return this;
     }
 

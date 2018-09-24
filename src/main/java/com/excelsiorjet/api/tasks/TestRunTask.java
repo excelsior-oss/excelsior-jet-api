@@ -191,7 +191,9 @@ public class TestRunTask {
 
         Utils.mkdir(project.execProfiles().outputDir);
 
-        List<String> args = xjavaArgs(buildDir, classpath, additionalVMArgs);
+        RunStopSupport runStopSupport = new RunStopSupport(project.jetOutputDir(), false);
+
+        List<String> args = xjavaArgs(buildDir, classpath, additionalVMArgs, runStopSupport);
         String cmdLine = args.stream()
                 .map(Utils::quoteCmdLineArgument)
                 .collect(Collectors.joining(" "));
@@ -202,6 +204,7 @@ public class TestRunTask {
         // we  redirect its output to std out in test run
         boolean errToOut = project.appType() != ApplicationType.TOMCAT;
         int errCode = excelsiorJet.testRun(workingDirectory, logger, errToOut, args.toArray(new String[args.size()]));
+        runStopSupport.taskFinished();
         String finishText = Txt.s("TestRunTask.Finish.Info", errCode);
         if (errCode != 0) {
             logger.warn(finishText);
@@ -210,7 +213,7 @@ public class TestRunTask {
         }
     }
 
-    private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs) throws JetTaskFailureException {
+    private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs, RunStopSupport runStopSupport) throws JetTaskFailureException {
         List<String> args = new ArrayList<>();
         ExecProfilesConfig execProfiles = project.execProfiles();
         if (excelsiorJet.isStartupProfileGenerationSupported()) {
@@ -219,6 +222,8 @@ public class TestRunTask {
         if (excelsiorJet.isUsageListGenerationSupported()) {
             args.add("-Djet.usage.list=" + execProfiles.getUsg().getAbsolutePath());
         }
+
+        args.add(project.getTerminationVMProp(runStopSupport.prepareToRunTask()));
 
         args.addAll(additionalVMArgs);
 

@@ -50,7 +50,7 @@ public class RunTask {
     /**
      * Runs the executable when the project is already validated (from other tasks).
      */
-    public void run(File appDir) throws CmdLineToolException {
+    public void run(File appDir) throws CmdLineToolException, JetTaskFailureException {
         String[] args = Utils.prepend(new File(appDir, project.exeRelativePath(excelsiorJet)).getAbsolutePath(),
                 project.exeRunArgs());
 
@@ -60,7 +60,17 @@ public class RunTask {
 
         logger.info(Txt.s("RunTask.Start.Info", cmdLine));
 
-        int errCode = new CmdLineTool(args).workingDirectory(appDir).withLog(logger).execute();
+        RunStopSupport runStopSupport = new RunStopSupport(project.jetOutputDir(), false);
+
+        File termFile = runStopSupport.prepareToRunTask();
+
+        int errCode = new CmdLineTool(args)
+                .workingDirectory(appDir)
+                .withLog(logger)
+                .withEnvironment("JETVMPROP", project.getTerminationVMProp(termFile))
+                .execute();
+
+        runStopSupport.taskFinished();
 
         String finishText = Txt.s("RunTask.Finish.Info", errCode);
         if (errCode != 0) {
