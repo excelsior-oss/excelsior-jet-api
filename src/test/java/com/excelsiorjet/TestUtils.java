@@ -70,7 +70,12 @@ public class TestUtils {
         return getOrCreateFakeJetHome("1100");
     }
 
-    public static void cleanFakeJetDir() throws IOException {
-        Utils.cleanDirectory(new File(workDir(), FAKE_JET_HOME));
+    public static void cleanFakeJetDir() {
+        try {
+            Utils.cleanDirectory(new File(workDir(), FAKE_JET_HOME));
+        } catch (IOException e) {
+            //sometimes the cleanup fails due to file system lags on calling File.delete().
+            //Ignore that.
+        }
     }
 }
