@@ -46,7 +46,7 @@ public class StopTask {
             throw new JetTaskFailureException(Txt.s("RunTask.NoRunForCrossCompilation.Error"));
         }
 
-        project.validate(excelsiorJet, true);
+        project.validate(excelsiorJet, false);
 
         switch (project.appType()) {
             case WINDOWS_SERVICE:
@@ -54,9 +54,7 @@ public class StopTask {
                 throw new JetTaskFailureException(Txt.s("RunTask.AppTypeNotForRun.Error", project.appType()));
         }
 
-        if (!new RunStopSupport(project.jetOutputDir(), true).stopRunTask()) {
-            throw new JetTaskFailureException(Txt.s("StopTask.NoRunApp.Error", project.appType()));
-        }
+        new RunStopSupport(project.jetOutputDir(), true).stopRunTask();
     }
 
 }

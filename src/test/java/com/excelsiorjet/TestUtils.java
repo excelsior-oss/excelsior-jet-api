@@ -71,11 +71,6 @@ public class TestUtils {
     }
 
     public static void cleanFakeJetDir() {
-        try {
-            Utils.cleanDirectory(new File(workDir(), FAKE_JET_HOME));
-        } catch (IOException e) {
-            //sometimes the cleanup fails due to file system lags on calling File.delete().
-            //Ignore that.
-        }
+        Utils.cleanDirectorySilently(new File(workDir(), FAKE_JET_HOME));
     }
 }

@@ -203,8 +203,13 @@ public class TestRunTask {
         // Tomcat outputs to std error, so to not confuse users,
         // we  redirect its output to std out in test run
         boolean errToOut = project.appType() != ApplicationType.TOMCAT;
-        int errCode = excelsiorJet.testRun(workingDirectory, logger, errToOut, args.toArray(new String[args.size()]));
-        runStopSupport.taskFinished();
+        int errCode;
+        try {
+            errCode = excelsiorJet.testRun(workingDirectory, logger, errToOut, args.toArray(new String[args.size()]));
+        } finally {
+            runStopSupport.taskFinished();
+        }
+
         String finishText = Txt.s("TestRunTask.Finish.Info", errCode);
         if (errCode != 0) {
             logger.warn(finishText);

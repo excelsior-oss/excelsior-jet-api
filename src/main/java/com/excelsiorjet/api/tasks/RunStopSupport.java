@@ -22,6 +22,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.api.util.Txt;
+import com.excelsiorjet.api.util.Utils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -67,6 +68,10 @@ public class RunStopSupport {
     private static final String LOCK_TERM_FILE_PREFIX = LOCK_PEFIX + TERM_FILE_PREFIX;
     private static final String TERM_TEMP_DIR = "termination";
 
+    //1 min timeout
+    private static final int STOP_TIMEOUT = 60000;
+    private static final int SLEEP_TIME = 300;
+
 
     private int id = -1;
     private File termTempDir;
@@ -76,7 +81,8 @@ public class RunStopSupport {
     private static Map<File, Lock> acquiredLocks = Collections.synchronizedMap(new HashMap<>());
 
     public RunStopSupport(File baseDir, boolean toStop) {
-        this.termTempDir = new File(baseDir, TERM_TEMP_DIR);
+        String tempDirProp = System.getProperty("jet.run.temp.dir");
+        this.termTempDir = new File(baseDir, Utils.isEmpty(tempDirProp)? TERM_TEMP_DIR : tempDirProp);
         this.toStop = toStop;
         termTempDir.mkdirs();
         cleanup();
@@ -231,22 +237,33 @@ public class RunStopSupport {
         getTermFile().delete();
     }
 
-    public boolean stopRunTask() {
+    public void stopRunTask() throws JetTaskFailureException {
         if (!toStop) {
             throw new IllegalStateException("stopRunTask when is going to run");
         }
         if (id == -1) {
-            return false;
+            throw new JetTaskFailureException(Txt.s("StopTask.NoRunApp.Error"));
         }
         try {
             if (isLocked(getLockFile())) {
-                getTermFile().createNewFile();
+                File termFile = getTermFile();
+                termFile.createNewFile();
+                int  timeToEnd = STOP_TIMEOUT;
+                while ((timeToEnd > 0 ) && termFile.exists()) {
+                    try {
+                        Thread.sleep(SLEEP_TIME);
+                    } catch (InterruptedException ignore) {
+                    }
+                    timeToEnd -= SLEEP_TIME;
+                }
+                if (timeToEnd <= 0) {
+                    throw new JetTaskFailureException(Txt.s("StopTask.StopTimeout.Error"));
+                }
             } else {
                 //the process died before we stop it. At least we saw it so ignore that.
             }
-            return true;
         } catch (IOException e) {
-            return false;
+            throw new JetTaskFailureException(Txt.s("StopTask.StopFailure.Error", e.getMessage()));
         }
     }
 

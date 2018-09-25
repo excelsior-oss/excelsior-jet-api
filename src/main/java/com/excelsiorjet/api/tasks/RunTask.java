@@ -63,14 +63,17 @@ public class RunTask {
         RunStopSupport runStopSupport = new RunStopSupport(project.jetOutputDir(), false);
 
         File termFile = runStopSupport.prepareToRunTask();
+        int errCode;
+        try {
+            errCode = new CmdLineTool(args)
+                    .workingDirectory(appDir)
+                    .withLog(logger)
+                    .withEnvironment("JETVMPROP", project.getTerminationVMProp(termFile))
+                    .execute();
+        } finally {
+            runStopSupport.taskFinished();
+        }
 
-        int errCode = new CmdLineTool(args)
-                .workingDirectory(appDir)
-                .withLog(logger)
-                .withEnvironment("JETVMPROP", project.getTerminationVMProp(termFile))
-                .execute();
-
-        runStopSupport.taskFinished();
 
         String finishText = Txt.s("RunTask.Finish.Info", errCode);
         if (errCode != 0) {

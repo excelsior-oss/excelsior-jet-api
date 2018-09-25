@@ -206,7 +206,7 @@ public class JetBuildTaskTest {
     }
 
 
-    static void mockUtilsClass() throws Exception {
+    static void mockUtilsClass()  {
         PowerMockito.mockStatic(Utils.class, invocationOnMock -> {
             String methodName = invocationOnMock.getMethod().getName();
             if (methodName.equals("parameterToEnumConstantName") ||
@@ -223,8 +223,8 @@ public class JetBuildTaskTest {
         });
     }
 
-    private void prepareJetBuildDir() throws IOException {
-        Utils.cleanDirectory(Tests.jetBuildDir.toFile());
+    private void prepareJetBuildDir() {
+        Utils.cleanDirectorySilently(Tests.jetBuildDir.toFile());
         Tests.jetBuildDir.toFile().mkdirs();
     }
 

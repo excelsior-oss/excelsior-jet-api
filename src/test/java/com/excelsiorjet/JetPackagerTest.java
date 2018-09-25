@@ -48,12 +48,7 @@ public class JetPackagerTest {
 
     @After
     public void tearDown() {
-        try {
-            Utils.cleanDirectory(targetDir);
-        } catch (IOException e) {
-            //sometimes the cleanup fails due to file system lags on calling File.delete().
-            //Ignore that.
-        }
+        Utils.cleanDirectorySilently(targetDir);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.excelsiorjet.api.tasks;
 
 import com.excelsiorjet.TestUtils;
+import com.excelsiorjet.api.util.Txt;
 import org.junit.Test;
 
 import java.io.File;
@@ -73,8 +74,11 @@ public class RunStopSupportTest {
     }
 
     private void stopTask(RunTask expectedToStop) {
-        assertTrue(runStopSupport(true).stopRunTask());
-        expectedToStop.join(300);
+        try {
+            runStopSupport(true).stopRunTask();
+        } catch (JetTaskFailureException e) {
+            fail(e.getMessage());
+        }
         assertTrue(expectedToStop.isCompleted());
     }
 
@@ -129,7 +133,13 @@ public class RunStopSupportTest {
 
     @Test
     public void stopNoRun() {
-        assertFalse(runStopSupport(true).stopRunTask());
+        try {
+            runStopSupport(true).stopRunTask();
+            fail("Stopped task without run");
+        } catch (JetTaskFailureException e) {
+            assertEquals(e.getMessage(), Txt.s("StopTask.NoRunApp.Error"));
+            //passed
+        }
     }
 
 }
