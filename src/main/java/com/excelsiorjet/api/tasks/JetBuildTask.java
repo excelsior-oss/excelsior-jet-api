@@ -306,7 +306,7 @@ public class JetBuildTask {
     }
 
     private void collectProfile(File profileDir) throws JetTaskFailureException, IOException, CmdLineToolException {
-        new RunTask(excelsiorJet, project).run(profileDir);
+        new RunTask(excelsiorJet, project, true).run(profileDir);
     }
 
     private long computeModifyTimeDaysBetween(File file1, File file2) {

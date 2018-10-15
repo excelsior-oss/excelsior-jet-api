@@ -200,6 +200,22 @@ public class TestRunTask {
 
         logger.info(Txt.s("TestRunTask.Start.Info", cmdLine));
 
+        if (project.execProfiles().testRunTimeout != 0) {
+            Thread t = new Thread(()->{
+                try {
+                    Thread.sleep(project.execProfiles().testRunTimeout*1000);
+                } catch (InterruptedException ignore) {
+                }
+                try {
+                    new RunStopSupport(project.jetOutputDir(), true).stopRunTask();
+                } catch (JetTaskFailureException e) {
+                    logger.error(e.getMessage());
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        }
+
         // Tomcat outputs to std error, so to not confuse users,
         // we  redirect its output to std out in test run
         boolean errToOut = project.appType() != ApplicationType.TOMCAT;

@@ -218,6 +218,8 @@ public class JetProject {
      * @see ExecProfilesConfig#profileLocally
      * @see ExecProfilesConfig#daysToWarnAboutOutdatedProfiles
      * @see ExecProfilesConfig#checkExistence
+     * @see ExecProfilesConfig#testRunTimeout
+     * @see ExecProfilesConfig#profileRunTimeout
      */
     private ExecProfilesConfig execProfilesConfiguration;
 

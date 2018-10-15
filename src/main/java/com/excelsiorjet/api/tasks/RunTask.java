@@ -41,10 +41,16 @@ public class RunTask {
 
     private final ExcelsiorJet excelsiorJet;
     private final JetProject project;
+    private final boolean toProfile;
 
-    public RunTask(ExcelsiorJet excelsiorJet, JetProject project) throws JetTaskFailureException {
+    public RunTask(ExcelsiorJet excelsiorJet, JetProject project, boolean toProfile) throws JetTaskFailureException {
         this.excelsiorJet = excelsiorJet;
         this.project = project;
+        this.toProfile = toProfile;
+    }
+
+    public RunTask(ExcelsiorJet excelsiorJet, JetProject project) throws JetTaskFailureException {
+        this(excelsiorJet, project, false);
     }
 
     /**
@@ -63,6 +69,23 @@ public class RunTask {
         RunStopSupport runStopSupport = new RunStopSupport(project.jetOutputDir(), false);
 
         File termFile = runStopSupport.prepareToRunTask();
+
+        if (toProfile && project.execProfiles().profileRunTimeout != 0) {
+            Thread t = new Thread(()->{
+                try {
+                    Thread.sleep(project.execProfiles().profileRunTimeout*1000);
+                } catch (InterruptedException ignore) {
+                }
+                try {
+                    new RunStopSupport(project.jetOutputDir(), true).stopRunTask();
+                } catch (JetTaskFailureException e) {
+                    logger.error(e.getMessage());
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        }
+
         int errCode;
         try {
             errCode = new CmdLineTool(args)
