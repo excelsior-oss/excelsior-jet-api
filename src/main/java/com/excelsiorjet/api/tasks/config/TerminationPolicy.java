@@ -27,7 +27,7 @@ import com.excelsiorjet.api.util.Utils;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * We support two termination policies: via sending Ctrl-C event to a running application or via calling
+ * We support two termination policies: via sending a Ctrl-C event to a running application or via calling
  * {@code java.lang.Shutdown.halt()} within a running application.
  */
 public enum TerminationPolicy {

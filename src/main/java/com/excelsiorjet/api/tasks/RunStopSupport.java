@@ -91,9 +91,9 @@ public class RunStopSupport {
 
     /**
      * File system lock wrapper.
-     * When we need to lock a file, we have to create a channel and then to call tryLock that returns FileLock
-     * on successful file locking. As we need to release a lock not immediately whe should keep the channel
-     * and lock objects until lock is released. We also keep track of acquired locks to prevent double locking
+     * When we need to lock a file, we have to create a channel and then call tryLock that returns a FileLock
+     * on successful file locking. As we need to release the lock not immediately, we should keep the channel
+     * and lock objects until the lock is released. We also keep track of the acquired locks to prevent double locking
      * of the same file and to be able to use RunStopSupport objects within one process (useful for unit testing).
      */
     private static class Lock {
@@ -164,7 +164,7 @@ public class RunStopSupport {
     }
 
     /**
-     * Cleans up temporary directory from files that are not used by any of run tasks.
+     * Cleans up the temporary directory from files that are not used by any of the running tasks.
      */
     private void cleanup() {
         File[] termFileLocks = termTempDir.listFiles(f->f.getName().startsWith(LOCK_TERM_FILE_PREFIX));
@@ -180,7 +180,7 @@ public class RunStopSupport {
     }
 
     /**
-     *  Looks for the last created lock file and retrieves id from it.
+     *  Looks for the last created lock file and retrieves an id from it.
      */
     private int findLastID() {
         File[] termFileLocks = termTempDir.listFiles(f->f.getName().startsWith(LOCK_TERM_FILE_PREFIX));
