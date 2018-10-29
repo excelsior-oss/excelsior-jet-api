@@ -53,12 +53,12 @@ import java.util.stream.Stream;
  *         //handle failed stop
  *     }
  * </blockquote></pre>
- * {@code stopRunTask} identifies what task is run now and stops it via creating respected {@code termFile}.
+ * {@code stopRunTask} identifies what task is run now and stops it by creating the respective {@code termFile}.
  *
  * <p>Implementation details:</p>
  *    {@code prepareToRun} locks a file in a temp dir so another process where we call {@code stopRunTask} knows what
- *    task is waiting to stop. {@code stopRunTask} looks for the locked file and creates respective termination file
- *    notifying the run task to stop by this way. When run task is stopped it releases the lock and deletes both lock
+ *    task is waiting to stop. {@code stopRunTask} looks for the locked file and creates the respective termination file,
+ *    thereby notifying the running task to stop. When the task is stopped it releases the lock and deletes both lock
  *    and termination files.
  */
 public class RunStopSupport {
@@ -91,9 +91,9 @@ public class RunStopSupport {
 
     /**
      * File system lock wrapper.
-     * When we need to lock a file, we have to create a channel and then to call tryLock that returns FileLock
-     * on successful file locking. As we need to release a lock not immediately whe should keep the channel
-     * and lock objects until lock is released. We also keep track of acquired locks to prevent double locking
+     * When we need to lock a file, we have to create a channel and then call tryLock that returns a FileLock
+     * on successful file locking. As we need to release that lock not immediately, we should keep the channel
+     * and lock objects until the lock is released. We also keep track of acquired locks to prevent double locking
      * of the same file and to be able to use RunStopSupport objects within one process (useful for unit testing).
      */
     private static class Lock {
@@ -119,8 +119,8 @@ public class RunStopSupport {
     }
 
     /**
-     * Tries to lock the file
-     * @return {code null}, if the file is locked from another process or respecive Lock object on successful locking.
+     * Tries to lock the given file
+     * @return {code null} if the file is locked from another process, or the respective Lock object upon successful locking.
      */
     private static Lock acquireLock(File file) {
         if (acquiredLocks.containsKey(file)) {
@@ -148,7 +148,7 @@ public class RunStopSupport {
     }
 
     /**
-     * Returns {@code true}, if the file is locked from another process or within this process.
+     * Returns {@code true} if the file is locked from another process or within this process.
      */
     private static boolean isLocked(File file) {
         if (acquiredLocks.containsKey(file)) {
@@ -164,7 +164,7 @@ public class RunStopSupport {
     }
 
     /**
-     * Cleans up temporary directory from files that are not used by any of run tasks.
+     * Cleans up the temporary directory from files that are not used by any of the run tasks.
      */
     private void cleanup() {
         File[] termFileLocks = termTempDir.listFiles(f->f.getName().startsWith(LOCK_TERM_FILE_PREFIX));
@@ -180,7 +180,7 @@ public class RunStopSupport {
     }
 
     /**
-     *  Looks for the last created lock file and retrieves id from it.
+     *  Looks for the last created lock file and retrieves its id.
      */
     private int findLastID() {
         File[] termFileLocks = termTempDir.listFiles(f->f.getName().startsWith(LOCK_TERM_FILE_PREFIX));
