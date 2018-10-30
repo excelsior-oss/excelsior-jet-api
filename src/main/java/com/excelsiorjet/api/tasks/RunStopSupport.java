@@ -185,7 +185,10 @@ public class RunStopSupport {
     private int findLastID() {
         File[] termFileLocks = termTempDir.listFiles(f->f.getName().startsWith(LOCK_TERM_FILE_PREFIX));
         if (termFileLocks != null) {
-            Optional<File> lastFile = Stream.of(termFileLocks).max(Comparator.comparing(File::lastModified));
+            Optional<File> lastFile = Stream.of(termFileLocks).max(
+                    (File f1, File f2) -> f1.lastModified() == f2.lastModified() ? f1.getName().compareTo(f2.getName()) :
+                            Long.compare(f1.lastModified(), f2.lastModified())
+            );
             if (lastFile.isPresent()) {
                 String fname = lastFile.get().getName();
                 return Integer.valueOf(fname.substring(LOCK_TERM_FILE_PREFIX.length()));
