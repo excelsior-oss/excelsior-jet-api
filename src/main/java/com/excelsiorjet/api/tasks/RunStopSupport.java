@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  *     File termFile = runStopSupport.prepareToRun();
  *     runTask(termFile);
  *     runStopSupport.taskFinished();
- * </blockquote></pre>
+ * </pre></blockquote>
  *
  * It is expected that runTask() is run until it sees {@code termFile} in the file system.
  *
@@ -52,7 +52,7 @@ import java.util.stream.Stream;
  *     if (!runStopSupport.stopRunTask()) {
  *         //handle failed stop
  *     }
- * </blockquote></pre>
+ * </pre></blockquote>
  * {@code stopRunTask} identifies what task is run now and stops it by creating the respective {@code termFile}.
  *
  * <p>Implementation details:</p>
