@@ -144,6 +144,22 @@ public class ExecProfilesConfig {
      */
     public String checkExistence = ExecProfilesExistenceType.NONE.toString();
 
+    /**
+     * Timeout for the test run task in seconds.
+     *
+     * Set the parameter, if your app does not terminate automatically and you would like to automate collection of
+     * the profiles gathered during {@link TestRunTask}.
+     */
+    public int testRunTimeout;
+
+    /**
+     * Timeout for the profile run task in seconds.
+     *
+     * Set the parameter, if your app does not terminate automatically and you would like to automate collection of
+     * the execution profile gathered during jet:profile task.
+     */
+    public int profileRunTimeout;
+
     public void fillDefaults(JetProject jetProject, ExcelsiorJet excelsiorJet) throws JetTaskFailureException {
         if (outputDir == null) {
             outputDir = jetProject.jetResourcesDir();

@@ -179,23 +179,53 @@ public class TestRunTask {
                 classpath = getTomcatClassPath(workingDirectory);
                 additionalVMArgs = getTomcatVMArgs();
                 break;
+            case SPRING_BOOT:
+                project.copySpringBootArtifact();
+                workingDirectory = buildDir;
+                classpath = project.mainArtifact().getName();
+                additionalVMArgs = Collections.singletonList("-Djet.classloader.id.provider=com/excelsior/jet/runtime/classload/customclassloaders/springboot/SpringBootCLIDProvider");
+                break;
             default:
                 throw new AssertionError("Unknown app type");
         }
 
         Utils.mkdir(project.execProfiles().outputDir);
 
-        List<String> args = xjavaArgs(buildDir, classpath, additionalVMArgs);
+        RunStopSupport runStopSupport = new RunStopSupport(project.jetOutputDir(), false);
+
+        List<String> args = xjavaArgs(buildDir, classpath, additionalVMArgs, runStopSupport);
         String cmdLine = args.stream()
                 .map(Utils::quoteCmdLineArgument)
                 .collect(Collectors.joining(" "));
 
         logger.info(Txt.s("TestRunTask.Start.Info", cmdLine));
 
+        if (project.execProfiles().testRunTimeout != 0) {
+            Thread t = new Thread(()->{
+                try {
+                    Thread.sleep(project.execProfiles().testRunTimeout*1000);
+                } catch (InterruptedException ignore) {
+                }
+                try {
+                    new RunStopSupport(project.jetOutputDir(), true).stopRunTask();
+                } catch (JetTaskFailureException e) {
+                    logger.error(e.getMessage());
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        }
+
         // Tomcat outputs to std error, so to not confuse users,
         // we  redirect its output to std out in test run
         boolean errToOut = project.appType() != ApplicationType.TOMCAT;
-        int errCode = excelsiorJet.testRun(workingDirectory, logger, errToOut, args.toArray(new String[args.size()]));
+        int errCode;
+        try {
+            errCode = excelsiorJet.testRun(workingDirectory, logger, errToOut, args.toArray(new String[args.size()]));
+        } finally {
+            runStopSupport.taskFinished();
+        }
+
         String finishText = Txt.s("TestRunTask.Finish.Info", errCode);
         if (errCode != 0) {
             logger.warn(finishText);
@@ -204,7 +234,7 @@ public class TestRunTask {
         }
     }
 
-    private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs) throws JetTaskFailureException {
+    private List<String> xjavaArgs(File buildDir, String classpath, List<String> additionalVMArgs, RunStopSupport runStopSupport) throws JetTaskFailureException {
         List<String> args = new ArrayList<>();
         ExecProfilesConfig execProfiles = project.execProfiles();
         if (excelsiorJet.isStartupProfileGenerationSupported()) {
@@ -213,6 +243,8 @@ public class TestRunTask {
         if (excelsiorJet.isUsageListGenerationSupported()) {
             args.add("-Djet.usage.list=" + execProfiles.getUsg().getAbsolutePath());
         }
+
+        args.add(project.getTerminationVMProp(runStopSupport.prepareToRunTask()));
 
         args.addAll(additionalVMArgs);
 

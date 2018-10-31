@@ -47,8 +47,8 @@ public class JetPackagerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        Utils.cleanDirectory(targetDir);
+    public void tearDown() {
+        Utils.cleanDirectorySilently(targetDir);
     }
 
     @Test

@@ -97,6 +97,7 @@ public class Tests {
             case PLAIN:
             case DYNAMIC_LIBRARY:
             case WINDOWS_SERVICE:
+            case SPRING_BOOT:
                 project.mainJar(fileSpy(mainJar.toString()));
                 break;
             case TOMCAT:

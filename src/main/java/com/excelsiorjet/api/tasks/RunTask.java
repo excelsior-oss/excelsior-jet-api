@@ -41,16 +41,22 @@ public class RunTask {
 
     private final ExcelsiorJet excelsiorJet;
     private final JetProject project;
+    private final boolean toProfile;
 
-    public RunTask(ExcelsiorJet excelsiorJet, JetProject project) throws JetTaskFailureException {
+    public RunTask(ExcelsiorJet excelsiorJet, JetProject project, boolean toProfile) throws JetTaskFailureException {
         this.excelsiorJet = excelsiorJet;
         this.project = project;
+        this.toProfile = toProfile;
+    }
+
+    public RunTask(ExcelsiorJet excelsiorJet, JetProject project) throws JetTaskFailureException {
+        this(excelsiorJet, project, false);
     }
 
     /**
      * Runs the executable when the project is already validated (from other tasks).
      */
-    public void run(File appDir) throws CmdLineToolException {
+    public void run(File appDir) throws CmdLineToolException, JetTaskFailureException {
         String[] args = Utils.prepend(new File(appDir, project.exeRelativePath(excelsiorJet)).getAbsolutePath(),
                 project.exeRunArgs());
 
@@ -60,7 +66,37 @@ public class RunTask {
 
         logger.info(Txt.s("RunTask.Start.Info", cmdLine));
 
-        int errCode = new CmdLineTool(args).workingDirectory(appDir).withLog(logger).execute();
+        RunStopSupport runStopSupport = new RunStopSupport(project.jetOutputDir(), false);
+
+        File termFile = runStopSupport.prepareToRunTask();
+
+        if (toProfile && project.execProfiles().profileRunTimeout != 0) {
+            Thread t = new Thread(()->{
+                try {
+                    Thread.sleep(project.execProfiles().profileRunTimeout*1000);
+                } catch (InterruptedException ignore) {
+                }
+                try {
+                    new RunStopSupport(project.jetOutputDir(), true).stopRunTask();
+                } catch (JetTaskFailureException e) {
+                    logger.error(e.getMessage());
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        }
+
+        int errCode;
+        try {
+            errCode = new CmdLineTool(args)
+                    .workingDirectory(appDir)
+                    .withLog(logger)
+                    .withEnvironment("JETVMPROP", project.getTerminationVMProp(termFile))
+                    .execute();
+        } finally {
+            runStopSupport.taskFinished();
+        }
+
 
         String finishText = Txt.s("RunTask.Finish.Info", errCode);
         if (errCode != 0) {

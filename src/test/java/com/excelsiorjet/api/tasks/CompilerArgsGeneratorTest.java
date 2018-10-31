@@ -172,6 +172,22 @@ public class CompilerArgsGeneratorTest {
     }
 
     @Test
+    public void noClasspathEntriesForSpringBoot() throws Exception {
+        JetProject prj = testProject(ApplicationType.SPRING_BOOT);
+        prj.processDependencies();
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
+        String expectedPrj = linesToString("-apptype=springboot",
+                "-springbootarchive=test.jar",
+                "-outputname=test",
+                "-decor=ht",
+                "-inline-",
+                "%-jetvmprop=");
+
+        assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrj));
+    }
+
+    @Test
     public void testExternalDirWithPackagePath() throws Exception {
         File depDirSpy = Tests.dirSpy(Tests.projectDir.resolve("extDir").toString());
         JetProject prj = testProject(ApplicationType.PLAIN).
@@ -218,6 +234,25 @@ public class CompilerArgsGeneratorTest {
         String expectedPrjTail = linesToString(
                 "%-jetvmprop=",
                 "!classloaderentry webapp webapps/test:/WEB-INF/lib/dep.jar",
+                "  -optimize=all",
+                "  -protect=all",
+                "!end");
+        assertTrue(compilerArgsGenerator.projectFileContent().endsWith(expectedPrjTail));
+    }
+
+    @Test
+    public void testSpringBootDependencySettings() throws Exception {
+        File depSpy = Tests.mavenDepSpy("dep.jar");
+        DependencySettings dependencySettings = DependencyBuilder.testDependencySettings().protect(ClasspathEntry.ProtectionType.ALL).optimize(ClasspathEntry.OptimizationType.ALL).asDependencySettings();
+        JetProject prj = Mockito.spy(testProject(ApplicationType.SPRING_BOOT).
+                projectDependencies(singletonList(DependencyBuilder.testProjectDependency(depSpy).version(dependencySettings.version).asProjectDependency())).
+                dependencies(singletonList(dependencySettings)));
+        prj.processDependencies();
+
+        CompilerArgsGenerator compilerArgsGenerator = new CompilerArgsGenerator(prj, excelsiorJet(), false);
+        String expectedPrjTail = linesToString(
+                "%-jetvmprop=",
+                "!classloaderentry springboot test.jar:/BOOT-INF/lib/dep.jar",
                 "  -optimize=all",
                 "  -protect=all",
                 "!end");

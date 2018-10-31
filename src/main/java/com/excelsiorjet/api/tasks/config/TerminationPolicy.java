@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Excelsior LLC.
+ * Copyright (c) 2018, Excelsior LLC.
  *
  *  This file is part of Excelsior JET API.
  *
@@ -27,45 +27,31 @@ import com.excelsiorjet.api.util.Utils;
 import static com.excelsiorjet.api.util.Txt.s;
 
 /**
- * Supported application types enumeration.
+ * We support two termination policies: via sending Ctrl-C event to a running application or via calling
+ * {@code java.lang.Shutdown.halt()} within a running application.
  */
-public enum ApplicationType {
-
-    /**
-     * Plain Java application that runs standalone.
-     */
-    PLAIN,
-
-    /**
-     * Spring Boot application that runs as Spring Boot executable jar.
-     */
-    SPRING_BOOT,
-
-    /**
-     * Servlet-based Java application that runs within the Tomcat servlet container.
-     */
-    TOMCAT,
-
-    /**
-     * Dynamic library callable from a non-Java environment.
-     */
-    DYNAMIC_LIBRARY,
-
-    /**
-     * Windows service (Windows only).
-     */
-    WINDOWS_SERVICE
-    ;
+public enum TerminationPolicy {
+    CTRL_C,
+    HALT;
 
     public String toString() {
         return Utils.enumConstantNameToParameter(name());
     }
 
-    public static ApplicationType validate(String appType) throws JetTaskFailureException {
+    public static TerminationPolicy validate(String terminationPolicy) throws JetTaskFailureException {
         try {
-            return ApplicationType.valueOf(Utils.parameterToEnumConstantName(appType));
+            return TerminationPolicy.valueOf(Utils.parameterToEnumConstantName(terminationPolicy));
         } catch (Exception e) {
-            throw new JetTaskFailureException(s("JetApi.UnknownAppType.Failure", appType));
+            throw new JetTaskFailureException(s("JetApi.UnknownTerminationPolicy.Failure", terminationPolicy));
         }
     }
+
+    public static TerminationPolicy fromString(String packaging) {
+        try {
+            return validate(packaging);
+        } catch (JetTaskFailureException e) {
+            throw new AssertionError("terminationPolicy should be valid here", e);
+        }
+    }
+
 }

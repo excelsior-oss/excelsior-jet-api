@@ -80,6 +80,7 @@ class CompilerArgsGenerator {
         }
 
         for (ClasspathEntry dep : project.classpathEntries()) {
+            String entryPath;
             switch (project.appType()) {
                 case PLAIN:
                 case DYNAMIC_LIBRARY:
@@ -88,13 +89,31 @@ class CompilerArgsGenerator {
                     break;
                 case TOMCAT:
                     String warDeployName = project.tomcatConfiguration().warDeployName;
-                    String entryPath = ":/WEB-INF/";
+                    entryPath = ":/WEB-INF/";
                     if (dep.isMainArtifact) {
                         entryPath += "classes";
                     } else {
                         entryPath += "lib/" + dep.path.getName();
                     }
                     out.println("!classloaderentry webapp webapps/" + warDeployName.substring(0, warDeployName.lastIndexOf(".war")) + entryPath);
+                    break;
+                case SPRING_BOOT:
+                    String springBootArchive = project.mainArtifact().getName();
+                    entryPath = project.isMainArtifactJar()? ":/BOOT-INF/": ":/WEB-INF/";
+                    if (dep.isMainArtifact) {
+                        if (dep.pack != null) {
+                            //special case: we should set -pack equation for the whole Spring Boot Jar
+                            out.println("!classloaderentry app " + springBootArchive);
+                            out.println("  -pack=" + dep.pack.jetValue);
+                            out.println("!end");
+                        }
+                        entryPath += "classes";
+                    } else {
+                        //TODO: pass "provided" flag from the plugins to be able to set settings
+                        //for lib-provided/ jars of a Spring Boot war
+                        entryPath += "lib/" + dep.path.getName();
+                    }
+                    out.println("!classloaderentry springboot " + springBootArchive + entryPath);
                     break;
                 default:
                     throw new AssertionError("Unknown app type");
@@ -167,6 +186,11 @@ class CompilerArgsGenerator {
                     compilerArgs.add("-gentomcatscripts-");
                 }
                 break;
+            case SPRING_BOOT:
+                compilerArgs.add("-apptype=springboot");
+                compilerArgs.add("-springbootarchive=" + project.mainArtifact().getName());
+                break;
+
             default:
                 throw new AssertionError("Unknown app type");
         }
@@ -186,6 +210,7 @@ class CompilerArgsGenerator {
                     //fall through
                 case PLAIN:
                 case TOMCAT:
+                case SPRING_BOOT:
                     compilerArgs.add("-gui+");
                     break;
                 case DYNAMIC_LIBRARY:

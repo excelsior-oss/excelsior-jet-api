@@ -306,7 +306,7 @@ public class JetBuildTask {
     }
 
     private void collectProfile(File profileDir) throws JetTaskFailureException, IOException, CmdLineToolException {
-        new RunTask(excelsiorJet, project).run(profileDir);
+        new RunTask(excelsiorJet, project, true).run(profileDir);
     }
 
     private long computeModifyTimeDaysBetween(File file1, File file2) {
@@ -366,6 +366,10 @@ public class JetBuildTask {
                 project.copyTomcatAndWar();
                 compile(buildDir);
                 break;
+            case SPRING_BOOT:
+                project.copySpringBootArtifact();
+                compile(buildDir);
+                break;
             default:
                 throw new AssertionError("Unknown application type");
         }
@@ -384,6 +388,7 @@ public class JetBuildTask {
                         break;
                     case PLAIN:
                     case TOMCAT:
+                    case SPRING_BOOT:
                         collectProfile(appOrProfileDir);
                         if (project.execProfiles().getJProfile().exists()) {
                             logger.info(Txt.s("JetApi.Profile.ProfileCollected"));

@@ -77,6 +77,13 @@ public class Utils {
         });
     }
 
+    public static void cleanDirectorySilently(File f) {
+        try {
+            cleanDirectory(f);
+        } catch (IOException ignore) {
+        }
+    }
+
     public static void copyFile(Path source, Path target) throws IOException {
         if (!target.toFile().exists()) {
             Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
