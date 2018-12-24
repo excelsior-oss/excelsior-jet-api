@@ -23,8 +23,11 @@ package com.excelsiorjet.api.util;
 
 import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 import java.io.*;
 import java.nio.file.*;
@@ -188,6 +191,40 @@ public class Utils {
         try (ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
                 new BufferedOutputStream(new FileOutputStream(outputFile)))) {
             compressDirectoryToZipfile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile);
+        }
+    }
+
+    private static void compressDirectoryToTarFile(String rootDir, String sourceDir, TarArchiveOutputStream out) throws IOException {
+        File[] files = new File(sourceDir).listFiles();
+        assert files != null;
+        for (File file : files) {
+            if (file.isDirectory()) {
+                compressDirectoryToTarFile(rootDir, sourceDir + File.separator + file.getName(), out);
+            } else {
+                TarArchiveEntry entry = new TarArchiveEntry(file.getAbsolutePath().substring(rootDir.length() + 1));
+                entry.setSize(file.length());
+                if (Host.isUnix()) {
+                    if (file.canExecute()) {
+                        //set -rwxr-xr-x
+                        entry.setMode(0100755);
+                    } else {
+                        //set -rw-r--r--
+                        entry.setMode(0100644);
+                    }
+                }
+                out.putArchiveEntry(entry);
+                try (InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()))) {
+                    copy(in, out);
+                }
+                out.closeArchiveEntry();
+            }
+        }
+    }
+
+    public static void compressToTarGzFile(File sourceDir, File outputFile) throws IOException {
+        try (TarArchiveOutputStream tarFile = new TarArchiveOutputStream(new GzipCompressorOutputStream(
+                new BufferedOutputStream(new FileOutputStream(outputFile))))) {
+            compressDirectoryToTarFile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), tarFile);
         }
     }
 

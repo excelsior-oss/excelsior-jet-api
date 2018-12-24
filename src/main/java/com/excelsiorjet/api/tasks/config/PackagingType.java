@@ -32,6 +32,7 @@ import static com.excelsiorjet.api.util.Txt.s;
 public enum PackagingType {
     NONE,
     ZIP,
+    TAR_GZ,
     EXCELSIOR_INSTALLER,
     OSX_APP_BUNDLE,
     NATIVE_BUNDLE;

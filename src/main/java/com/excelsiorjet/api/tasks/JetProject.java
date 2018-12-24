@@ -24,6 +24,7 @@ package com.excelsiorjet.api.tasks;
 import com.excelsiorjet.api.ExcelsiorJet;
 import com.excelsiorjet.api.JetHomeException;
 import com.excelsiorjet.api.log.Log;
+import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.tasks.config.*;
 import com.excelsiorjet.api.tasks.config.compiler.*;
 import com.excelsiorjet.api.tasks.config.dependencies.DependencySettings;
@@ -242,6 +243,8 @@ public class JetProject {
      * <dl>
      * <dt>zip</dt>
      * <dd>zip archive with a self-contained application package (default)</dd>
+     * <dt>tar-gz</dt>
+     * <dd>tar.gz archive with a self-contained application package</dd>
      * <dt>excelsior-installer</dt>
      * <dd>self-extracting installer with standard GUI for Windows
      * and command-line interface for Linux</dd>
@@ -730,6 +733,13 @@ public class JetProject {
         switch (PackagingType.validate(excelsiorJetPackaging)) {
             case ZIP:
             case NONE:
+                break;
+            case TAR_GZ:
+                if (excelsiorJet.isCrossCompilation() && Host.isWindows()) {
+                    // Cannot pack to tar.gz due to absence of isExecutable information in the Maven plugin
+                    // for Linux files on Windows. Should be supported in xpack.
+                    throw new JetTaskFailureException(s("JetApi.TarGZOnWindowsHostLinuxTarget.NotSupported"));
+                }
                 break;
             case EXCELSIOR_INSTALLER:
                 if (!excelsiorJet.isExcelsiorInstallerSupported()) {
