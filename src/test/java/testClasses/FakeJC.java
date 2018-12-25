@@ -1,7 +1,5 @@
 package testClasses;
 
-import com.excelsiorjet.api.JetHomeException;
-
 import java.io.File;
 
 /**
@@ -9,7 +7,7 @@ import java.io.File;
  */
 public class FakeJC {
 
-    public static void main(String arg[]) throws JetHomeException {
+    public static void main(String arg[]) {
         String path = System.getenv("PATH");
         String firstEntry = path.split(File.pathSeparator)[0];
         if (!firstEntry.contains("FakeJetHome")) {

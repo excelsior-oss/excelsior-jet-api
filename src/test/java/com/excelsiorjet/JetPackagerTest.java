@@ -56,8 +56,7 @@ public class JetPackagerTest {
         try {
             File classesDir = TestUtils.classesDir();
             assertEquals(0,
-                    new JetCompiler("testClasses/FakeJC", "-outputname=jc",
-                            "-lookup=*.class=" + classesDir.getAbsolutePath())
+                    new JetCompiler("testClasses/FakeJC", "-outputname=jc")
                             .workingDirectory(TestUtils.workDir())
                             .execute());
 
@@ -68,7 +67,6 @@ public class JetPackagerTest {
             assertEquals(0,
                     new JetPackager("-add-file", exe.getAbsolutePath(), "/",
                             "-add-file", classesDir.getAbsolutePath(), "/",
-                            "-assign-resource", exe.getName(), classesDir.getName(), classesDir.getName(),
                             "-target", fakeJetBin.getAbsolutePath()).execute());
 
 
