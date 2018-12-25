@@ -226,7 +226,8 @@ public class ExcelsiorJet {
     }
 
     public boolean isCrossCompilation() {
-        return targetOS != Host.getOS();
+        //currently only ARM32 is supported in cross compilation mode
+        return targetCpu == CpuArch.ARM32;
     }
 
     public boolean isTestRunSupported() {
