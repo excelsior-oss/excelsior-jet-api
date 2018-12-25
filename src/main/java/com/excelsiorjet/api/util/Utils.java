@@ -23,6 +23,8 @@ package com.excelsiorjet.api.util;
 
 import com.excelsiorjet.api.platform.Host;
 import com.excelsiorjet.api.tasks.JetTaskFailureException;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -161,23 +163,40 @@ public class Utils {
         }
     }
 
-    private static void compressDirectoryToZipfile(String rootDir, String sourceDir, ZipArchiveOutputStream out) throws IOException {
+    @FunctionalInterface
+    private interface CreateArchiveEntry {
+        ArchiveEntry createEntry(String name, long size, int mode);
+    }
+
+    private static ArchiveEntry createZipEntry(String name, long size, int mode) {
+        ZipArchiveEntry entry = new ZipArchiveEntry(name);
+        if (Host.isUnix()) {
+            entry.setUnixMode(mode);
+        }
+        return entry;
+    }
+
+    private static ArchiveEntry createTarEntry(String name, long size, int mode) {
+        TarArchiveEntry entry = new TarArchiveEntry(name);
+        entry.setSize(size);
+        if (Host.isUnix()) {
+            entry.setMode(mode);
+        }
+        return entry;
+    }
+
+    private static void compressDirectoryToArchive(String rootDir, String sourceDir, ArchiveOutputStream out, CreateArchiveEntry cae) throws IOException {
         File[] files = new File(sourceDir).listFiles();
         assert files != null;
         for (File file : files) {
             if (file.isDirectory()) {
-                compressDirectoryToZipfile(rootDir, sourceDir + File.separator + file.getName(), out);
+                compressDirectoryToArchive(rootDir, sourceDir + File.separator + file.getName(), out, cae);
             } else {
-                ZipArchiveEntry entry = new ZipArchiveEntry(file.getAbsolutePath().substring(rootDir.length() + 1));
-                if (Host.isUnix()) {
-                    if (file.canExecute()) {
-                        //set -rwxr-xr-x
-                        entry.setUnixMode(0100755);
-                    } else {
-                        //set -rw-r--r--
-                        entry.setUnixMode(0100644);
-                    }
-                }
+                ArchiveEntry entry = cae.createEntry(
+                        file.getAbsolutePath().substring(rootDir.length() + 1),
+                        file.length(),
+                        file.canExecute() ? /*-rwxr-xr-x*/ 0100755 : /*-rw-r--r--*/ 0100644
+                );
                 out.putArchiveEntry(entry);
                 try (InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()))) {
                     copy(in, out);
@@ -187,44 +206,19 @@ public class Utils {
         }
     }
 
-    public static void compressZipfile(File sourceDir, File outputFile) throws IOException {
+    public static void compressToZipFile(File sourceDir, File outputFile) throws IOException {
         try (ZipArchiveOutputStream zipFile = new ZipArchiveOutputStream(
                 new BufferedOutputStream(new FileOutputStream(outputFile)))) {
-            compressDirectoryToZipfile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile);
-        }
-    }
-
-    private static void compressDirectoryToTarFile(String rootDir, String sourceDir, TarArchiveOutputStream out) throws IOException {
-        File[] files = new File(sourceDir).listFiles();
-        assert files != null;
-        for (File file : files) {
-            if (file.isDirectory()) {
-                compressDirectoryToTarFile(rootDir, sourceDir + File.separator + file.getName(), out);
-            } else {
-                TarArchiveEntry entry = new TarArchiveEntry(file.getAbsolutePath().substring(rootDir.length() + 1));
-                entry.setSize(file.length());
-                if (Host.isUnix()) {
-                    if (file.canExecute()) {
-                        //set -rwxr-xr-x
-                        entry.setMode(0100755);
-                    } else {
-                        //set -rw-r--r--
-                        entry.setMode(0100644);
-                    }
-                }
-                out.putArchiveEntry(entry);
-                try (InputStream in = new BufferedInputStream(new FileInputStream(sourceDir + File.separator + file.getName()))) {
-                    copy(in, out);
-                }
-                out.closeArchiveEntry();
-            }
+            compressDirectoryToArchive(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), zipFile,
+                    Utils::createZipEntry);
         }
     }
 
     public static void compressToTarGzFile(File sourceDir, File outputFile) throws IOException {
         try (TarArchiveOutputStream tarFile = new TarArchiveOutputStream(new GzipCompressorOutputStream(
                 new BufferedOutputStream(new FileOutputStream(outputFile))))) {
-            compressDirectoryToTarFile(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), tarFile);
+            compressDirectoryToArchive(sourceDir.getAbsolutePath(), sourceDir.getAbsolutePath(), tarFile,
+                    Utils::createTarEntry);
         }
     }
 

@@ -736,8 +736,10 @@ public class JetProject {
                 break;
             case TAR_GZ:
                 if (excelsiorJet.isCrossCompilation() && Host.isWindows()) {
-                    // Cannot pack to tar.gz due to absence of isExecutable information in the Maven plugin
-                    // for Linux files on Windows. Should be supported in xpack.
+                    // Cannot pack to tar.gz on Windows for Linux target
+                    // because we do not know what files should have executable Unix mode
+                    // in the resulting tar.gz archive.
+                    // Should be supported in xpack.
                     throw new JetTaskFailureException(s("JetApi.TarGZOnWindowsHostLinuxTarget.NotSupported"));
                 }
                 break;

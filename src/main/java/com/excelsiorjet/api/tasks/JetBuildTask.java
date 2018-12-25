@@ -93,6 +93,7 @@ public class JetBuildTask {
                 excelsiorJet.since11_3() &&
                 (project.appType() != ApplicationType.WINDOWS_SERVICE) &&
                 // JET-9267 workaround: cannot use xpack zipping when slimDown or diskFootprintReduction is enabled
+                // The issue is fixed in JET 12.
                 (excelsiorJet.since12_0() || (
                 (project.runtimeConfiguration().slimDown == null) &&
                 (project.runtimeConfiguration().diskFootprintReduction == null)));
@@ -277,7 +278,7 @@ public class JetBuildTask {
             }
         } else {
             logger.info(s("JetBuildTask.ZipApp.Info"));
-            Utils.compressZipfile(packageDir, targetZip);
+            Utils.compressToZipFile(packageDir, targetZip);
         }
         return targetZip;
     }
