@@ -115,9 +115,9 @@ public class JetBuildTask {
         }
     }
 
-    private ArrayList<String> getCommonXPackArgs(String targetDir, File buildDir, String suffix) throws JetTaskFailureException {
+    private ArrayList<String> getCommonXPackArgs(String targetDir, File buildDir, String suffix, String exeDir) throws JetTaskFailureException {
         File rspFile = new File(buildDir, project.outputName() + suffix + ".xpack");
-        ArrayList<XPackOption> xpackOptions = packagerArgsGenerator.getCommonXPackOptions(targetDir);
+        ArrayList<XPackOption> xpackOptions = packagerArgsGenerator.getCommonXPackOptions(targetDir, exeDir);
         return getXPackArgs(xpackOptions, rspFile);
     }
 
@@ -126,7 +126,7 @@ public class JetBuildTask {
      * as a self-contained directory
      */
     private void createAppOrProfileDir(File buildDir, File appOrProfileDir) throws CmdLineToolException, JetTaskFailureException {
-        ArrayList<String> xpackArgs = getCommonXPackArgs(appOrProfileDir.getAbsolutePath(), buildDir, ".SFD");
+        ArrayList<String> xpackArgs = getCommonXPackArgs(appOrProfileDir.getAbsolutePath(), buildDir, ".SFD", "/");
         if (useXPackZipping()) {
             //since 11.3 Excelsior JET supports zipping self-contained directories itself
             xpackArgs.add("-backend");
@@ -187,8 +187,12 @@ public class JetBuildTask {
         }
         File contents = new File(appBundle, "Contents");
         Utils.mkdir(contents);
-        File contentsMacOs = new File(contents, "MacOS");
-        Utils.mkdir(contentsMacOs);
+
+        ArrayList<String> xpackArgs = getCommonXPackArgs(contents.getAbsolutePath(), buildDir, ".OSXBundle", "MacOS");
+        if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
+            throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
+        }
+
         File contentsResources = new File(contents, "Resources");
         Utils.mkdir(contentsResources);
 
@@ -221,11 +225,6 @@ public class JetBuildTask {
                             "</plist>\n");
         }
 
-        ArrayList<String> xpackArgs = getCommonXPackArgs(contentsMacOs.getAbsolutePath(), buildDir, ".OSXBundle");
-        if (excelsiorJet.pack(buildDir, xpackArgs.toArray(new String[xpackArgs.size()])) != 0) {
-            throw new JetTaskFailureException(s("JetBuildTask.Package.Failure"));
-        }
-
         if (project.osxBundleConfiguration().icon != null) {
             Files.copy(project.osxBundleConfiguration().icon.toPath(),
                     new File(contentsResources, project.osxBundleConfiguration().icon.getName()).toPath());
@@ -234,10 +233,13 @@ public class JetBuildTask {
         File appPkg = null;
         if (project.osxBundleConfiguration().developerId != null) {
             logger.info(s("JetBuildTask.SigningOSXBundle.Info"));
-            if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "--sign",
+            if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "-o", "-runtime", "--sign",
                     project.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(logger).execute() != 0) {
                 throw new JetTaskFailureException(s("JetBuildTask.OSX.CodeSign.Failure"));
             }
+
+            signExecutablesInRT(new File(contents, "rt"));
+
             logger.info(s("JetBuildTask.CreatingOSXInstaller.Info"));
             if (project.osxBundleConfiguration().publisherId != null) {
                 appPkg = new File(project.jetOutputDir(), project.artifactName() + ".pkg");
@@ -260,6 +262,27 @@ public class JetBuildTask {
             logger.info(s("JetBuildTask.GetOSXBundle.Info", appBundle.getAbsolutePath()));
         }
 
+    }
+
+    private void signExecutablesInRT(File rt) throws JetTaskFailureException, CmdLineToolException {
+        signExecutablesIn(new File(rt, "bin"));
+        signExecutablesIn(new File(rt, "jetrt"));
+        signExecutablesIn(new File(rt, "lib"));
+        signExecutablesIn(new File(rt, "lib/jetvm"));
+    }
+
+    private void signExecutablesIn(File folder) throws JetTaskFailureException, CmdLineToolException {
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File f: files) {
+                if (f.canExecute()) {
+                    if (new CmdLineTool("codesign", "-s", "--verbose", "--force", "--deep", "-o", "-runtime", "--sign",
+                            project.osxBundleConfiguration().developerId, f.getAbsolutePath()).withLog(logger).execute() != 0) {
+                        throw new JetTaskFailureException(s("JetBuildTask.OSX.CodeSign.Failure"));
+                    }
+                }
+            }
+        }
     }
 
     private File zipBuild(File packageDir) throws IOException {
