@@ -233,7 +233,7 @@ public class JetBuildTask {
         File appPkg = null;
         if (project.osxBundleConfiguration().developerId != null) {
             logger.info(s("JetBuildTask.SigningOSXBundle.Info"));
-            if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "-o", "-runtime", "--sign",
+            if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "-o", "runtime", "--sign",
                     project.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(logger).execute() != 0) {
                 throw new JetTaskFailureException(s("JetBuildTask.OSX.CodeSign.Failure"));
             }
@@ -276,7 +276,7 @@ public class JetBuildTask {
         if (files != null) {
             for (File f: files) {
                 if (f.canExecute()) {
-                    if (new CmdLineTool("codesign", "-s", "--verbose", "--force", "--deep", "-o", "-runtime", "--sign",
+                    if (new CmdLineTool("codesign", "-s", "--verbose", "--force", "--deep", "-o", "runtime", "--sign",
                             project.osxBundleConfiguration().developerId, f.getAbsolutePath()).withLog(logger).execute() != 0) {
                         throw new JetTaskFailureException(s("JetBuildTask.OSX.CodeSign.Failure"));
                     }
