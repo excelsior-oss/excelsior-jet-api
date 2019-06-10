@@ -275,7 +275,7 @@ public class JetBuildTask {
         File[] files = folder.listFiles();
         if (files != null) {
             for (File f: files) {
-                if (f.canExecute()) {
+                if (f.isFile() && f.canExecute()) {
                     if (new CmdLineTool("codesign", "-s", "--verbose", "--force", "--deep", "-o", "runtime", "--sign",
                             project.osxBundleConfiguration().developerId, f.getAbsolutePath()).withLog(logger).execute() != 0) {
                         throw new JetTaskFailureException(s("JetBuildTask.OSX.CodeSign.Failure"));
