@@ -233,12 +233,13 @@ public class JetBuildTask {
         File appPkg = null;
         if (project.osxBundleConfiguration().developerId != null) {
             logger.info(s("JetBuildTask.SigningOSXBundle.Info"));
+
+            signExecutablesInRT(new File(contents, "rt"));
+
             if (new CmdLineTool("codesign", "--verbose", "--force", "--deep", "-o", "runtime", "--sign",
                     project.osxBundleConfiguration().developerId, appBundle.getAbsolutePath()).withLog(logger).execute() != 0) {
                 throw new JetTaskFailureException(s("JetBuildTask.OSX.CodeSign.Failure"));
             }
-
-            signExecutablesInRT(new File(contents, "rt"));
 
             logger.info(s("JetBuildTask.CreatingOSXInstaller.Info"));
             if (project.osxBundleConfiguration().publisherId != null) {
