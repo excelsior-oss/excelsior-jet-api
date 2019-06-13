@@ -55,6 +55,10 @@ public class PackagerArgsGenerator {
     }
 
     ArrayList<XPackOption> getCommonXPackOptions() throws JetTaskFailureException {
+        return getCommonXPackOptions("/");
+    }
+
+    ArrayList<XPackOption> getCommonXPackOptions(String exeDir) throws JetTaskFailureException {
         ArrayList<XPackOption> xpackOptions = new ArrayList<>();
 
         File source = null;
@@ -69,7 +73,7 @@ public class PackagerArgsGenerator {
                     xpackOptions.add(new XPackOption("-source", source.getAbsolutePath()));
                 }
 
-                xpackOptions.add(new XPackOption("-add-file", exeRelativePath, "/"));
+                xpackOptions.add(new XPackOption("-add-file", exeRelativePath, exeDir));
 
                 for (PackageFile pfile : project.packageFiles()) {
                     xpackOptions.add(new XPackOption("-add-file", pfile.path.getAbsolutePath(), pfile.packagePath));
@@ -399,8 +403,8 @@ public class PackagerArgsGenerator {
         return values.length == 1 && (values[0].equalsIgnoreCase("none"));
     }
 
-    ArrayList<XPackOption> getCommonXPackOptions(String targetDir) throws JetTaskFailureException {
-        ArrayList<XPackOption> xpackOptions = getCommonXPackOptions();
+    ArrayList<XPackOption> getCommonXPackOptions(String targetDir, String exeDir) throws JetTaskFailureException {
+        ArrayList<XPackOption> xpackOptions = getCommonXPackOptions(exeDir);
         xpackOptions.add(new XPackOption("-target", targetDir));
         return xpackOptions;
     }
